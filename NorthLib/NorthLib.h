@@ -14,6 +14,6 @@ FOUNDATION_EXPORT double NorthLibVersionNumber;
 //! Project version string for NorthLib.
 FOUNDATION_EXPORT const unsigned char NorthLibVersionString[];
 
-// In this header, you should import all the public headers of your framework using statements like #import <NorthLib/PublicHeader.h>
-
+#include <NorthLib/ZipStream.h>
+#include <NorthLib/hashes.h>
 
