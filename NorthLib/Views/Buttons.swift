@@ -383,7 +383,8 @@ open class Button<View: ButtonView>: ButtonControl {
     self.init( frame: CGRect(x: 0, y: 0, width: width, height: height) )
   }
   required public init?(coder aDecoder: NSCoder) {
-      fatalError("init(coder:) has not been implemented")
+    super.init(coder: aDecoder)
+    fatal("init(coder:) has not been implemented")
   }  
 } // Button<View>
 
@@ -458,7 +459,8 @@ open class Switch<View: ButtonView>: SwitchControl {
     self.init( frame: CGRect(x: 0, y: 0, width: width, height: height) )
   }
   required public init?(coder aDecoder: NSCoder) {
-      fatalError("init(coder:) has not been implemented")
+    super.init(coder: aDecoder)
+    fatal("init(coder:) has not been implemented")
   }
 } // Switch<View>
 

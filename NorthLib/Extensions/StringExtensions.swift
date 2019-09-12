@@ -20,7 +20,7 @@ public extension String {
    newlines are enclosed in the string.
    
    - Parameters:
-     - font: the text font to use in the label
+   - font: the text font to use in the label
    - Returns: A new UILabel containing the current String
    */
   func label(font: UIFont? = nil) -> UILabel {
@@ -43,12 +43,24 @@ public extension String {
    big enough to fit the string of characters.
    
    - Parameters:
-     - font: the text font used to calculate the size
+   - font: the text font used to calculate the size
    - Returns: the size of the smallest box encompassing the String
    */
   func size(font: UIFont? = nil) -> CGSize {
     return label(font:font).frame.size
   }
   
-}
+  /// allMatches returns an array of strings representing all matches
+  /// of the passed regular expression in 'self'.
+  func allMatches( regexp: String ) -> [String] {
+    do {
+      let re = try NSRegularExpression(pattern: regexp)
+      let res = re.matches(in: self, range: NSRange(self.startIndex..., in: self))
+      return res.map {
+        String(self[Range($0.range, in: self)!])
+      }
+    } catch { return [] }
+  }
+  
+} // extension String
 
