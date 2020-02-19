@@ -9,23 +9,73 @@ import UIKit
 
 fileprivate var countVC = 0
 
-open class PageCollectionVC<View: UIView>: UIViewController, UICollectionViewDelegate,
+/// An undefined View
+open class UndefinedView: UIView {
+  public var label = UILabel()
+  
+  private func setup() {
+    backgroundColor = UIColor.red
+    label.backgroundColor = UIColor.clear
+    label.font = UIFont.boldSystemFont(ofSize: 200)
+    label.textColor = UIColor.yellow
+    label.textAlignment = .center
+    label.adjustsFontSizeToFitWidth = true
+    label.text = "?"
+    addSubview(label)
+    pin(label.centerX, to: self.centerX)
+    pin(label.centerY, to: self.centerY)
+    pin(label.width, to: self.width, dist: -20)
+  }
+  
+  public override init(frame: CGRect) {
+    super.init(frame: frame)
+    setup()
+  }
+  
+  public required init?(coder: NSCoder) {
+    super.init(coder: coder)
+    setup()
+  }
+}
+
+/// The View to put into one page
+public protocol OptionalView {
+  var mainView: UIView { get }
+  var waitingView: UIView? { get }
+  var isAvailable: Bool { get }
+  func whenAvailable(closure: @escaping ()->())
+  func loadView()
+}
+
+/// Common Views can be optional
+extension UIView: OptionalView {
+  public var mainView: UIView { return self }
+  public var waitingView: UIView? { return nil }
+  public var isAvailable: Bool { return true }
+  public func whenAvailable(closure: @escaping () -> ()) {}
+  public func loadView() {}
+}
+
+open class PageCollectionVC: UIViewController, UICollectionViewDelegate,
   UICollectionViewDataSource, UICollectionViewDelegateFlowLayout, UIScrollViewDelegate {
   
   class PageCell: UICollectionViewCell {
-    var view: View?
+    var pageView: UIView?
   }
   
   open var collectionView: UICollectionView!
 
-  open var provider: ((Int,View?)->View)? = nil
+  open var provider: ((Int)->OptionalView)? = nil
   
   /// inset from top/bottom/left/right as factor to min(width,height)
   open var inset = 0.025
   
   fileprivate var initialIndex: Int?
   fileprivate var lastIndex: Int?
+  fileprivate var prevIndex: Int?  // index of previous page (scrolling from)
+  fileprivate var nextIndex: Int?  // index of next page (scrolling to)
   fileprivate var cvSize: CGSize { return self.collectionView.bounds.size }
+  fileprivate var onDisplayClosure: ((Int)->())?
 
   open var index: Int? {
     get {
@@ -56,7 +106,15 @@ open class PageCollectionVC<View: UIView>: UIViewController, UICollectionViewDel
   
   public required init?(coder: NSCoder) { super.init(coder: coder) }
   
-  open func viewProvider(provider: @escaping (Int,View?)->View) {
+  public func onDisplay(closure: ((Int)->())?) {
+    onDisplayClosure = closure
+  }
+  
+  private func displaying(index: Int) {
+    if let closure = onDisplayClosure { closure(index) }
+  }
+  
+  open func viewProvider(provider: @escaping (Int)->OptionalView) {
     self.provider = provider
   }
   
@@ -117,25 +175,37 @@ open class PageCollectionVC<View: UIView>: UIViewController, UICollectionViewDel
                                                      for: indexPath) as? PageCell {
       if let idx = initialIndex { initialIndex = nil; scrollto(idx) }
       if let provider = self.provider {
-        let page = provider(indexPath.item, cell.view)
-        if cell.view !== page {
-          if let v = cell.view {
-            v.removeFromSuperview()
-          }
-          cell.view = page
-          cell.addSubview(page)
-          page.translatesAutoresizingMaskIntoConstraints = false
-          NSLayoutConstraint.activate([
-            page.topAnchor.constraint(equalTo: cell.topAnchor),
-            page.leadingAnchor.constraint(equalTo: cell.leadingAnchor),
-            page.trailingAnchor.constraint(equalTo: cell.trailingAnchor),
-            page.bottomAnchor.constraint(equalTo: cell.bottomAnchor),
-          ])
+        let page = provider(indexPath.item)
+        let isAvailable = page.isAvailable
+        let activeView = isAvailable ? page.mainView : (page.waitingView ?? UndefinedView())
+        if let pageView = cell.pageView {
+          pageView.removeFromSuperview()
+        }
+        cell.contentView.addSubview(activeView)
+        pin(activeView, to: cell.contentView)
+        if isAvailable { page.loadView() }
+        else {
+          page.whenAvailable { collectionView.reloadItems(at: [indexPath]) }
         }
         return cell
       }
     }
     return PageCell()
+  }
+  
+  // MARK: - UICollectionViewDelegate
+  
+  public func collectionView(_ view: UICollectionView, willDisplay: UICollectionViewCell, 
+                             forItemAt: IndexPath) {
+    nextIndex = forItemAt.item
+    if prevIndex == nil { displaying(index: nextIndex!) }
+  }
+  
+  public func collectionView(_ view: UICollectionView, didEndDisplaying: UICollectionViewCell, 
+                             forItemAt: IndexPath) {
+    prevIndex = forItemAt.item
+    if let n = nextIndex, prevIndex != n { displaying(index: n) }
+    nextIndex = nil
   }
   
   // MARK: - UICollectionViewDelegateFlowLayout

@@ -57,4 +57,13 @@ open class DottedLineView: UIView {
     setNeedsDisplay()
   }
   
+  public override init(frame: CGRect) {
+    super.init(frame: frame)
+    backgroundColor = UIColor.clear
+  }
+  
+  public required init?(coder: NSCoder) {
+    super.init(coder: coder)
+  }
+  
 }

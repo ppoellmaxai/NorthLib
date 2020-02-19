@@ -84,11 +84,11 @@ open class Defaults: NSObject {
     private static let name = NSNotification.Name(rawValue: "Defaults.Notification")
     static func send( _ key: String, _ val: String?, _ scope: String? ) {
       NotificationCenter.default.post( name: Notification.name,
-                                       object: Notification(key: key, val: val) )
+        object: Notification(key: key, val: val, scope: scope) )
     }
-    static func addObserver( _ observer: Any, atChange: @escaping (String, String?, String?)->() ) {
+    static func addObserver(atChange: @escaping (String, String?, String?)->()) {
       NotificationCenter.default.addObserver(forName: Notification.name,
-        object: observer, queue: nil ) { (nfc) -> () in
+        object: nil, queue: nil ) { (nfc) -> () in
           if let dnfc: Defaults.Notification = nfc.object as? Defaults.Notification {
             atChange( dnfc.key, dnfc.val, dnfc.scope )
           }

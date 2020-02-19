@@ -7,7 +7,7 @@
 
 import Foundation
 
-extension Array {
+public extension Array {
   
   /// appends one Element to an array
   @discardableResult
@@ -23,4 +23,12 @@ extension Array {
     return lhs
   }
   
+  /// removes first element
+  @discardableResult
+  mutating func pop() -> Element? { 
+    return self.isEmpty ? nil : self.removeFirst() 
+  }
+  
+  /// appends one element at the end
+  mutating func push(elem: Element) { self.append(elem) }  
 }

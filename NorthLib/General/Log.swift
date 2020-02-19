@@ -131,7 +131,7 @@ public class Log {
       if let cn = className { s += cn + "." }
       s += "\(funcName) \(logLevel)"
       if isException { s += " Exception" }
-      if let str = message { s += ":\n  " + str }
+      if let str = message { s += ":\n" + str.indent(by:2) }
       else {
         s += ":\n  at line \(line) in file \(fileBaseName)"
       }

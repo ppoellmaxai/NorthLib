@@ -23,7 +23,7 @@ open class Database: DoesLog {
   public lazy var coordinator = NSPersistentStoreCoordinator(managedObjectModel: model)
   
   /// application support directory
-  public static var appDir: String { return Directory.appSupportPath()! }
+  public static var appDir: String { return Dir.appSupportPath }
     
   /// directory where DB is stored
   public static var dbDir: String { return Database.appDir + "/database" }
@@ -33,13 +33,13 @@ open class Database: DoesLog {
   
   /// managed object context of database
   public var context: NSManagedObjectContext
-    
+  
+  @discardableResult  
   public init(_ modelName: String, closure: @escaping (Database)->() ) {
     self.modelName = modelName
     self.context = NSManagedObjectContext(concurrencyType: .mainQueueConcurrencyType)
     self.context.persistentStoreCoordinator = coordinator
-    do { try Directory.create(Database.dbDir) }
-    catch let e { fatal(e) }
+    Dir(Database.dbDir).create()
     let dbURL = URL(fileURLWithPath: dbPath)
     let queue = DispatchQueue.global(qos: .background)
     queue.async {

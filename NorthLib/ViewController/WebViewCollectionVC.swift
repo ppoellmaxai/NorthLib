@@ -8,12 +8,67 @@
 import UIKit
 import WebKit
 
-open class WebViewCollectionVC: PageCollectionVC<WebView>, WKUIDelegate,
+/// An URL with a waiting view that is to display if the URL is not yet available
+public protocol WebViewUrl {
+  var url: URL { get }
+  var isAvailable: Bool { get }
+  func whenAvailable(closure: @escaping ()->())
+  func waitingView() -> UIView?
+}
+
+/// An optional WebView using a "waiting view" as long as the web contents is not available
+struct OptionalWebView: OptionalView {
+  
+  var url: WebViewUrl
+  var webView: WebView?
+  
+  var isAvailable: Bool { return url.isAvailable }
+  func whenAvailable(closure: @escaping () -> ()) { url.whenAvailable(closure: closure) }
+  var waitingView: UIView? { return url.waitingView() }
+  var mainView: UIView { return webView ?? UIView() }
+  func loadView() { if isAvailable { webView?.load(url: url.url) } }
+  
+  init(vc: WebViewCollectionVC, url: WebViewUrl) {
+    self.url = url
+    if isAvailable {
+      let webConfiguration = WKWebViewConfiguration()
+      webView = WebView(frame: .zero, configuration: webConfiguration)
+      guard let webView = webView else { return }
+      webView.uiDelegate = vc
+      webView.navigationDelegate = vc
+      webView.allowsBackForwardNavigationGestures = false
+      webView.scrollView.isDirectionalLockEnabled = true
+      webView.scrollView.showsHorizontalScrollIndicator = false
+      webView.baseDir = vc.baseDir
+      webView.whenScrolled(minRatio: 0.05) { [weak vc] ratio in
+        vc?.didScroll(ratio: ratio)
+      }
+    }
+  }
+  
+} // OptionalWebView
+
+/// A very simple file based WebViewUrl
+public struct FileUrl: WebViewUrl {
+  public var url: URL
+  public var path: String { return url.path }
+  public var isAvailable: Bool { return File(path).exists }
+  public func whenAvailable(closure: ()->()) {}
+  public func waitingView() -> UIView? { return nil }
+  public init(path: String) { self.url = URL(fileURLWithPath: path) }
+}
+
+/// A WebViewCollectionVC manages a hoizontal collection of web views
+open class WebViewCollectionVC: PageCollectionVC, WKUIDelegate,
   WKNavigationDelegate {
     
-  /// The list of String URLs to collect
-  public var urls: [URL] = []
-  public var path: String = ""
+  /// The list of URLs to display in WebViews
+  public var urls: [WebViewUrl] = []
+  public var baseDir: String?
+  public var current: WebViewUrl? { 
+    guard let index = index else { return nil }
+    return urls[index] 
+  }
   
   // The closure to call when link is pressed
   private var _whenLinkPressed: ((URL,URL)->())?
@@ -23,11 +78,30 @@ open class WebViewCollectionVC: PageCollectionVC<WebView>, WKUIDelegate,
     _whenLinkPressed = closure
   }
   
-  public func displayFiles( path: String, files: [String] ) {
+  // The closure to call when the webview has been scrolled more than 5%
+  private var _whenScrolled: ((CGFloat)->())?
+  
+  /// Define closure to call when more than 5% has b een scrolled
+  public func whenScrolled(_ closure: ((CGFloat)->())?) {
+    _whenScrolled = closure
+  }
+  
+  /// Scroll of WebView detected
+  public func didScroll(ratio: CGFloat) { 
+    guard let closure = _whenScrolled else { return }
+    closure(ratio)
+  }
+  
+  public func displayUrls(urls: [WebViewUrl]) {
+    self.urls = urls
+    self.count = urls.count
+  }
+  
+  public func displayFiles(path: String, files: [String]) {
     urls = []
-    self.path = path
     for f in files {
-      urls.append( URL( string: "file://" + path + "/" + f )! )
+      let url = FileUrl(path: path + "/" + f)
+      urls.append(url)
     }
     self.count = urls.count
   }
@@ -36,60 +110,72 @@ open class WebViewCollectionVC: PageCollectionVC<WebView>, WKUIDelegate,
     displayFiles(path: path, files: files)
   }
   
-  public func gotoUrl( url: URL ) {
-    if let index = urls.firstIndex(of: url) {
-      self.index = index
+  public func gotoUrl(url: URL) {
+    var idx = 0
+    for u in urls {
+      if u.url == url { self.index = idx; return }
+      idx += 1
     }
   }
   
   public func gotoUrl(_ url: String) {
-    gotoUrl(url: URL(string: "file://" + path + "/" + url)!)
+    let url = URL(fileURLWithPath: url)
+    gotoUrl(url: url)
+  }
+  
+  public func gotoUrl(path: String, file: String) { 
+    gotoUrl(path + "/" + file)
   }
   
   open override func viewDidLoad() {
     super.viewDidLoad()
     self.view.backgroundColor = UIColor.white
     inset = 0
-    viewProvider { [weak self] (index,view) in
-      var ret: WebView
-      if let v = view { ret = v }
-      else {
-        let webConfiguration = WKWebViewConfiguration()
-        ret = WebView(frame: .zero, configuration: webConfiguration)
-        ret.uiDelegate = self
-        ret.navigationDelegate = self
-        ret.allowsBackForwardNavigationGestures = false
-        ret.scrollView.isDirectionalLockEnabled = true
-        ret.scrollView.showsHorizontalScrollIndicator = false
-        //let pan = ret.scrollView.panGestureRecognizer
-      }
-      if let this = self {
-        ret.load(this.urls[index])
-      }
-      return ret
+    viewProvider { [weak self] (index) in
+      guard let this = self else { return UIView() }
+      return OptionalWebView(vc: this, url: this.urls[index])
     }
   }
   
   public func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-    debug("view size=\(webView.bounds.size), content size=\(webView.scrollView.contentSize), content offset=\(webView.scrollView.contentOffset)")
-//    let newCSize = CGSize(width: webView.bounds.size.width, height: webView.scrollView.contentSize.height)
-//    webView.scrollView.contentSize = newCSize
+    if let wview = webView as? WebView {
+ //     debug("Webview loaded: \(wview.url?.lastPathComponent ?? "[undefined URL]")")
+    }
   }
   
-//   public func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
-//     debug()
-//   }
+   public func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+     if let wview = webView as? WebView {
+//       debug("Webview loading: \(wview.url?.lastPathComponent ?? "[undefined URL]")")
+     }
+   }
+  
+  public func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, 
+                      withError err: Error) {
+    if let wview = webView as? WebView {
+      error("WebView Error on \"\(wview.originalUrl?.lastPathComponent ?? "[undefined URL]")\": \(err.description)")
+    }
+  }
+  
+  public func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, 
+                      withError err: Error) {
+    if let wview = webView as? WebView {
+      error("WebView Error on \"\(wview.originalUrl?.lastPathComponent ?? "[undefined URL]")\": \(err.description)")
+    }
+  }
   
   public func webView(_ webView: WKWebView, decidePolicyFor nav: WKNavigationAction,
                       decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
     if let url = nav.request.url {
       let type = nav.navigationType
-      if type == .other { decisionHandler( .allow ); return }
-      else if type == .linkActivated {
-        if let closure = _whenLinkPressed { closure(webView.url!, url) }
+      if type == .linkActivated {
+        if let closure = _whenLinkPressed { 
+          closure(webView.url!, url) 
+          decisionHandler(.cancel)
+          return
+        }
       }
     }
-    decisionHandler( .cancel )
+    decisionHandler(.allow)
   }
   
   override public func scrollViewDidScroll(_ scrollView: UIScrollView) {

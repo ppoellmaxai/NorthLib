@@ -127,6 +127,21 @@ open class App {
     }
   }
   
+  /// Returns the largest AppIcon
+  private static var _icon: UIImage?
+  public static var icon: UIImage? {
+    if _icon == nil {
+      guard 
+        let iconsDictionary = Bundle.main.infoDictionary?["CFBundleIcons"] as? NSDictionary,
+        let primaryIconsDictionary = iconsDictionary["CFBundlePrimaryIcon"] as? NSDictionary,
+        let iconFiles = primaryIconsDictionary["CFBundleIconFiles"] as? NSArray,
+        let lastIcon = iconFiles.lastObject as? String,
+        let img = UIImage(named: lastIcon) else { return nil }
+      _icon = img
+    }
+    return _icon
+  }
+  
   public init() {}
   
 } // class App

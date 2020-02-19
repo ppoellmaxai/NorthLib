@@ -7,14 +7,36 @@
 
 import Foundation
 
+extension Swift.Error {
+  public var errorDescription: String? {
+    if let le = self as? LocalizedError { return le.errorDescription }
+    else { return localizedDescription }
+  }
+  public var description: String {
+    if let str = errorDescription { return str }
+    else { return "[undefined error]" }
+  }
+}
 
-/// Member error() is similar to get() and returns the Failure value if available
 extension Result {
+  /// error() is similar to get() and returns the Failure value if available
   public func error() -> Failure? { 
     if case .failure(let err) = self { return err }
     else { return nil }
   }
-}
+  
+  /// value returns the success value (or nil if no success)
+  /// An Error is logged.
+  public func value(file: String = #file, line: Int = #line,
+    function: String = #function) -> Success? {
+    switch self {
+    case .success(let val): return val
+    case .failure(let err):
+      Log.error(err, object: nil, file: file, line: line, function: function)
+      return nil
+    }
+  }
+} // Result
 
 extension DoesLog {
   
@@ -80,7 +102,7 @@ extension Log {
     
     /// The localized description according to the Error protocol
     public var localizedDescription: String { return toString() }
-    
+
     /// Initialisation with a previous ErrorMessage
     public init( level: LogLevel, className: String?, fileName: String, funcName: String,
                  line: Int, message: String?, previous: Log.Error? ) {
@@ -102,10 +124,10 @@ extension Log {
       super.init(level:level, className:className, fileName:fileName, funcName:funcName,
                  line:line, message:message, previous: previous)
       if let msg = self.message {
-        self.message = msg + "\n  " + "Enclosed Error: \(enclosed.localizedDescription)"
+        self.message = msg + "\n  " + "Enclosed Error: \(enclosed.description)"
       }
       else {
-        self.message = "Enclosed Error: \(enclosed.localizedDescription)"
+        self.message = "Enclosed Error: \(enclosed.description)"
       }
     }
 

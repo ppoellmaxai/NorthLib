@@ -8,12 +8,17 @@
 import Foundation
 
 
-/// The Version class offers comparisions of version numbers, e.g.
-/// after:
+/// The Version class offers comparisions of version numbers.
+/// 
+/// E.g. after:
+/// ````
 ///   let v1 = Version( "1.0" )
 ///   let v2 = Version( "1.2" )
+/// ````
 /// you may use:
+/// ````
 ///     v1 < v2; v1 == v2; v1[0]; print(v2)
+/// ````
 ///
 open class Version: Comparable, CustomStringConvertible {
   
@@ -27,6 +32,9 @@ open class Version: Comparable, CustomStringConvertible {
     self.fromString(ver)
   }
   
+  /// Reads a version number from a String.
+  /// - parameters:
+  ///   - ver: Version String, e.g. "1.2.0" 
   public func fromString( _ ver: String ) {
     let varray = ver.allMatches(regexp: "[0-9]+")
     self.version = []

@@ -9,6 +9,18 @@ import Foundation
 
 public extension Data {
   
+  /// Returns the Data as UTF8 String
+  var string: String { return String(data: self, encoding: .utf8)! }
+  
+  /// Returns the data as a String of hex digits.
+  var hex: String {
+    let d: NSData = self as NSData
+    let cstr = data_toHex(d.bytes, d.count)
+    let str = String(utf8String: cstr!)
+    free(cstr)
+    return str!
+  }
+  
   /// Returns the md5 sum as a String of hex digits.
   var md5: String {
     let d: NSData = self as NSData

@@ -349,7 +349,7 @@ open class ButtonControl: UIControl {
     super.init(coder: aDecoder)
   }
  
-  /// Returns a  UIBarButtonItem which custom view is set to self
+  /// Returns a UIBarButtonItem which custom view is set to self
   open func barButton() -> UIBarButtonItem {
     let bb = UIBarButtonItem()
     bb.customView = self
@@ -504,6 +504,60 @@ open class PlusView: FlipFlopView {
 */
 
 open class MinusView: PlusView {
+  override open func setup() {
+    super.setup()
+    isPrimary = false
+  }
+}
+
+/**
+  FlipFlopView displaying a left or right arrow
+ 
+  A ArrowView is a FlipFlopView subclass showing a left arrow as its primary
+  icon and a right arrow as secondary icon.
+*/
+
+@IBDesignable
+open class ArrowView: FlipFlopView {
+  
+  open func drawArrow() {
+    let isLeft = isDrawPrimary
+    let h = bounds.size.height, w = bounds.size.width,
+    hi = w*(hinset/2), vi = h*(vinset/2),
+    d = h/2 - vi,
+    lw = lineWidth * h
+    let arrow = UIBezierPath()
+    var pu: CGPoint, pm: CGPoint, pl: CGPoint
+    if isLeft {
+      pu = CGPoint(x:hi+d+lw, y:vi)
+      pm = CGPoint(x:hi+lw, y:h/2)
+      pl = CGPoint(x:pu.x, y:h-vi)
+    }
+    else {
+      pu = CGPoint(x:w-hi-d-lw, y:vi)
+      pm = CGPoint(x:w-hi-lw, y:h/2)
+      pl = CGPoint(x:pu.x, y:h-vi)       
+    }
+    arrow.move(to: pu)
+    arrow.addLine(to: pm)
+    arrow.addLine(to: pl)
+    arrow.lineJoinStyle = .miter
+    arrow.lineWidth = lw
+    strokeColor.setStroke()
+    arrow.stroke()
+  }
+  
+  override open func draw(_ rect: CGRect) { drawArrow() }
+  
+} // class ArrowView
+
+public typealias LeftArrowView = ArrowView
+
+/**
+  The RightArrowView is a convenience class derived from
+  ArrowView to draw a right arrow as its primary icon.
+*/
+open class RightArrowView: ArrowView {
   override open func setup() {
     super.setup()
     isPrimary = false
