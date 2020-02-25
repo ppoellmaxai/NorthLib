@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		AE1D62732403FA270004D8AD /* Keychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE1D62722403FA270004D8AD /* Keychain.swift */; };
 		AE1DA65723BE0054003DFE92 /* sysdef.h in Headers */ = {isa = PBXBuildFile; fileRef = AE1DA65623BE0054003DFE92 /* sysdef.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AE1DA65923BE04F7003DFE92 /* strext.h in Headers */ = {isa = PBXBuildFile; fileRef = AE1DA65823BE04F7003DFE92 /* strext.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AE1DA65B23BE08F0003DFE92 /* strext.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AE1DA65A23BE08F0003DFE92 /* strext.cpp */; };
@@ -75,6 +76,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		AE1D62722403FA270004D8AD /* Keychain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Keychain.swift; sourceTree = "<group>"; };
 		AE1DA65623BE0054003DFE92 /* sysdef.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = sysdef.h; sourceTree = "<group>"; };
 		AE1DA65823BE04F7003DFE92 /* strext.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = strext.h; sourceTree = "<group>"; };
 		AE1DA65A23BE08F0003DFE92 /* strext.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = strext.cpp; sourceTree = "<group>"; };
@@ -252,6 +254,7 @@
 				AE7122DE23197B4000B715A8 /* Globals.swift */,
 				AE7122DF23197B4000B715A8 /* FileLogger.swift */,
 				AED2B5D723B0C61A00D9A087 /* File.swift */,
+				AE1D62722403FA270004D8AD /* Keychain.swift */,
 			);
 			path = General;
 			sourceTree = "<group>";
@@ -478,6 +481,7 @@
 				AE7122EE23197B4000B715A8 /* Error.swift in Sources */,
 				AED2B5D823B0C61A00D9A087 /* File.swift in Sources */,
 				AE7122EC23197B4000B715A8 /* Math.swift in Sources */,
+				AE1D62732403FA270004D8AD /* Keychain.swift in Sources */,
 				AE98513A2320FCA700EAC9D8 /* WebViewCollectionVC.swift in Sources */,
 				AE71231A231EB8B100B715A8 /* zip.cpp in Sources */,
 				AE71231F231FFDFD00B715A8 /* ZipStream.mm in Sources */,

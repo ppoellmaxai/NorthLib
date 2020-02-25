@@ -199,6 +199,28 @@ class DefaultsTests: XCTestCase {
 
 } // class DefaultsTest
 
+class KeychainTests: XCTestCase {
+  
+  override func setUp() {
+    super.setUp()
+    Log.minLogLevel = .Debug
+  }
+  
+  override func tearDown() {
+    super.tearDown()
+  }
+  
+  func testKeychain() {
+    let kc = Keychain.singleton
+    if let pw = kc["geheim"] { print("geheim = \"\(pw)\"") }
+    kc["geheim"] = "huhu"
+    XCTAssertEqual(kc["geheim"], "huhu")      
+    kc["geheim"] = nil
+    XCTAssertNil(kc["geheim"])
+    kc["geheim"] = "fiffi"
+  }
+
+} // class DefaultsTest
 class FileTests: XCTestCase {
   
   override func setUp() {
