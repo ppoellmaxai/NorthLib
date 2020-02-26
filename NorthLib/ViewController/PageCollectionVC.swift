@@ -60,7 +60,22 @@ open class PageCollectionVC: UIViewController, UICollectionViewDelegate,
   UICollectionViewDataSource, UICollectionViewDelegateFlowLayout, UIScrollViewDelegate {
   
   class PageCell: UICollectionViewCell {
+    /// The View to display
     var pageView: UIView?
+    /// Index of View in collection view
+    var index: Int?
+  
+    override init(frame: CGRect) {
+      super.init(frame: frame)
+    }
+    init(view: UIView, index: Int) { 
+      self.pageView = view
+      self.index = index
+      super.init(frame: CGRect())
+    }    
+    required init?(coder: NSCoder) {
+      super.init(coder: coder)
+    }
   }
   
   open var collectionView: UICollectionView!
@@ -70,34 +85,42 @@ open class PageCollectionVC: UIViewController, UICollectionViewDelegate,
   /// inset from top/bottom/left/right as factor to min(width,height)
   open var inset = 0.025
   
-  fileprivate var initialIndex: Int?
-  fileprivate var lastIndex: Int?
-  fileprivate var prevIndex: Int?  // index of previous page (scrolling from)
-  fileprivate var nextIndex: Int?  // index of next page (scrolling to)
+  fileprivate var index2scrollTo: Int?  // index of page to scroll to
   fileprivate var cvSize: CGSize { return self.collectionView.bounds.size }
-  fileprivate var onDisplayClosure: ((Int)->())?
+  fileprivate var onDisplayClosure: ((Int, UIView?)->())?
+  
+  // Cell which is currently displayed
+  private var currentCell: PageCell?
 
-  open var index: Int? {
-    get {
-      let wbounds = self.view.bounds
-      let center = CGPoint(x: wbounds.midX, y: wbounds.midY) + collectionView.contentOffset
-      let ipath = collectionView.indexPathForItem(at:center)
-      return ipath?.item
-    }
-    set {
-      if let v = newValue {
-        if let idx = self.index { 
-          if v > idx+1 { scrollto(v-1, animated:false) }
-          else if v < idx-1 { scrollto(v+1, animated:false) }
-          delay(seconds: 0.2) { self.scrollto(v,animated: true) }
-        }
-        else { initialIndex = v }
-      }
-    }
+  private func indexPath(cell: PageCell?) -> IndexPath?{ 
+    if let c = cell { return collectionView.indexPath(for: c) }
+    return nil
   }
   
-  open var count: Int = 0 {
-    didSet { if collectionView != nil { collectionView.reloadData() } }
+  /// IndexPath of current cell
+  open var indexPath: IndexPath? { return indexPath(cell: currentCell) }
+
+  /// Index of current cell
+  open var index: Int? {
+    get { if let cell = currentCell { return cell.index } else { return nil } }
+    set(idx) { if let i = idx { scrollto(i) } }
+  }
+  
+  private var visibleCells: Set<PageCell> = []
+
+  /// View currently displayed
+  open var currentView: UIView? { 
+    return currentCell?.pageView
+  }
+  
+  fileprivate var _count: Int = 0
+  open var count: Int {
+    get { return _count }
+    set { 
+      _count = newValue
+      collectionView.reloadData()
+      index = 0
+    }
   }
   
   private var reuseIdent: String = { countVC += 1; return "PageCell\(countVC)" }()
@@ -106,12 +129,25 @@ open class PageCollectionVC: UIViewController, UICollectionViewDelegate,
   
   public required init?(coder: NSCoder) { super.init(coder: coder) }
   
-  public func onDisplay(closure: ((Int)->())?) {
+  public func onDisplay(closure: ((Int, UIView?)->())?) {
     onDisplayClosure = closure
   }
   
-  private func displaying(index: Int) {
-    if let closure = onDisplayClosure { closure(index) }
+  private func updateDisplaying() {
+//    if let i = index2scrollTo { 
+//      index2scrollTo = nil
+//      scrollto(i)
+//      return
+//    }
+    debug("visible cells: \(visibleCells.map{$0.index})")
+    if visibleCells.count == 1 {
+      let vis = visibleCells.first!
+      if vis !== currentCell {
+        debug("displaying page #\(vis.index!)")
+        currentCell = vis
+        if let closure = onDisplayClosure { closure(vis.index!, currentCell?.pageView) }
+      }
+    }
   }
   
   open func viewProvider(provider: @escaping (Int)->OptionalView) {
@@ -119,8 +155,11 @@ open class PageCollectionVC: UIViewController, UICollectionViewDelegate,
   }
   
   open func scrollto(_ index: Int, animated: Bool = false) {
-    let ipath = IndexPath(item: index, section: 0)
-    collectionView.scrollToItem(at: ipath, at: .centeredHorizontally, animated: animated)
+    if currentCell != nil {
+      let ipath = IndexPath(item: index, section: 0)
+      collectionView.scrollToItem(at: ipath, at: .centeredHorizontally, animated: animated)
+    }
+    else { index2scrollTo = index }
   }
 
   // MARK: - Life Cycle
@@ -156,7 +195,6 @@ open class PageCollectionVC: UIViewController, UICollectionViewDelegate,
     super.willTransition(to: newCollection, with: coordinator)
     coordinator.animate(alongsideTransition: nil) { [weak self] ctx in
       self?.collectionView.collectionViewLayout.invalidateLayout()
-      self?.center()
     }
   }
   
@@ -173,14 +211,16 @@ open class PageCollectionVC: UIViewController, UICollectionViewDelegate,
   open func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
     if let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdent,
                                                      for: indexPath) as? PageCell {
-      if let idx = initialIndex { initialIndex = nil; scrollto(idx) }
+      let idx = indexPath.item
       if let provider = self.provider {
-        let page = provider(indexPath.item)
+        let page = provider(idx)
         let isAvailable = page.isAvailable
         let activeView = isAvailable ? page.mainView : (page.waitingView ?? UndefinedView())
         if let pageView = cell.pageView {
           pageView.removeFromSuperview()
         }
+        cell.pageView = activeView
+        cell.index = idx
         cell.contentView.addSubview(activeView)
         pin(activeView, to: cell.contentView)
         if isAvailable { page.loadView() }
@@ -197,15 +237,14 @@ open class PageCollectionVC: UIViewController, UICollectionViewDelegate,
   
   public func collectionView(_ view: UICollectionView, willDisplay: UICollectionViewCell, 
                              forItemAt: IndexPath) {
-    nextIndex = forItemAt.item
-    if prevIndex == nil { displaying(index: nextIndex!) }
+    visibleCells.update(with: willDisplay as! PageCell)
+    updateDisplaying()
   }
   
   public func collectionView(_ view: UICollectionView, didEndDisplaying: UICollectionViewCell, 
                              forItemAt: IndexPath) {
-    prevIndex = forItemAt.item
-    if let n = nextIndex, prevIndex != n { displaying(index: n) }
-    nextIndex = nil
+    visibleCells.remove(didEndDisplaying as! PageCell)
+    updateDisplaying()
   }
   
   // MARK: - UICollectionViewDelegateFlowLayout
@@ -220,55 +259,55 @@ open class PageCollectionVC: UIViewController, UICollectionViewDelegate,
     return CGSize(width: s.width - 2*margin, height: s.height - 2*margin)
   }
   
-  public func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout,
-                             sizeForItemAt indexPath: IndexPath) -> CGSize {
+  public func collectionView(_ collectionView: UICollectionView, 
+    layout collectionViewLayout: UICollectionViewLayout,
+    sizeForItemAt indexPath: IndexPath) -> CGSize {
     return cellsize
   }
   
-  public func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout,
-                           insetForSectionAt section: Int) -> UIEdgeInsets {
+  public func collectionView(_ collectionView: UICollectionView, 
+    layout collectionViewLayout: UICollectionViewLayout,
+    insetForSectionAt section: Int) -> UIEdgeInsets {
     let m = margin
     return UIEdgeInsets(top: m, left: m, bottom: m, right: m)
   }
   
-  public func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout,
-                              minimumInteritemSpacingForSectionAt section: Int) -> CGFloat {
+  public func collectionView(_ collectionView: UICollectionView, 
+    layout collectionViewLayout: UICollectionViewLayout,
+    minimumInteritemSpacingForSectionAt section: Int) -> CGFloat {
     return 0
   }
   
-  public func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumLineSpacingForSectionAt section: Int) -> CGFloat {
+  public func collectionView(_ collectionView: UICollectionView, 
+    layout collectionViewLayout: UICollectionViewLayout, 
+    minimumLineSpacingForSectionAt section: Int) -> CGFloat {
     return 2*margin
   }
   
   // MARK: - UIScrollViewDelegate
  
-  fileprivate func center() {
-    var idx: Int?
-    if let i = index { idx = i }
-    else if let l = lastIndex { idx = l }
-    if let i = idx { self.scrollto(i, animated: true) }
-  }
-  
-  fileprivate var isDecelerating = false
   
   public func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
-    isDecelerating = false
   }
   
   public func scrollViewDidScroll(_ scrollView: UIScrollView) {
-    if let idx = index { lastIndex = idx }
   }
 
   public func scrollViewWillBeginDecelerating(_ scrollView: UIScrollView) {
-    isDecelerating = true
   }
 
   public func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
-    //center()
+    let cells = collectionView.visibleCells as! [PageCell]
+    if cells.count == 1 { 
+      let cell = cells[0]
+      if cell !== currentCell {
+        visibleCells = [cells[0]] 
+        updateDisplaying()
+      }
+    }
   }
   
   public func scrollViewWillEndDragging(_ scrollView: UIScrollView, withVelocity velocity: CGPoint, targetContentOffset: UnsafeMutablePointer<CGPoint>) {
-    //if !isDecelerating { center() }
   }
   
 } // PageCollectionVC

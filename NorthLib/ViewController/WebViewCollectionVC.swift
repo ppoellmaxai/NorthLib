@@ -25,24 +25,22 @@ struct OptionalWebView: OptionalView {
   var isAvailable: Bool { return url.isAvailable }
   func whenAvailable(closure: @escaping () -> ()) { url.whenAvailable(closure: closure) }
   var waitingView: UIView? { return url.waitingView() }
-  var mainView: UIView { return webView ?? UIView() }
+  var mainView: UIView { return webView ?? UndefinedView() }
   func loadView() { if isAvailable { webView?.load(url: url.url) } }
   
   init(vc: WebViewCollectionVC, url: WebViewUrl) {
     self.url = url
-    if isAvailable {
-      let webConfiguration = WKWebViewConfiguration()
-      webView = WebView(frame: .zero, configuration: webConfiguration)
-      guard let webView = webView else { return }
-      webView.uiDelegate = vc
-      webView.navigationDelegate = vc
-      webView.allowsBackForwardNavigationGestures = false
-      webView.scrollView.isDirectionalLockEnabled = true
-      webView.scrollView.showsHorizontalScrollIndicator = false
-      webView.baseDir = vc.baseDir
-      webView.whenScrolled(minRatio: 0.05) { [weak vc] ratio in
-        vc?.didScroll(ratio: ratio)
-      }
+    let webConfiguration = WKWebViewConfiguration()
+    self.webView = WebView(frame: .zero, configuration: webConfiguration)
+    guard let webView = self.webView else { return }
+    webView.uiDelegate = vc
+    webView.navigationDelegate = vc
+    webView.allowsBackForwardNavigationGestures = false
+    webView.scrollView.isDirectionalLockEnabled = true
+    webView.scrollView.showsHorizontalScrollIndicator = false
+    webView.baseDir = vc.baseDir
+    webView.whenScrolled(minRatio: 0.05) { [weak vc] ratio in
+      vc?.didScroll(ratio: ratio)
     }
   }
   
@@ -66,9 +64,12 @@ open class WebViewCollectionVC: PageCollectionVC, WKUIDelegate,
   public var urls: [WebViewUrl] = []
   public var baseDir: String?
   public var current: WebViewUrl? { 
-    guard let index = index else { return nil }
-    return urls[index] 
+    if let i = index { return urls[i] }
+    else { return nil }
   }
+  fileprivate var initialUrl: URL?
+  
+  public var currentWebView: WebView? { return currentView as? WebView }
   
   // The closure to call when link is pressed
   private var _whenLinkPressed: ((URL,URL)->())?
@@ -92,30 +93,41 @@ open class WebViewCollectionVC: PageCollectionVC, WKUIDelegate,
     closure(ratio)
   }
   
-  public func displayUrls(urls: [WebViewUrl]) {
-    self.urls = urls
-    self.count = urls.count
-  }
-  
-  public func displayFiles(path: String, files: [String]) {
-    urls = []
-    for f in files {
-      let url = FileUrl(path: path + "/" + f)
-      urls.append(url)
+  public func displayUrls(urls: [WebViewUrl]? = nil) {
+    if let urls = urls { self.urls = urls }
+    self.count = self.urls.count
+    if let iurl = initialUrl {
+      initialUrl = nil
+      gotoUrl(url: iurl)
     }
-    self.count = urls.count
   }
   
-  public func displayFiles( path: String, files: String... ) {
-    displayFiles(path: path, files: files)
-  }
+//  public func displayFiles(path: String, files: [String]) {
+//    urls = []
+//    for f in files {
+//      let url = FileUrl(path: path + "/" + f)
+//      urls.append(url)
+//    }
+//    self.count = urls.count
+//  }
+//  
+//  public func displayFiles( path: String, files: String... ) {
+//    displayFiles(path: path, files: files)
+//  }
   
   public func gotoUrl(url: URL) {
+    if urls.count == 0 { self.initialUrl = url; return }
     var idx = 0
+    debug("searching for: \(url.lastPathComponent)")
     for u in urls {
-      if u.url == url { self.index = idx; return }
+      if u.url == url { 
+        self.index = idx 
+        debug("found at index: \(idx)")
+        return 
+      }
       idx += 1
     }
+    debug("not found")
   }
   
   public func gotoUrl(_ url: String) {
@@ -138,15 +150,15 @@ open class WebViewCollectionVC: PageCollectionVC, WKUIDelegate,
   }
   
   public func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-    if let wview = webView as? WebView {
- //     debug("Webview loaded: \(wview.url?.lastPathComponent ?? "[undefined URL]")")
-    }
+//    if let wview = webView as? WebView {
+//      debug("Webview loaded: \(wview.url?.lastPathComponent ?? "[undefined URL]")")
+//    }
   }
   
    public func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
-     if let wview = webView as? WebView {
+//     if let wview = webView as? WebView {
 //       debug("Webview loading: \(wview.url?.lastPathComponent ?? "[undefined URL]")")
-     }
+//     }
    }
   
   public func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, 
@@ -165,6 +177,7 @@ open class WebViewCollectionVC: PageCollectionVC, WKUIDelegate,
   
   public func webView(_ webView: WKWebView, decidePolicyFor nav: WKNavigationAction,
                       decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+    //debug("\(nav.toString())")
     if let url = nav.request.url {
       let type = nav.navigationType
       if type == .linkActivated {

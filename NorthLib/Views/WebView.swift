@@ -60,6 +60,26 @@ open class JSBridgeObject: DoesLog {
   
 } // class JSBridgeObject
 
+extension WKNavigationAction: ToString {
+  
+  public func navtype2a() -> String {
+    switch self.navigationType {
+    case .backForward:     return "backForward"
+    case .formResubmitted: return "formResubmitted"
+    case .formSubmitted:   return "formSubmitted"
+    case .linkActivated:   return "linkActivated"
+    case .other:           return "other"
+    case .reload:          return "reload"
+    default:               return "[undefined]"
+    }
+  }
+  
+  public func toString() -> String {
+    return "WebView Navigation: \(navtype2a())\n  \(request.toString())"
+  }
+  
+}
+
 open class WebView: WKWebView, WKScriptMessageHandler, UIScrollViewDelegate {
 
   /// JS NativeBridge objects
@@ -154,6 +174,10 @@ open class WebView: WKWebView, WKScriptMessageHandler, UIScrollViewDelegate {
   required public init?(coder: NSCoder) {
     super.init(coder: coder)
     setup()
+  }
+  
+  public func scrollToTop() {
+    scrollView.setContentOffset(CGPoint(x:0, y:0), animated: false)
   }
   
   // MARK: - WKScriptMessageHandler protocol

@@ -7,7 +7,7 @@
 
 import UIKit
 
-/// DlFile describes a downloadable file from a HTTP server
+/// DlFile describes a file that is downloadable from a HTTP server
 public protocol DlFile {
   /// Name of file on server (will be appended to a base URL)
   var name: String { get }
@@ -56,12 +56,21 @@ public enum HttpError: LocalizedError {
 }
 
 
-public extension URLRequest {
+extension URLRequest: ToString {
+  
   /// Access request specific HTTP headers
-  subscript(hdr: String) -> String? {
+  public subscript(hdr: String) -> String? {
     get { return self.value(forHTTPHeaderField: hdr) }
     set { setValue(newValue, forHTTPHeaderField: hdr) }
   }
+  
+  public func toString() -> String {
+    var ret: String = "URLRequest: \(self.url?.absoluteString ?? "[undefined URL]")"
+    if let rtype = self.httpMethod { ret += " (\(rtype))" }
+    if let data = self.httpBody { ret += ", data: \(data.count) bytes" }
+    return ret
+  }
+  
 } // URLRequest
 
 
