@@ -305,16 +305,21 @@ open class HttpSession: NSObject, URLSessionDelegate, URLSessionTaskDelegate, UR
     return HttpSession(name: name, isBackground: true)
   }
   
+  // produce URLRequest from URL url
+  fileprivate func request(url: URL) -> Result<URLRequest,Error> {
+    var req = URLRequest(url: url)
+    for (key,val) in header {
+      req[key] = val
+    }
+    return .success(req)
+  }
+
   // produce URLRequest from String url
   fileprivate func request(url: String) -> Result<URLRequest,Error> {
     guard let rurl = URL(string: url) else { 
       return .failure(error(HttpError.invalidURL(url))) 
     }
-    var req = URLRequest(url: rurl)
-    for (key,val) in header {
-      req[key] = val
-    }
-    return .success(req)
+    return request(url: rurl)
   }
 
   /// Get some data from a web server
@@ -494,7 +499,13 @@ open class HttpSession: NSObject, URLSessionDelegate, URLSessionTaskDelegate, UR
                          completionHandler: @escaping (URLSession.DelayedRequestDisposition, URLRequest?) -> Void) {
     let tid = task.taskIdentifier
     debug("Task \(tid): Delayed background task is ready to run")
-    completionHandler(.continueLoading, nil)
+    if let url = request.url {
+      let res = self.request(url: url)
+      if var newRequest = res.value() { 
+        newRequest.httpMethod = request.httpMethod
+        delay(seconds: 0.01) { completionHandler(.useNewRequest, newRequest) }
+      }
+    }
   }
   
   // Task is waiting for network availability (may be reflected in the UI)

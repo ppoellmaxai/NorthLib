@@ -69,7 +69,7 @@ open class WebViewCollectionVC: PageCollectionVC, WKUIDelegate,
   }
   fileprivate var initialUrl: URL?
   
-  public var currentWebView: WebView? { return currentView as? WebView }
+  public var currentWebView: WebView? { return currentView?.activeView as? WebView }
   
   // The closure to call when link is pressed
   private var _whenLinkPressed: ((URL,URL)->())?

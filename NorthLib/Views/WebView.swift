@@ -104,6 +104,15 @@ open class WebView: WKWebView, WKScriptMessageHandler, UIScrollViewDelegate {
     _whenScrolled = closure
   }
   
+  // The closure to call when some dragging (scrolling) has been done
+  private var _whenDragged: ((CGFloat)->())?
+
+  /// Define closure to call when web content has been dragged, the value passed
+  /// is the number of points scrolled down divided by the content's height
+  public func whenDragged(closure: @escaping (CGFloat)->()) {
+    _whenDragged = closure
+  }
+  
   // content y offset at start of dragging
   private var startDragging: CGFloat?
   
@@ -212,6 +221,10 @@ open class WebView: WKWebView, WKScriptMessageHandler, UIScrollViewDelegate {
       }
     }
     startDragging = nil
+    if let closure = _whenDragged {
+      let ratio = scrollView.contentOffset.y / scrollView.contentSize.height
+      closure(ratio)
+    }
   }
   
 } // class WebView

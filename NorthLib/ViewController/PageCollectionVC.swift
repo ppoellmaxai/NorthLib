@@ -47,6 +47,10 @@ public protocol OptionalView {
   func loadView()
 }
 
+public extension OptionalView {
+  var activeView: UIView { return isAvailable ? mainView : (waitingView ?? UndefinedView()) }
+}
+
 /// Common Views can be optional
 extension UIView: OptionalView {
   public var mainView: UIView { return self }
@@ -60,11 +64,33 @@ open class PageCollectionVC: UIViewController, UICollectionViewDelegate,
   UICollectionViewDataSource, UICollectionViewDelegateFlowLayout, UIScrollViewDelegate {
   
   class PageCell: UICollectionViewCell {
+    
     /// The View to display
     var pageView: UIView?
     /// Index of View in collection view
     var index: Int?
-  
+    
+    /// Request view from provider and put it into a PageCell
+    func update(pcvc: PageCollectionVC, idx: Int) {
+      if let provider = pcvc.provider {
+        let page = provider(idx)
+        let isAvailable = page.isAvailable
+        let activeView = page.activeView
+        if let pageView = self.pageView {
+          pageView.removeFromSuperview()
+        }
+        self.pageView = activeView
+        self.index = idx
+        self.contentView.addSubview(activeView)
+        pin(activeView, to: self.contentView)
+        if isAvailable { page.loadView() }
+        else {
+          let iPath = IndexPath(item: idx, section: 0)
+          page.whenAvailable { pcvc.collectionView.reloadItems(at: [iPath]) }
+        }
+      }
+    }
+    
     override init(frame: CGRect) {
       super.init(frame: frame)
     }
@@ -78,8 +104,10 @@ open class PageCollectionVC: UIViewController, UICollectionViewDelegate,
     }
   }
   
+  /// The collection view displaying OptionalViews
   open var collectionView: UICollectionView!
 
+  /// A closure providing the optional views to display
   open var provider: ((Int)->OptionalView)? = nil
   
   /// inset from top/bottom/left/right as factor to min(width,height)
@@ -87,39 +115,47 @@ open class PageCollectionVC: UIViewController, UICollectionViewDelegate,
   
   fileprivate var index2scrollTo: Int?  // index of page to scroll to
   fileprivate var cvSize: CGSize { return self.collectionView.bounds.size }
-  fileprivate var onDisplayClosure: ((Int, UIView?)->())?
+  fileprivate var onDisplayClosure: ((Int, OptionalView?)->())?
   
-  // Cell which is currently displayed
-  private var currentCell: PageCell?
-
-  private func indexPath(cell: PageCell?) -> IndexPath?{ 
-    if let c = cell { return collectionView.indexPath(for: c) }
-    return nil
-  }
+  // View which is currently displayed
+  public var currentView: OptionalView?
   
-  /// IndexPath of current cell
-  open var indexPath: IndexPath? { return indexPath(cell: currentCell) }
-
-  /// Index of current cell
+  private var _index: Int?
+  
+  /// Index of current view, change it to scroll to a certain cell
   open var index: Int? {
-    get { if let cell = currentCell { return cell.index } else { return nil } }
-    set(idx) { if let i = idx { scrollto(i) } }
+    get { return _index }
+    set(idx) { 
+      if let idx = idx { 
+        if let provider = self.provider {
+          _index = idx
+          currentView = provider(idx)
+          scrollto(idx)
+          if let closure = onDisplayClosure { closure(idx, currentView) }
+        }
+      } 
+    }
   }
+
+//  private func indexPath(cell: PageCell?) -> IndexPath?{ 
+//    if let c = cell { return collectionView.indexPath(for: c) }
+//    return nil
+//  }
+//  
+//  /// IndexPath of current cell
+//  open var indexPath: IndexPath? { return indexPath(cell: currentCell) }
+
   
   private var visibleCells: Set<PageCell> = []
 
-  /// View currently displayed
-  open var currentView: UIView? { 
-    return currentCell?.pageView
-  }
-  
   fileprivate var _count: Int = 0
+  
+  /// Define and change the number of views to display, will reload data
   open var count: Int {
     get { return _count }
     set { 
       _count = newValue
       collectionView.reloadData()
-      index = 0
     }
   }
   
@@ -129,37 +165,37 @@ open class PageCollectionVC: UIViewController, UICollectionViewDelegate,
   
   public required init?(coder: NSCoder) { super.init(coder: coder) }
   
-  public func onDisplay(closure: ((Int, UIView?)->())?) {
+  public func onDisplay(closure: ((Int, OptionalView?)->())?) {
     onDisplayClosure = closure
   }
-  
+ 
+  // updateDisplaying is called when the scrollview has been scrolled which
+  // might have changed the view currently visible
   private func updateDisplaying() {
-//    if let i = index2scrollTo { 
-//      index2scrollTo = nil
-//      scrollto(i)
-//      return
-//    }
     debug("visible cells: \(visibleCells.map{$0.index})")
     if visibleCells.count == 1 {
       let vis = visibleCells.first!
-      if vis !== currentCell {
+      if vis.index != _index {
         debug("displaying page #\(vis.index!)")
-        currentCell = vis
-        if let closure = onDisplayClosure { closure(vis.index!, currentCell?.pageView) }
+        currentView = vis.pageView
+        _index = vis.index
+        if let closure = onDisplayClosure { closure(vis.index!, currentView) }
       }
     }
   }
   
+  /// Defines the closure to deliver the views to display
   open func viewProvider(provider: @escaping (Int)->OptionalView) {
     self.provider = provider
   }
-  
-  open func scrollto(_ index: Int, animated: Bool = false) {
-    if currentCell != nil {
+ 
+  /// Scroll to the view which index is given
+  fileprivate func scrollto(_ index: Int, animated: Bool = false) {
+    index2scrollTo = index
+    if currentView != nil {
       let ipath = IndexPath(item: index, section: 0)
       collectionView.scrollToItem(at: ipath, at: .centeredHorizontally, animated: animated)
     }
-    else { index2scrollTo = index }
   }
 
   // MARK: - Life Cycle
@@ -212,23 +248,21 @@ open class PageCollectionVC: UIViewController, UICollectionViewDelegate,
     if let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdent,
                                                      for: indexPath) as? PageCell {
       let idx = indexPath.item
-      if let provider = self.provider {
-        let page = provider(idx)
-        let isAvailable = page.isAvailable
-        let activeView = isAvailable ? page.mainView : (page.waitingView ?? UndefinedView())
-        if let pageView = cell.pageView {
-          pageView.removeFromSuperview()
-        }
-        cell.pageView = activeView
-        cell.index = idx
-        cell.contentView.addSubview(activeView)
-        pin(activeView, to: cell.contentView)
-        if isAvailable { page.loadView() }
+      cell.update(pcvc: self, idx: idx)
+      if let i2s = index2scrollTo {
+        if i2s == idx { index2scrollTo = nil }
         else {
-          page.whenAvailable { collectionView.reloadItems(at: [indexPath]) }
+          collectionView.scrollToItem(at: IndexPath(item: i2s, section: 0), 
+            at: .centeredHorizontally, animated: false)
         }
-        return cell
       }
+      else {
+        if currentView == nil {
+          currentView = cell.pageView
+          _index = idx
+        }
+      }
+      return cell
     }
     return PageCell()
   }
@@ -300,7 +334,7 @@ open class PageCollectionVC: UIViewController, UICollectionViewDelegate,
     let cells = collectionView.visibleCells as! [PageCell]
     if cells.count == 1 { 
       let cell = cells[0]
-      if cell !== currentCell {
+      if cell.index != _index {
         visibleCells = [cells[0]] 
         updateDisplaying()
       }
