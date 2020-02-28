@@ -9,6 +9,31 @@
 
 import UIKit
 
+/// A CALayer extension to produce a snapshot
+public extension CALayer {
+  /// Returns snapshot of current layer as UIImage
+  var snapshot: UIImage? {
+    let scale = UIScreen.main.scale
+    UIGraphicsBeginImageContextWithOptions(frame.size, false, scale)
+    defer { UIGraphicsEndImageContext() }
+    guard let ctx = UIGraphicsGetCurrentContext() else { return nil }
+    render(in: ctx)
+    return UIGraphicsGetImageFromCurrentImageContext()
+  }
+}
+
+/// A UIView extension to produce a snapshot
+public extension UIView {
+  /// Returns snapshot of current view as UIImage
+  var snapshot: UIImage? {
+    let renderer = UIGraphicsImageRenderer(size: frame.size)
+    return renderer.image { _ in
+      drawHierarchy(in: bounds, afterScreenUpdates: true)
+    }
+  }
+}
+
+// Layout anchors and corresponding views:
 public struct LayoutAnchorX {
   public var anchor: NSLayoutXAxisAnchor
   public var view: UIView
@@ -30,7 +55,7 @@ public struct LayoutDimension {
     { self.view = view; self.anchor = anchor }
 }
 
-// Some Auto-Layout related extensions
+// Mostly Auto-Layout related extensions
 public extension UIView {
   
   /// Bottom anchor

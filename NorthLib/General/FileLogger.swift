@@ -9,18 +9,30 @@ import Foundation
 
 extension Log {
   
-  /// A ViewLogger writes all passed log messages to a TextView
+  /// A FileLogger writes all passed log messages to a File
   open class FileLogger: Logger {
     
     /// pathname of file to log to
     private(set) var filename: String?
     
+    /// URL of file to log to
+    public var url: URL? { 
+      if let fn = filename { return URL(fileURLWithPath: fn) }
+      else { return nil }
+    }
+    
     /// file descriptor of file to log to
     private(set) var fp: UnsafeMutablePointer<FILE>?
     
+    /// contents of logfile as Data
+    public var data: Data? {
+      if let url = self.url { return try? Data(contentsOf: url) }
+      else { return nil }
+    }
+    
     /// The FileLogger must be initialized with a filename
     public init(_ fname: String) {
-      if let fp = fopen(fname, "a") {
+      if let fp = fopen(fname, "w") {
         self.fp = fp
         self.filename = fname
       }
