@@ -33,9 +33,9 @@ open class Slider: NSObject, DoesLog {
     set { if isHorizontal { fromDefault = newValue } }
   }
   /// Slide in from bottom? (from top otherwise) (in vertical mode)
-  public var fromLeft: Bool {
-    get { return isHorizontal && fromDefault }
-    set { if isHorizontal { fromDefault = newValue } }
+  public var fromBottom: Bool {
+    get { return !isHorizontal && fromDefault }
+    set { if !isHorizontal { fromDefault = newValue } }
   }
   /// how much of the active view controller is covered by the slider
   /// (80% by default)
