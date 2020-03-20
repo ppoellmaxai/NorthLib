@@ -196,6 +196,11 @@ int str_i2roman ( char *buff, int len, int val, int islarge );
 int str_rroman2i ( const char **rstr );
 int str_roman2i ( const char *str );
 char *str_mexpand(const char *, str_matchfunc_t *, str_updatefunc_t *, void *);
+const char *uts_sysname();
+const char *uts_nodename();
+const char *uts_release();
+const char *uts_version();
+const char *uts_machine();
 
 /* Exports of strcvt.c: */
 int str_rbin2a ( char **dest, int dlen, const void *mem, int len );

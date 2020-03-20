@@ -208,5 +208,8 @@ public extension String {
     return ret
   }
   
+  /// Returns true if self is case insensitive equal to "true", false otherwise
+  var bool: Bool { return self.lowercased() == "true" }
+  
 } // extension String
 

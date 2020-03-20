@@ -39,6 +39,11 @@ class StringTests: XCTestCase {
   
   override func setUp() {
     super.setUp()
+    print("nodename: \(Utsname.nodename)")
+    print("sysname:  \(Utsname.sysname)")
+    print("release:  \(Utsname.release)")
+    print("version:  \(Utsname.version)")
+    print("machine:  \(Utsname.machine)")
   }
   
   override func tearDown() {

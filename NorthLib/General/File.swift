@@ -103,6 +103,11 @@ open class File: DoesLog {
     str_release(&str)
   }
   
+  /// Initialisation with URL
+  public convenience init(_ url: URL) {
+    self.init(url.path)
+  }
+  
   /// deinit closes the file pointer if it has been opened
   deinit {
     if fp != nil { fclose(fp) }
@@ -209,23 +214,38 @@ open class File: DoesLog {
   }
   
   /// Copies the file to a new location while maintaining the file status
-  public func copy(to: String) {
+  public func copy(to: String, isOverwrite: Bool = true) {
     guard exists else { return }
-    try! FileManager.default.copyItem(atPath: path, toPath: to)
-    if hasStat { stat_write(&_status!, to.cstr) }
+    if isOverwrite {
+      let dest = File(to)
+      if dest.exists { dest.remove() }
+    }
+    do {
+      try FileManager.default.copyItem(atPath: path, toPath: to)
+      if hasStat { stat_write(&_status!, to.cstr) }
+    }
+    catch (let err) { error(err) }
   }
   
   /// Moves the file to a new location while maintaining the file status
-  public func move(to: String) {
+  public func move(to: String, isOverwrite: Bool = true) {
     guard exists else { return }
-    try! FileManager.default.moveItem(atPath: path, toPath: to)
-    if hasStat { stat_write(&_status!, to.cstr) }
+    if isOverwrite {
+      let dest = File(to)
+      if dest.exists { dest.remove() }
+    }
+    do {
+      try FileManager.default.moveItem(atPath: path, toPath: to)
+      if hasStat { stat_write(&_status!, to.cstr) }
+    }
+    catch (let err) { error(err) }
   }
   
   /// Removes the file (and all subdirs if self is a directory)
   public func remove() {
     guard exists else { return }
-    try! FileManager.default.removeItem(atPath: path)
+    do { try FileManager.default.removeItem(atPath: path) }
+    catch (let err) { error(err) }
   }
 
   /// Returns the basename of a given pathname

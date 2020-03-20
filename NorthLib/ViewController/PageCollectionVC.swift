@@ -181,7 +181,11 @@ open class PageCollectionVC: UIViewController, UICollectionViewDelegate,
         _index = vis.index
         if let closure = onDisplayClosure { closure(vis.index!, currentView) }
       }
+      else {
+        debug("Index of visible cell = \(vis.index ?? -1) - equal to current index (no update)")
+      }
     }
+    else { debug("#visible cells: \(visibleCells.count) (no update)") }
   }
   
   /// Defines the closure to deliver the views to display
@@ -206,14 +210,12 @@ open class PageCollectionVC: UIViewController, UICollectionViewDelegate,
     flowLayout.scrollDirection = .horizontal
     collectionView = UICollectionView(frame: .zero, collectionViewLayout: flowLayout)
     collectionView.backgroundColor = UIColor.white
-    collectionView.translatesAutoresizingMaskIntoConstraints = false
+    collectionView.contentInsetAdjustmentBehavior = .never
     self.view.addSubview(collectionView)
-    NSLayoutConstraint.activate([
-      collectionView.topAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.topAnchor),
-      collectionView.leadingAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.leadingAnchor),
-      collectionView.trailingAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.trailingAnchor),
-      collectionView.bottomAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.bottomAnchor),
-      ])
+    pin(collectionView.top, to: self.view.topGuide())
+    pin(collectionView.bottom, to: self.view.bottom)
+    pin(collectionView.left, to: self.view.left)
+    pin(collectionView.right, to: self.view.right)
     collectionView.register(PageCell.self, forCellWithReuseIdentifier: reuseIdent)
     collectionView.delegate = self
     collectionView.dataSource = self
@@ -271,7 +273,7 @@ open class PageCollectionVC: UIViewController, UICollectionViewDelegate,
   
   public func collectionView(_ view: UICollectionView, willDisplay: UICollectionViewCell, 
                              forItemAt: IndexPath) {
-    visibleCells.update(with: willDisplay as! PageCell)
+    visibleCells.insert(willDisplay as! PageCell)
     updateDisplaying()
   }
   
@@ -336,6 +338,7 @@ open class PageCollectionVC: UIViewController, UICollectionViewDelegate,
       let cell = cells[0]
       if cell.index != _index {
         visibleCells = [cells[0]] 
+        debug("*** Action: Scrolling ended")
         updateDisplaying()
       }
     }

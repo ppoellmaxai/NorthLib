@@ -31,4 +31,28 @@ open class Alert {
     UIWindow.rootVC?.present(alert, animated: false, completion: nil)    
   }
 
-}
+  /// Generates a UIAlertAction
+  public static func action(_ title: String, style: UIAlertAction.Style = .default, 
+                            closure: @escaping (String)->()) -> UIAlertAction {
+    return UIAlertAction(title: title, style: style) {_ in closure(title) }
+  }
+
+  /// Presents an action sheet with a number of buttons
+  public static func actionSheet(title: String? = nil, message: String? = nil, 
+                                 actions: [UIAlertAction]) {
+    var msg: String? = nil
+    if let message = message { msg = "\n\(message)" }
+    let alert = UIAlertController(title: title, message: msg, preferredStyle: .actionSheet)
+    let cancelButton = UIAlertAction(title: "Abbrechen", style: .cancel)
+    for a in actions { alert.addAction(a) }
+    alert.addAction(cancelButton)
+    UIWindow.rootVC?.present(alert, animated: true, completion: nil)    
+  }
+
+  /// Presents an action sheet with a number of buttons
+  public static func actionSheet(title: String? = nil, message: String? = nil, 
+                                 actions: UIAlertAction...) {
+    actionSheet(title: title, message: message, actions: actions)
+  }
+  
+} // Alert

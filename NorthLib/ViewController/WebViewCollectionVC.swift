@@ -87,6 +87,11 @@ open class WebViewCollectionVC: PageCollectionVC, WKUIDelegate,
     _whenScrolled = closure
   }
   
+  /// reload contents of current WebView
+  open func reload() {
+    if let wv = currentWebView { wv.reload() }
+  }
+  
   /// Scroll of WebView detected
   public func didScroll(ratio: CGFloat) { 
     guard let closure = _whenScrolled else { return }

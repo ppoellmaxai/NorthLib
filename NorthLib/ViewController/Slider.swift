@@ -17,20 +17,31 @@ import UIKit
  *  right) and removes it from the slider view. Following the shade and slider views
  *  are removed.
  */
-
 open class Slider: NSObject, DoesLog {
   
   /// currently active view controller to slide into
   public var active: UIViewController
   /// view controller being slid in
   public var slider: UIViewController
-  /// slide in from left? (from right otherwise)
-  public var fromLeft: Bool = true { didSet { resetConstraints() } }
+  /// Horizontal or vertical slide (from top or bottom)
+  public var isHorizontal: Bool = true
+  /// Slide from default edge (left in horizontal and bottom in vertical slide mode)
+  public var fromDefault: Bool = true { didSet { resetConstraints() } }
+  /// Slide in from left? (from right otherwise) (in horizontal mode)
+  public var fromLeft: Bool {
+    get { return isHorizontal && fromDefault }
+    set { if isHorizontal { fromDefault = newValue } }
+  }
+  /// Slide in from bottom? (from top otherwise) (in vertical mode)
+  public var fromLeft: Bool {
+    get { return isHorizontal && fromDefault }
+    set { if isHorizontal { fromDefault = newValue } }
+  }
   /// how much of the active view controller is covered by the slider
   /// (80% by default)
-  public var coverageRatio:CGFloat = 0.8
+  public var coverageRatio: CGFloat = 0.8
   /// how long shall the sliding animation be (in seconds, 0.5 by default)
-  public var duration:TimeInterval = 0.5
+  public var duration: TimeInterval = 0.5
   
   /// how many points of the active view controller are covered by the slider
   /// (derived from coverageRatio by default)

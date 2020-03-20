@@ -11,7 +11,7 @@ import UIKit
 public extension UIColor {
 
   /// Returns a UIColor from an Int with 0xRRGGBB
-  static func rgb(_ color: Int) -> UIColor {
+  static func rgb(_ color: Int, alpha: CGFloat = 1.0) -> UIColor {
     let blue:CGFloat = CGFloat(color & 0xff),
         green:CGFloat = CGFloat( (color >> 8) & 0xff ),
         red:CGFloat = CGFloat( (color >> 16) & 0xff )

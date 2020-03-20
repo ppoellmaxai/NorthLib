@@ -152,14 +152,8 @@ open class HttpJob: DoesLog {
   fileprivate func fileDownloaded(file: URL) {
     var fn = self.filename
     if fn == nil { fn = tmppath() }
-    do {
-      let to = URL.init(fileURLWithPath: fn!)
-      debug("Task \(tid): downloaded \(to.lastPathComponent)")
-      try FileManager.default.moveItem(at: file, to: to)
-    }
-    catch let err {
-      self.httpError = error(err)
-    }    
+    debug("Task \(tid): downloaded \(File.basename(fn!))")
+    File(file).move(to: fn!)
   }
   
   // Calls the closure on the main thread
@@ -389,7 +383,7 @@ open class HttpSession: NSObject, URLSessionDelegate, URLSessionTaskDelegate, UR
                        closure: @escaping(Result<HttpJob?,Error>)->()) {
     if file.exists(inDir: toDir) { closure(.success(nil)) }
     else {
-      debug("download: \(file.name) - doesn't exist in \(toDir)")
+      debug("download: \(file.name) - doesn't exist in \(File.basename(toDir))")
       let url = "\(baseUrl)/\(file.name)"
       let toFile = File(dir: toDir, fname: file.name)
       let res = request(url: url)
@@ -670,7 +664,7 @@ open class HttpLoader: ToString, DoesLog {
     session.download(baseUrl: baseUrl, file: file, toDir: toDir) {
       [weak self] res in
       self?.count(res, size: file.size)
-      self?.download(fl, closure: closure)
+      delay(seconds: 0.02) { self?.download(fl, closure: closure) }
     }
   }
   

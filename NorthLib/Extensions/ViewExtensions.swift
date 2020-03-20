@@ -116,13 +116,18 @@ public extension UIView {
     return constraint
   }
   @discardableResult
-  func pinHeight(height: Int) -> NSLayoutConstraint { return pinHeight(CGFloat(height)) }
+  func pinHeight(_ height: Int) -> NSLayoutConstraint { return pinHeight(CGFloat(height)) }
+  
+  @discardableResult
+  func pinSize(_ size: CGSize) -> (width: NSLayoutConstraint, height: NSLayoutConstraint) { 
+    return (pinWidth(size.width), pinHeight(size.height))
+  }
   
   static func animate(seconds: Double, delay: Double = 0, closure: @escaping ()->()) {
     UIView.animate(withDuration: seconds, delay: delay, options: .curveEaseOut, 
                    animations: closure, completion: nil)  
   }
-  
+    
 } // extension UIView
 
 /// Pin vertical anchor of one view to vertical anchor of another view

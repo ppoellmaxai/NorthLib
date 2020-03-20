@@ -11,6 +11,7 @@
 #include  <stdio.h>
 #include  <string.h>
 #include  <sys/errno.h>
+#include  <sys/utsname.h>
 #include  "strext.h"
 
 /// An empty "C"-string
@@ -1376,3 +1377,20 @@ char *str_mexpand ( const char *str, str_matchfunc_t *match,
   } }
   return 0;
 }
+
+// The struct utsname singleton
+static struct utsname _utsname, *_utsnamep = 0;
+
+inline struct utsname *utsname() {
+  if (!_utsnamep) {
+    uname(&_utsname);
+    _utsnamep = &_utsname;
+  }
+  return _utsnamep;
+}
+
+const char *uts_sysname() { return utsname()->sysname; }
+const char *uts_nodename() { return utsname()->nodename; }
+const char *uts_release() { return utsname()->release; }
+const char *uts_version() { return utsname()->version; }
+const char *uts_machine() { return utsname()->machine; }

@@ -7,6 +7,27 @@
 
 import UIKit
 
+extension String {
+  public static func fromC(_ cstr: Int8...) -> String {
+    return withUnsafePointer(to: cstr) {
+      $0.withMemoryRebound(to: UInt8.self, capacity: MemoryLayout.size(ofValue: cstr)) {
+        String(cString: $0)
+      }
+    }
+  }
+}
+
+/// A wrapper around POSIX's struct utsname
+open class Utsname {
+  
+  static public var sysname: String { return String(cString: uts_sysname()) }
+  static public var nodename: String { return String(cString: uts_nodename()) }
+  static public var release: String { return String(cString: uts_release()) }
+  static public var version: String { return String(cString: uts_version()) }
+  static public var machine: String { return String(cString: uts_machine()) }
+
+} // Utsname
+
 /// App description from Apple's App Store
 open class StoreApp {
   
@@ -140,6 +161,24 @@ open class App {
       _icon = img
     }
     return _icon
+  }
+  
+  /// InstallationId: A String uniquly identifying this App's installation on this
+  /// unique device (called identifierForVendor by Apple)
+  fileprivate static var _installationId: String?
+  public static var installationId: String { 
+    if _installationId == nil {
+      if let ifv = UIDevice.current.identifierForVendor { _installationId = ifv.uuidString }
+      else {
+        let dfl = Defaults.singleton
+        if let iid = dfl["installationId"] { _installationId = iid }
+        else { 
+          _installationId = UUID().uuidString 
+          dfl["installationId"] = _installationId
+        }
+      }
+    }
+    return _installationId!
   }
   
   public init() {}

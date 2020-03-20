@@ -18,5 +18,18 @@ public extension UIImage {
       try! data.write(to: URL(fileURLWithPath: to), options: [])
     }
   }
+  
+  /// Initialize with animated gif Data
+  static func animatedGif(_ data: Data, duration: Double = 2.0) -> UIImage? {
+    guard let source =  CGImageSourceCreateWithData(data as CFData, nil) else { return nil }
+    var images = [UIImage]()
+    let imageCount = CGImageSourceGetCount(source)
+    for i in 0 ..< imageCount {
+      if let image = CGImageSourceCreateImageAtIndex(source, i, nil) {
+        images.append(UIImage(cgImage: image))
+      }
+    }
+    return UIImage.animatedImage(with: images, duration: duration)
+  }
 
 } // UIImage
