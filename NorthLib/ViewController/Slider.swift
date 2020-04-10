@@ -18,37 +18,50 @@ import UIKit
  *  are removed.
  */
 open class Slider: NSObject, DoesLog {
-  
+  /// Default decoration height
+  var decorationHeight: CGFloat = 20
+  /// Default handle width
+  var handleWidth: CGFloat = 40
+  /// Default handle height
+  var handleHeight: CGFloat = 5
   /// currently active view controller to slide into
-  public var active: UIViewController
+  var active: UIViewController
   /// view controller being slid in
-  public var slider: UIViewController
+  var slider: UIViewController
   /// Horizontal or vertical slide (from top or bottom)
-  public var isHorizontal: Bool = true
+  var isHorizontal: Bool
   /// Slide from default edge (left in horizontal and bottom in vertical slide mode)
-  public var fromDefault: Bool = true { didSet { resetConstraints() } }
+  var fromDefault: Bool = true { didSet { resetConstraints() } }
   /// Slide in from left? (from right otherwise) (in horizontal mode)
-  public var fromLeft: Bool {
+  var fromLeft: Bool {
     get { return isHorizontal && fromDefault }
     set { if isHorizontal { fromDefault = newValue } }
   }
   /// Slide in from bottom? (from top otherwise) (in vertical mode)
-  public var fromBottom: Bool {
+  var fromBottom: Bool {
     get { return !isHorizontal && fromDefault }
     set { if !isHorizontal { fromDefault = newValue } }
   }
   /// how much of the active view controller is covered by the slider
   /// (80% by default)
-  public var coverageRatio: CGFloat = 0.8
+  public var coverageRatio: CGFloat = 0.8 { didSet { resetConstraints() } }
   /// how long shall the sliding animation be (in seconds, 0.5 by default)
   public var duration: TimeInterval = 0.5
-  
   /// how many points of the active view controller are covered by the slider
   /// (derived from coverageRatio by default)
-  public var coverage: CGFloat { return active.view.bounds.width * coverageRatio }
+  public var coverage: CGFloat { 
+    get {
+      if isHorizontal { return active.view.bounds.width * coverageRatio }
+      else { return active.view.bounds.height * coverageRatio }
+    }
+    set {
+      if isHorizontal { coverageRatio = newValue/active.view.bounds.width }
+      else { coverageRatio = newValue/active.view.bounds.height }
+    }
+  }
   
   // is slider opened
-  fileprivate var isOpened = false
+  fileprivate var isOpen = false
   
   fileprivate var openClosure: ((Slider)->())? = nil
   fileprivate var closeClosure: ((Slider)->())? = nil
@@ -65,32 +78,72 @@ open class Slider: NSObject, DoesLog {
     closeClosure = closure
   }
   
-  public var shadeView = UIView()
-  public var sliderView = UIView()
+  var shadeView = UIView()
+  var sliderView = UIView()
+  var contentView = UIView()
+  var handleView: RoundedRect?
   
-  public lazy var leadingConstraint =
+  /// color of the slider decoration (if any)
+  public var color: UIColor? {
+    get { return sliderView.backgroundColor }
+    set { 
+      guard let color = newValue else { return }
+      sliderView.backgroundColor = color
+      if let handle = handleView, handleColor == nil { handle.color = color.dimmed() }
+    }
+  }
+  /// Color of the decoration's handle
+  public var handleColor: UIColor? {
+    didSet { if let col = handleColor { handleView?.color = col } }
+  }
+  
+  lazy var leadingConstraint =
     sliderView.leadingAnchor.constraint(equalTo:active.view.leadingAnchor)
-  public lazy var trailingConstraint =
+  lazy var trailingConstraint =
     sliderView.trailingAnchor.constraint(equalTo:active.view.trailingAnchor)
-  public lazy var widthConstraint =
+  lazy var widthConstraint =
     sliderView.widthAnchor.constraint(equalToConstant: 0)
+  lazy var topConstraint =
+    sliderView.topAnchor.constraint(equalTo:active.view.safeAreaLayoutGuide.topAnchor)
+  lazy var bottomConstraint =
+    sliderView.bottomAnchor.constraint(equalTo:active.view.bottomAnchor)
+  lazy var heightConstraint =
+    sliderView.heightAnchor.constraint(equalToConstant: 0)
+  
+  var currentCoverage: CGFloat {
+    let coverage = self.coverage
+    if isHorizontal {
+      if fromLeft { return coverage + leadingConstraint.constant }
+      else { return coverage - trailingConstraint.constant }
+    }
+    else {
+      if fromBottom { return coverage - bottomConstraint.constant }
+      else { return coverage + topConstraint.constant }
+    }
+  }
+  
+  var isNearOpen: Bool { currentCoverage > coverage/2.0 }
 
-  public func invariableConstraints() -> [NSLayoutConstraint] {
+  func setupInvariableConstraints() {
     let view = active.view!
-    return [
-      shadeView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-      shadeView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-      shadeView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-      shadeView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-      sliderView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-      sliderView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-    ]
+    pin(shadeView.top, to: view.topGuide())
+    pin(shadeView.bottom, to: view.bottom)
+    pin(shadeView.left, to: view.left)
+    pin(shadeView.right, to: view.right)
+    if isHorizontal {
+      pin(sliderView.top, to: view.topGuide())
+      pin(sliderView.bottom, to: view.bottom)
+    }
+    else {
+      pin(sliderView.left, to: view.left)
+      pin(sliderView.right, to: view.right)
+    }
   }
 
-  public func resetConstraints() {
+  func resetHorizontalConstraints() {
     widthConstraint.isActive = true
     widthConstraint.constant = coverage
-    if isOpened {
+    if isOpen {
       leadingConstraint.constant = 0
       trailingConstraint.constant = 0
     }
@@ -109,54 +162,150 @@ open class Slider: NSObject, DoesLog {
     active.view.layoutIfNeeded()
   }
   
-  public func toggleSlider() {
-    slide(toOpen: !isOpened)
+  func resetVerticalConstraints() {
+    heightConstraint.isActive = true
+    heightConstraint.constant = coverage
+    if isOpen {
+      topConstraint.constant = 0
+      bottomConstraint.constant = 0
+    }
+    else {
+      topConstraint.constant = -coverage
+      bottomConstraint.constant = coverage
+    }
+    if fromBottom {
+      topConstraint.isActive = false
+      bottomConstraint.isActive = true
+    }
+    else {
+      topConstraint.isActive = true
+      bottomConstraint.isActive = false
+    }
+    active.view.layoutIfNeeded()
+  }
+  
+  func resetConstraints() {
+    if isHorizontal { resetHorizontalConstraints() }
+    else { resetVerticalConstraints() }
+  }
+  
+  func toggleSlider() {
+    slide(toOpen: !isOpen)
   }
 
-  @objc public func handleTap() {
+  @objc private func handleTap() {
     toggleSlider()
+  }
+  
+  @objc private func handlePan(recog: UIPanGestureRecognizer) {
+    guard isOpen else { return }
+    if recog.state == .ended {
+      if isNearOpen { open() }
+      else { close() }
+      return
+    }
+    let view = recog.view
+    let translation = recog.translation(in: view)
+    recog.setTranslation(CGPoint(), in: view)
+    if isHorizontal {
+      leadingConstraint.constant += translation.x
+      leadingConstraint.constant = min(0.0, leadingConstraint.constant)
+      trailingConstraint.constant += translation.x
+      trailingConstraint.constant = max(0.0, trailingConstraint.constant)
+    }
+    else {
+      topConstraint.constant += translation.y
+      topConstraint.constant = min(0.0, topConstraint.constant)
+      bottomConstraint.constant += translation.y
+      bottomConstraint.constant = max(0.0, bottomConstraint.constant)
+    }
+    active.view.layoutIfNeeded()
+  }
+  
+  // In case of decoration make vertical slider larger with rounded corners
+  func decorateSlider(_ isDecorate: Bool) {
+    if isDecorate && !isHorizontal {
+      let handle = RoundedRect()
+      handleView = handle
+      sliderView.addSubview(handle)
+      handle.pinWidth(handleWidth)
+      handle.pinHeight(handleHeight)
+      pin(handle.centerX, to: sliderView.centerX)
+      pin(contentView.left, to: sliderView.left)
+      pin(contentView.right, to: sliderView.right)
+      sliderView.layer.cornerRadius = decorationHeight/2
+      if fromBottom {
+        pin(contentView.bottom, to: sliderView.bottom)
+        pin(contentView.top, to: sliderView.top, dist: decorationHeight)
+        // Mask top right and left corners
+        sliderView.layer.maskedCorners = [.layerMaxXMinYCorner, .layerMinXMinYCorner]
+        pin(handle.top, to: sliderView.top, dist: (decorationHeight - handleHeight)/2)
+      }
+      else {
+        pin(contentView.top, to: sliderView.top)
+        pin(contentView.bottom, to: sliderView.bottom, dist: -decorationHeight)        
+        // Mask bottom right and left corners
+        sliderView.layer.maskedCorners = [.layerMaxXMaxYCorner, .layerMinXMaxYCorner]
+        pin(handle.bottom, to: sliderView.bottom, dist: -(decorationHeight - handleHeight)/2)
+      }
+    }
+    else {
+      pin(contentView, to: sliderView)
+    }
   }
   
   /// A Slider is initialized with the view controller to slide in and a
   /// second view controller to slide into
-  public init(slider: UIViewController, into active: UIViewController) {
+  public init(slider: UIViewController, into active: UIViewController, 
+              isHorizontal: Bool = true, isFromDefault: Bool = true,
+              isDecorate: Bool = false) {
     self.slider = slider
     self.active = active
+    self.isHorizontal = isHorizontal
+    self.fromDefault = isFromDefault
     super.init()
     shadeView.backgroundColor = UIColor.black
     shadeView.translatesAutoresizingMaskIntoConstraints = false
     shadeView.isHidden = true
     sliderView.translatesAutoresizingMaskIntoConstraints = false
     sliderView.isHidden = true
+    sliderView.clipsToBounds = true
+    contentView.backgroundColor = UIColor.clear
     let tapRecognizer = UITapGestureRecognizer(target: self,
                                                action: #selector(handleTap))
     tapRecognizer.numberOfTapsRequired = 1
     shadeView.addGestureRecognizer(tapRecognizer)
+    let panRecognizer = UIPanGestureRecognizer(target: self, action: #selector(handlePan))
+    sliderView.addGestureRecognizer(panRecognizer)
+    sliderView.addSubview(contentView)
+    decorateSlider(isDecorate)
     active.view.addSubview(shadeView)
     active.view.addSubview(sliderView)
-    NSLayoutConstraint.activate(invariableConstraints())
+    setupInvariableConstraints()
+    let ics = slider.view.intrinsicContentSize
+    if isHorizontal { if ics.width > 0 { coverage = ics.width } }
+    else { if ics.height > 0 { coverage = ics.height } }
     resetConstraints()
   }
   
   public func slide(toOpen: Bool, animated: Bool = true) {
-    if toOpen == isOpened { return }
     let view = active.view!
     shadeView.isHidden = false
     sliderView.isHidden = false
-    if !isOpened {
+    if !isOpen {
       shadeView.alpha = 0
-      active.presentSubVC(controller: slider, inView: sliderView)
+      active.presentSubVC(controller: slider, inView: contentView)
       view.layoutIfNeeded()
     }
-    isOpened = toOpen
+    isOpen = toOpen
     let duration = animated ? self.duration : 0
     UIView.animate(withDuration: duration, delay: 0, usingSpringWithDamping: 0.8,
                    initialSpringVelocity: 0.2, options: .curveEaseOut, animations: {
-      if self.isOpened { self.shadeView.alpha = 0.2 }
+      if self.isOpen { self.shadeView.alpha = 0.2 }
       else { self.shadeView.alpha = 0 }
       self.resetConstraints()
     }) { _ in // completion
-      if !self.isOpened { // remove slider
+      if !self.isOpen { // remove slider
         self.active.removeSubVC(self.slider)
         self.shadeView.isHidden = true
         self.sliderView.isHidden = true
@@ -187,10 +336,10 @@ open class Slider: NSObject, DoesLog {
 
 
 /**
- *  A ButtonSlider is a Slider that uses an image as a Button at the top left
- *  corner of the active view controller to slide in a slider view controller.
+ *  A ButtonSlider is a horizontal Slider that uses an image as a Button at the 
+ *  top left/right corner of the active view controller to slide in a slider view 
+ *  controller.
  */
-
 open class ButtonSlider: Slider {
   
   /// image to use as button
@@ -198,7 +347,7 @@ open class ButtonSlider: Slider {
     didSet {
       guard let img = image else { return }
       button.setImage(img, for: .normal)
-      resetConstraints()
+      coverage = active.view!.bounds.size.width - img.size.width
     }
   }
   public var button = UIButton(type: .custom)
@@ -209,11 +358,6 @@ open class ButtonSlider: Slider {
   public var shift: CGFloat { return (image?.size.width ?? 0) * shiftRatio }
   public var topInset: CGFloat = 7 { didSet { resetConstraints() } }
   public override var fromLeft: Bool { didSet { resetConstraints() } }
-  
-  public override var coverage: CGFloat {
-    if let img = image { return active.view!.bounds.size.width - img.size.width }
-    else { return super.coverage }
-  }
   
   public lazy var leadingButtonConstraint: NSLayoutConstraint =
     button.leadingAnchor.constraint(equalTo: sliderView.trailingAnchor)
@@ -252,10 +396,10 @@ open class ButtonSlider: Slider {
     toggleSlider()
   }
   
-  public override init(slider: UIViewController, into active: UIViewController) {
+  public init(slider: UIViewController, into active: UIViewController) {
     active.view.addSubview(button)
     button.translatesAutoresizingMaskIntoConstraints = false
-    super.init(slider: slider, into: active)
+    super.init(slider: slider, into: active, isHorizontal: true)
     active.view.bringSubviewToFront(button)
     button.addTarget(self, action: #selector(buttonPressed(sender:)), for: .touchUpInside)
   }
@@ -286,3 +430,129 @@ open class ButtonSlider: Slider {
   }
   
 } // class ButtonSlider
+
+/// A small UIResponder extension to retrieve the first responder
+public extension UIResponder {
+  private struct Dummy {
+    static weak var responder: UIResponder?
+  }
+  static var first: UIResponder {
+    Dummy.responder = nil
+    UIApplication.shared.sendAction(#selector(_storeFirstResponder), to: nil, 
+                                    from: nil, for: nil)
+    return Dummy.responder!
+  }
+  @objc private func _storeFirstResponder() { Dummy.responder = self }
+}
+
+/**
+ A VerticalSheet is a vertical Slider that provides for text input fields and 
+ and shifts the View up/down when the keyboard appears/disappears and the input field
+ could be hidden.
+ */
+open class VerticalSheet: Slider {
+  // Minimal distance between keyboard and text field
+  let minDistance: CGFloat = 20
+  
+  // Keyboard distance slid up
+  var kbDistance: CGFloat?
+  
+  /// Move the slider up
+  public func slideUp(_ dist: CGFloat) {
+    debug("up: \(dist)")
+    guard isOpen else { return }
+    UIView.animate(seconds: duration) { [weak self] in
+      guard let self = self else { return }
+      self.topConstraint.constant -= dist
+      self.bottomConstraint.constant -= dist
+      self.active.view.layoutIfNeeded()
+    }
+  }
+  
+  /// Move the slider down
+  public func slideDown(_ dist: CGFloat) { slideUp(-dist) }
+  
+  // Keyboard change notification handler, shifts sheet if necessary
+  @objc func handleKeyboardChange(notification: Notification) {
+    guard let keyboardFrame = (notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] 
+      as? NSValue)?.cgRectValue else { return }
+    guard kbDistance == nil else { return }
+    let firstResponder = UIResponder.first
+    var view: UIView? = firstResponder as? UITextField
+    if view == nil { view = firstResponder as? UITextView }
+    if let view = view {
+      var textFrame = view.frame
+      textFrame = UIWindow.keyWindow!.convert(textFrame, from: view.superview)
+      debug("keyboardFrame: \(keyboardFrame), textFrame: \(textFrame)")
+      let kbY = keyboardFrame.origin.y
+      let tY = textFrame.origin.y + textFrame.size.height
+      if tY > kbY + minDistance {
+        kbDistance = tY - (kbY + minDistance)
+        debug("Sliding up: \(kbDistance!)")
+        slideUp(kbDistance!)
+      }
+    }
+  }
+  
+  // Keyboard hide notification handler, shifts sheet back if necessary
+  @objc func handleKeyboardHide(notification: Notification) {
+    if let dist = kbDistance {
+      debug("Sliding down: \(dist)")
+      slideDown(dist)
+      kbDistance = nil
+    }
+  }
+  
+  public init(slider: UIViewController, into active: UIViewController,
+              fromBottom: Bool = true) {
+    super.init(slider: slider, into: active, isHorizontal: false, isFromDefault: fromBottom,
+               isDecorate: true)
+    NotificationCenter.default.addObserver(self, 
+      selector: #selector(handleKeyboardChange(notification:)), 
+      name: UIResponder.keyboardWillChangeFrameNotification, object: nil)
+    NotificationCenter.default.addObserver(self, 
+      selector: #selector(handleKeyboardHide(notification:)), 
+      name: UIResponder.keyboardWillHideNotification, object: nil)
+  }
+  
+  deinit {
+    NotificationCenter.default.removeObserver(self, 
+      name: UIResponder.keyboardWillChangeFrameNotification, object: nil)
+    NotificationCenter.default.removeObserver(self, 
+      name: UIResponder.keyboardWillHideNotification, object: nil)
+  }  
+} // VerticalSheet
+
+/// A BottomSheet is a vertical Slider growing from the bottom
+open class BottomSheet: VerticalSheet {
+  public init(slider: UIViewController, into active: UIViewController) {
+    super.init(slider: slider, into: active, fromBottom: true)
+  }
+}
+
+/**
+ A RoundedRect is a view that consists solely of a rectangle which left and right 
+ edges are half circles.
+ */
+open class RoundedRect: UIView {
+  
+  /// The color to draw the rectangle in
+  open var color: UIColor = UIColor.gray { didSet { self.setNeedsDisplay() } }
+
+  override open func draw(_ rect: CGRect) {
+    let path = UIBezierPath(roundedRect: self.bounds, cornerRadius: self.bounds.height/2)
+    color.setFill()
+    path.fill()
+  }
+  
+  override public init(frame: CGRect) {
+    super.init(frame: frame)
+    backgroundColor = UIColor.clear
+  }
+  
+  required public init?(coder: NSCoder) {
+    super.init(coder: coder)
+    backgroundColor = UIColor.clear
+  }
+  
+}
