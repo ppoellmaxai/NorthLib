@@ -17,19 +17,18 @@ public protocol WebViewUrl {
 }
 
 /// An optional WebView using a "waiting view" as long as the web contents is not available
-struct OptionalWebView: OptionalView {
+struct OptionalWebView: OptionalView, DoesLog {
   
   var url: WebViewUrl
   var webView: WebView?
+  var waitingView: UIView?
   
   var isAvailable: Bool { return url.isAvailable }
   func whenAvailable(closure: @escaping () -> ()) { url.whenAvailable(closure: closure) }
-  var waitingView: UIView? { return url.waitingView() }
-  var mainView: UIView { return webView ?? UndefinedView() }
+  var mainView: UIView { return webView! }
   func loadView() { if isAvailable { webView?.load(url: url.url) } }
   
-  init(vc: WebViewCollectionVC, url: WebViewUrl) {
-    self.url = url
+  fileprivate mutating func createWebView(vc: WebViewCollectionVC) {
     let webConfiguration = WKWebViewConfiguration()
     self.webView = WebView(frame: .zero, configuration: webConfiguration)
     guard let webView = self.webView else { return }
@@ -41,9 +40,25 @@ struct OptionalWebView: OptionalView {
     webView.baseDir = vc.baseDir
     webView.whenScrolled(minRatio: 0.05) { [weak vc] ratio in
       vc?.didScroll(ratio: ratio)
-    }
+    }    
+  }
+
+  init(vc: WebViewCollectionVC, url: WebViewUrl) {
+    self.url = url
+    self.waitingView = url.waitingView()
+    createWebView(vc: vc)
   }
   
+  @discardableResult
+  mutating func update(vc: WebViewCollectionVC, url: WebViewUrl) -> OptionalWebView {
+    debug("updating WebView")
+    self.url = url
+    self.waitingView = url.waitingView()
+    webView?.stopLoading()
+//    createWebView(vc: vc)
+    return self
+  }
+    
 } // OptionalWebView
 
 /// A very simple file based WebViewUrl
@@ -148,9 +163,10 @@ open class WebViewCollectionVC: PageCollectionVC, WKUIDelegate,
     super.viewDidLoad()
     self.view.backgroundColor = UIColor.white
     inset = 0
-    viewProvider { [weak self] (index) in
+    viewProvider { [weak self] (index, oview) in
       guard let this = self else { return UIView() }
-      return OptionalWebView(vc: this, url: this.urls[index])
+      if var ov = oview as? OptionalWebView { return ov.update(vc: this, url: this.urls[index]) }
+      else { return OptionalWebView(vc: this, url: this.urls[index]) }
     }
   }
   
@@ -170,6 +186,8 @@ open class WebViewCollectionVC: PageCollectionVC, WKUIDelegate,
                       withError err: Error) {
     if let wview = webView as? WebView {
       error("WebView Error on \"\(wview.originalUrl?.lastPathComponent ?? "[undefined URL]")\": \(err.description)")
+      wview.stopLoading()
+      wview.reloadFromOrigin()
     }
   }
   
@@ -177,6 +195,8 @@ open class WebViewCollectionVC: PageCollectionVC, WKUIDelegate,
                       withError err: Error) {
     if let wview = webView as? WebView {
       error("WebView Error on \"\(wview.originalUrl?.lastPathComponent ?? "[undefined URL]")\": \(err.description)")
+      wview.stopLoading()
+      wview.reloadFromOrigin()
     }
   }
   
@@ -196,11 +216,11 @@ open class WebViewCollectionVC: PageCollectionVC, WKUIDelegate,
     decisionHandler(.allow)
   }
   
-  override public func scrollViewDidScroll(_ scrollView: UIScrollView) {
+//  override public func scrollViewDidScroll(_ scrollView: UIScrollView) {
 //    debug(scrollView.contentOffset.toString())
 //    if scrollView.contentOffset.x > 0
 //      { scrollView.contentOffset = CGPoint(x: 0, y: scrollView.contentOffset.y) }
-  }
+//  }
   
   public func webView(_ webView: WKWebView, runJavaScriptAlertPanelWithMessage message: String,
                initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping () -> Void) {

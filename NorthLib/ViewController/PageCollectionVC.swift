@@ -9,80 +9,30 @@ import UIKit
 
 fileprivate var countVC = 0
 
-/// An undefined View
-open class UndefinedView: UIView {
-  public var label = UILabel()
-  
-  private func setup() {
-    backgroundColor = UIColor.red
-    label.backgroundColor = UIColor.clear
-    label.font = UIFont.boldSystemFont(ofSize: 200)
-    label.textColor = UIColor.yellow
-    label.textAlignment = .center
-    label.adjustsFontSizeToFitWidth = true
-    label.text = "?"
-    addSubview(label)
-    pin(label.centerX, to: self.centerX)
-    pin(label.centerY, to: self.centerY)
-    pin(label.width, to: self.width, dist: -20)
-  }
-  
-  public override init(frame: CGRect) {
-    super.init(frame: frame)
-    setup()
-  }
-  
-  public required init?(coder: NSCoder) {
-    super.init(coder: coder)
-    setup()
-  }
-}
-
-/// The View to put into one page
-public protocol OptionalView {
-  var mainView: UIView { get }
-  var waitingView: UIView? { get }
-  var isAvailable: Bool { get }
-  func whenAvailable(closure: @escaping ()->())
-  func loadView()
-}
-
-public extension OptionalView {
-  var activeView: UIView { return isAvailable ? mainView : (waitingView ?? UndefinedView()) }
-}
-
-/// Common Views can be optional
-extension UIView: OptionalView {
-  public var mainView: UIView { return self }
-  public var waitingView: UIView? { return nil }
-  public var isAvailable: Bool { return true }
-  public func whenAvailable(closure: @escaping () -> ()) {}
-  public func loadView() {}
-}
 
 open class PageCollectionVC: UIViewController, UICollectionViewDelegate,
   UICollectionViewDataSource, UICollectionViewDelegateFlowLayout, UIScrollViewDelegate {
-  
+
+  /// The Cell that is presented as scrollable collection view item  
   class PageCell: UICollectionViewCell {
     
+    /// The page to display
+    var page: OptionalView?
     /// The View to display
-    var pageView: UIView?
+    var pageView: UIView? { return page?.activeView }
     /// Index of View in collection view
     var index: Int?
     
     /// Request view from provider and put it into a PageCell
     func update(pcvc: PageCollectionVC, idx: Int) {
       if let provider = pcvc.provider {
-        let page = provider(idx)
+        if let pv = pageView { pv.removeFromSuperview() }
+        let page = provider(idx, self.page)
         let isAvailable = page.isAvailable
-        let activeView = page.activeView
-        if let pageView = self.pageView {
-          pageView.removeFromSuperview()
-        }
-        self.pageView = activeView
+        self.contentView.addSubview(page.activeView)
+        pin(page.activeView, to: self.contentView)
         self.index = idx
-        self.contentView.addSubview(activeView)
-        pin(activeView, to: self.contentView)
+        self.page = page
         if isAvailable { page.loadView() }
         else {
           let iPath = IndexPath(item: idx, section: 0)
@@ -94,28 +44,37 @@ open class PageCollectionVC: UIViewController, UICollectionViewDelegate,
     override init(frame: CGRect) {
       super.init(frame: frame)
     }
-    init(view: UIView, index: Int) { 
-      self.pageView = view
-      self.index = index
-      super.init(frame: CGRect())
-    }    
     required init?(coder: NSCoder) {
       super.init(coder: coder)
     }
-  }
+  } // PageCell
   
   /// The collection view displaying OptionalViews
   open var collectionView: UICollectionView!
+  
+  /// The Layout object determining the size of the cells
+  open var cvLayout: UICollectionViewFlowLayout!
 
   /// A closure providing the optional views to display
-  open var provider: ((Int)->OptionalView)? = nil
+  open var provider: ((Int, OptionalView?)->OptionalView)? = nil
   
   /// inset from top/bottom/left/right as factor to min(width,height)
   open var inset = 0.025
+
+  // The raw cell size (without bounds)
+  private var rawCellsize: CGSize { return self.collectionView.bounds.size }
   
-  fileprivate var index2scrollTo: Int?  // index of page to scroll to
-  fileprivate var cvSize: CGSize { return self.collectionView.bounds.size }
-  fileprivate var onDisplayClosure: ((Int, OptionalView?)->())?
+  // The default margin of cells (ie. left/right/top/bottom insets)
+  private var margin: CGFloat {
+    let s = rawCellsize
+    return min(s.height, s.width) * CGFloat(inset)
+  }
+  
+  // The size of a cell is defined by the collection views bounds minus margins
+  private var cellsize: CGSize {
+    let s = rawCellsize
+    return CGSize(width: s.width - 2*margin, height: s.height - 2*margin)
+  }
   
   // View which is currently displayed
   public var currentView: OptionalView?
@@ -127,26 +86,12 @@ open class PageCollectionVC: UIViewController, UICollectionViewDelegate,
     get { return _index }
     set(idx) { 
       if let idx = idx { 
-        if let provider = self.provider {
-          _index = idx
-          currentView = provider(idx)
-          scrollto(idx)
-          if let closure = onDisplayClosure { closure(idx, currentView) }
-        }
+        _index = idx
+        scrollto(idx)
+        if let closure = onDisplayClosure { closure(idx) }
       } 
     }
   }
-
-//  private func indexPath(cell: PageCell?) -> IndexPath?{ 
-//    if let c = cell { return collectionView.indexPath(for: c) }
-//    return nil
-//  }
-//  
-//  /// IndexPath of current cell
-//  open var indexPath: IndexPath? { return indexPath(cell: currentCell) }
-
-  
-  private var visibleCells: Set<PageCell> = []
 
   fileprivate var _count: Int = 0
   
@@ -164,39 +109,35 @@ open class PageCollectionVC: UIViewController, UICollectionViewDelegate,
   public init() { super.init(nibName: nil, bundle: nil) }
   
   public required init?(coder: NSCoder) { super.init(coder: coder) }
+
+  fileprivate var onDisplayClosure: ((Int)->())?
   
-  public func onDisplay(closure: ((Int, OptionalView?)->())?) {
+  /// Define closure to call when a cell is newly displayed  
+  public func onDisplay(closure: ((Int)->())?) {
     onDisplayClosure = closure
   }
  
   // updateDisplaying is called when the scrollview has been scrolled which
   // might have changed the view currently visible
-  private func updateDisplaying() {
-    debug("visible cells: \(visibleCells.map{$0.index})")
-    if visibleCells.count == 1 {
-      let vis = visibleCells.first!
-      if vis.index != _index {
-        debug("displaying page #\(vis.index!)")
-        currentView = vis.pageView
-        _index = vis.index
-        if let closure = onDisplayClosure { closure(vis.index!, currentView) }
-      }
-      else {
-        debug("Index of visible cell = \(vis.index ?? -1) - equal to current index (no update)")
-      }
+  private func updateDisplaying(_ idx: Int) { 
+    if _index != idx {
+      _index = idx
+      if let closure = onDisplayClosure { closure(idx) }
     }
-    else { debug("#visible cells: \(visibleCells.count) (no update)") }
   }
   
-  /// Defines the closure to deliver the views to display
-  open func viewProvider(provider: @escaping (Int)->OptionalView) {
+  /// Defines the closure which delivers the views to display
+  open func viewProvider(provider: @escaping (Int, OptionalView?)->OptionalView) {
     self.provider = provider
   }
  
-  /// Scroll to the view which index is given
+  
+  // Scroll to the cell at position index
+  fileprivate var isInitializing = true
+  fileprivate var initialIndex: Int? = nil
   fileprivate func scrollto(_ index: Int, animated: Bool = false) {
-    index2scrollTo = index
-    if currentView != nil {
+    if isInitializing { initialIndex = index }
+    else {
       let ipath = IndexPath(item: index, section: 0)
       collectionView.scrollToItem(at: ipath, at: .centeredHorizontally, animated: animated)
     }
@@ -206,9 +147,11 @@ open class PageCollectionVC: UIViewController, UICollectionViewDelegate,
 
   override open func loadView() {
     super.loadView()
-    let flowLayout = UICollectionViewFlowLayout()
-    flowLayout.scrollDirection = .horizontal
-    collectionView = UICollectionView(frame: .zero, collectionViewLayout: flowLayout)
+    cvLayout = UICollectionViewFlowLayout()
+    cvLayout.scrollDirection = .horizontal
+    collectionView = UICollectionView(frame: .zero, collectionViewLayout: cvLayout)
+    let m = margin
+    collectionView.contentInset = UIEdgeInsets(top: m, left: m, bottom: m, right: m)
     collectionView.backgroundColor = UIColor.white
     collectionView.contentInsetAdjustmentBehavior = .never
     self.view.addSubview(collectionView)
@@ -248,22 +191,13 @@ open class PageCollectionVC: UIViewController, UICollectionViewDelegate,
   
   open func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
     if let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdent,
-                                                     for: indexPath) as? PageCell {
+                  for: indexPath) as? PageCell {
       let idx = indexPath.item
       cell.update(pcvc: self, idx: idx)
-      if let i2s = index2scrollTo {
-        if i2s == idx { index2scrollTo = nil }
-        else {
-          collectionView.scrollToItem(at: IndexPath(item: i2s, section: 0), 
-            at: .centeredHorizontally, animated: false)
-        }
-      }
-      else {
-        if currentView == nil {
-          currentView = cell.pageView
-          _index = idx
-        }
-      }
+      if isInitializing {
+        isInitializing = false
+        if initialIndex! != idx { scrollto(initialIndex!) }
+      } 
       return cell
     }
     return PageCell()
@@ -271,30 +205,10 @@ open class PageCollectionVC: UIViewController, UICollectionViewDelegate,
   
   // MARK: - UICollectionViewDelegate
   
-  public func collectionView(_ view: UICollectionView, willDisplay: UICollectionViewCell, 
-                             forItemAt: IndexPath) {
-    visibleCells.insert(willDisplay as! PageCell)
-    updateDisplaying()
-  }
-  
-  public func collectionView(_ view: UICollectionView, didEndDisplaying: UICollectionViewCell, 
-                             forItemAt: IndexPath) {
-    visibleCells.remove(didEndDisplaying as! PageCell)
-    updateDisplaying()
-  }
+  // ...
   
   // MARK: - UICollectionViewDelegateFlowLayout
-  
-  private var margin: CGFloat {
-    let s = cvSize
-    return min(s.height, s.width) * CGFloat(inset)
-  }
-  
-  private var cellsize: CGSize {
-    let s = cvSize
-    return CGSize(width: s.width - 2*margin, height: s.height - 2*margin)
-  }
-  
+    
   public func collectionView(_ collectionView: UICollectionView, 
     layout collectionViewLayout: UICollectionViewLayout,
     sizeForItemAt indexPath: IndexPath) -> CGSize {
@@ -322,30 +236,23 @@ open class PageCollectionVC: UIViewController, UICollectionViewDelegate,
   
   // MARK: - UIScrollViewDelegate
  
-  
-  public func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
-  }
-  
+  // When dragging stops, position collection view to a complete page  
+//  public func scrollViewWillEndDragging(_ scrollView: UIScrollView, 
+//    withVelocity velocity: CGPoint, 
+//    targetContentOffset: UnsafeMutablePointer<CGPoint>) {
+//    var offset = targetContentOffset.pointee
+//    let cellwidth = rawCellsize.width
+//    let idx = round((offset.x + scrollView.contentInset.left) / cellwidth)
+//    offset = CGPoint(x: idx*cellwidth - scrollView.contentInset.left,
+//                     y: scrollView.contentInset.top)
+//    targetContentOffset.pointee = offset
+//    updateDisplaying(Int(idx))
+//  }
+ 
+  // While scrolling update page index
   public func scrollViewDidScroll(_ scrollView: UIScrollView) {
-  }
-
-  public func scrollViewWillBeginDecelerating(_ scrollView: UIScrollView) {
-  }
-
-  public func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
-    let cells = collectionView.visibleCells as! [PageCell]
-    if cells.count == 1 { 
-      let cell = cells[0]
-      if cell.index != _index {
-        visibleCells = [cells[0]] 
-        debug("*** Action: Scrolling ended")
-        updateDisplaying()
-      }
-    }
-  }
-  
-  public func scrollViewWillEndDragging(_ scrollView: UIScrollView, withVelocity velocity: CGPoint, targetContentOffset: UnsafeMutablePointer<CGPoint>) {
+    let pageIndex = Int(round(scrollView.contentOffset.x/view.bounds.size.width))
+    if pageIndex != _index { updateDisplaying(pageIndex) }  
   }
   
 } // PageCollectionVC
-
