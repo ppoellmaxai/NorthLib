@@ -171,7 +171,7 @@ open class WebView: WKWebView, WKScriptMessageHandler, UIScrollViewDelegate {
   public func load(html: String) -> WKNavigation? {
     return loadHTMLString(html, baseURL: baseUrl)
   }
-
+  
   public func setup() {
   }
   

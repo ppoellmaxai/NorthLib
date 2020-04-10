@@ -43,9 +43,43 @@ public extension UIColor {
       if v > 0.01 {
         let f = 1/v
         if f < m { m = f }
-      } }
+    } }
     r *= m; g *= m; b *= m;
     return UIColor(red: r, green: g, blue: b, alpha: a)
+  }
+  
+  /// Interprete the color as a 3-dimensional vector and return its length
+  /// 0<=l<=sqrt(3)
+  var abs: CGFloat {
+    let (r,g,b,_) = rgba()
+    return sqrt(r*r+g*g+b*b)
+  }
+
+  
+  /**
+   * Returns a lighter or darker color depending on `add`.
+   *
+   * This operator takes a UIColor `color` and returns a newly created color
+   * so that the red, green, blue components of `color` are increased by `add`.
+   *
+   * - Parameters:
+   *   - add: make color lighter if > 0, darker if < 0 (-1<=add<=1)
+   * - Returns: a new UIColor object with a lighter or darker color.
+   */
+  static func +(color: UIColor, add: CGFloat) -> UIColor {
+    let (r,g,b,a) = color.rgba()
+    let rgb = [r,g,b].map { max(0,min(1,$0+add)) }
+    return UIColor(red: rgb[0], green: rgb[1], blue: rgb[2], alpha: a)
+  }
+  static func -(color: UIColor, add: CGFloat) -> UIColor { return color + -add }
+    
+  /// Produces a slightly darker or lighter color, depending on whether
+  /// abs >= sqrt(3)/2 (darker)
+  func dimmed() -> UIColor {
+    let med: CGFloat = sqrt(3)/2
+    let abs = self.abs
+    if abs >= med { return self - 0.2 }
+    else { return self + 0.2 }
   }
   
 }

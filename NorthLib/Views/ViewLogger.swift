@@ -26,10 +26,13 @@ extension LogView {
 }
 
 /// A minimalistic LogView consisting of a TextView only
-open class SimpleLogView: UITextView, LogView {
+open class SimpleLogView: UITextView, LogView, Touchable {  
  
   /// The default font for log messages
   public static var font = UIFont(name: "Menlo-Regular", size: 14.0)
+  
+  /// The tap recognizer
+  public var recognizer = TapRecognizer()
   
   /// Append colored text
   public func append(txt: String, color: UIColor? = UIColor.black) {

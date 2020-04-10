@@ -211,5 +211,8 @@ public extension String {
   /// Returns true if self is case insensitive equal to "true", false otherwise
   var bool: Bool { return self.lowercased() == "true" }
   
+  /// Returns an Int if possible
+  var int: Int? { return Int(self) }
+  
 } // extension String
 

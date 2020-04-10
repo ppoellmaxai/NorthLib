@@ -11,22 +11,34 @@ import Foundation
 
 infix operator /~ : MultiplicationPrecedence
 infix operator =~ : ComparisonPrecedence
+infix operator ** : BitwiseShiftPrecedence
 
-public extension FloatingPoint {
+public extension BinaryFloatingPoint {
   
   /// Remainder for FloatingPoint values, e.g. 3.6 % 0.5 == 0.1
   static func %(lhs: Self, rhs: Self) -> Self {
-    return lhs.truncatingRemainder(dividingBy: rhs)
+    lhs.truncatingRemainder(dividingBy: rhs)
   }
   
   /// Truncating division for FloatingPoint values, e.g. 3.6 /~ 0.5 == 7.0
   static func /~(lhs: Self, rhs: Self) -> Self {
-    return (lhs/rhs).rounded(.towardZero)
+    (lhs/rhs).rounded(.towardZero)
   }
   
   /// Compares two floats with an epsilon of 2*Self.ulpOfOne
   static func =~(lhs: Self, rhs: Self) -> Bool {
-    return abs(lhs-rhs) < (2*Self.ulpOfOne)
+    abs(lhs-rhs) < (2*Self.ulpOfOne)
   }
+  
+  func log<T:BinaryFloatingPoint>(base: T = 10.0) -> Self { 
+    Self(Darwin.log(Double(self)/Double(base)))
+  }
+  
+  func pow<T:BinaryFloatingPoint>(exp: T) -> Self {
+    Self(Darwin.pow(Double(self), Double(exp)))
+  }
+  
+  static func **(lhs: Self, rhs: Self) -> Self { lhs.pow(exp: rhs) }
+  static func **(lhs: Self, rhs: Int) -> Self { lhs.pow(exp: Double(rhs)) }
   
 } // extension FloatingPoint

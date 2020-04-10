@@ -28,3 +28,9 @@ public func tmppath() -> String {
   let uuid = UUID().uuidString
   return "\(dir.path)/\(uuid).tmp"
 }
+
+/// Returns address of raw pointer
+public func address(_ obj: UnsafeRawPointer) -> Int { Int(bitPattern: obj) }
+
+/// Returns address of object
+public func address<T>(_ obj: T) -> Int { unsafeBitCast(obj, to: Int.self) }

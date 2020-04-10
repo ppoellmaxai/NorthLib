@@ -170,3 +170,33 @@ public func pin(_ view: UIView, to: UIView, dist: CGFloat = 0) -> (top: NSLayout
   let right = pin(view.right, to: to.right, dist: -dist)
   return (top, bottom, left, right)
 }
+
+/// A simple UITapGestureRecognizer wrapper
+open class TapRecognizer: UITapGestureRecognizer {  
+  private var onTapClosure: ((UITapGestureRecognizer)->())?  
+  @objc private func handleTap(sender: UITapGestureRecognizer) { onTapClosure?(sender) }
+  /// Define closure to call upon Tap
+  open func onTap(view: UIView, closure: ((UITapGestureRecognizer)->())?) { 
+    view.isUserInteractionEnabled = true
+    view.addGestureRecognizer(self)
+    onTapClosure = closure 
+  }  
+  public init() { 
+    super.init(target: nil, action: nil) 
+    addTarget(self, action: #selector(handleTap))
+  }
+}
+
+/// An view with a tap gesture recognizer attached
+public protocol Touchable {
+  var recognizer: TapRecognizer { get }
+}
+
+extension UIView {
+  /// Define closure to call upon tap
+  public func onTap(closure: ((UITapGestureRecognizer)->())?) {
+    if let tview = self as? Touchable { 
+      tview.recognizer.onTap(view: self, closure: closure)
+    }
+  }
+}

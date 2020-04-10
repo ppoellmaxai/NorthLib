@@ -21,6 +21,14 @@ class EtcTests: XCTestCase {
     XCTAssertNotEqual(p2, p3)
   } 
   
+  func testArray() {
+    let a1 = [1,2,3,4,5,6,7,8,9,10]
+    XCTAssertEqual(a1.rotated(1), [2,3,4,5,6,7,8,9,10,1])
+    XCTAssertEqual(a1.rotated(-1), [10,1,2,3,4,5,6,7,8,9])
+    XCTAssertEqual(a1.rotated(2), [3,4,5,6,7,8,9,10,1,2])
+    XCTAssertEqual(a1.rotated(-2), [9,10,1,2,3,4,5,6,7,8])
+  }
+  
 } // class EtcTests
 
 class MathTests: XCTestCase {  

@@ -148,3 +148,9 @@ public struct UsTime: Comparable, ToString, DoesLog {
   }
   
 }  // struct UsTime
+
+
+public extension String {
+  /// Convert string of digits to UsTime
+  var usTime: UsTime { UsTime(self) }
+}

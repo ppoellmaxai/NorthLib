@@ -65,6 +65,6 @@ extension Log {
       }
     }
     
-  } // class ViewLogger
+  } // class FileLogger
   
 } // extension Log

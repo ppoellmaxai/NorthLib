@@ -664,8 +664,8 @@ open class HttpLoader: ToString, DoesLog {
     session.download(baseUrl: baseUrl, file: file, toDir: toDir) {
       [weak self] res in
       self?.count(res, size: file.size)
-      delay(seconds: 0.02) { self?.download(fl, closure: closure) }
+      delay(seconds: 0.06) { self?.download(fl, closure: closure) }
     }
   }
   
-} // DlStat
+} // HttpLoader

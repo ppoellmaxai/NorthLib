@@ -31,4 +31,26 @@ public extension Array {
   
   /// appends one element at the end
   mutating func push(elem: Element) { self.append(elem) }  
-}
+  
+  /// rotates elements clockwise (n >0) or anti clockwise (n<0)
+  func rotated(_ n: Int) -> Array {
+    var ret: Array = []
+    if n > 0 {
+      ret += self[n..<count]
+      ret += self[0..<n]
+    }
+    else if n < 0 {
+      let from = count + n
+      ret += self[from..<count]
+      ret += self[0..<from]
+    }
+    else { ret = self }
+    return ret
+  }
+  
+  /// creates a copy of the array
+  func copy() -> Array {
+    self.map { ($0 as! NSCopying).copy() as! Element }
+  }
+  
+} // Array

@@ -110,7 +110,7 @@ public extension UIViewController {
   }
   
   /**
-   loadFromNib instantiates a view controler from a nib file
+   loadFromNib instantiates a view controller from a nib file
    */
   class func loadFromNib() -> Self {
     func instantiateFromNib<T: UIViewController>() -> T {
@@ -118,5 +118,10 @@ public extension UIViewController {
     }    
     return instantiateFromNib()
   }
+  
+  /**
+   Returns true if the view controller is visible
+   */
+   var isVisible: Bool { return viewIfLoaded?.window != nil }
   
 } // extension UIViewController
