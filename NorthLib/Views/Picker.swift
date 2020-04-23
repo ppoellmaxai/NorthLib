@@ -9,7 +9,7 @@ import UIKit
 
 /** 
  A Picker is a straight forward UIPickerView subclass intended to simplify
- UIPickerView usage. Thies implementation only supports one component.
+ UIPickerView usage. This implementation only supports one component.
  */
 open class Picker: UIPickerView, UIPickerViewDelegate, UIPickerViewDataSource {
   

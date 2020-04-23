@@ -52,6 +52,7 @@
 		AE7123332320E0B800B715A8 /* hashes.h in Headers */ = {isa = PBXBuildFile; fileRef = AE7123312320E0B800B715A8 /* hashes.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AE7123342320E0B800B715A8 /* hashes.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AE7123322320E0B800B715A8 /* hashes.cpp */; };
 		AE7123362320E64300B715A8 /* DataExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE7123352320E64300B715A8 /* DataExtensions.swift */; };
+		AE80A399244DE1920012DFFA /* CubeLabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE80A398244DE1920012DFFA /* CubeLabel.swift */; };
 		AE9851352320FC7500EAC9D8 /* WebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE9851332320FC7500EAC9D8 /* WebView.swift */; };
 		AE9851372320FC7500EAC9D8 /* NativeBridge.js in Resources */ = {isa = PBXBuildFile; fileRef = AE9851342320FC7500EAC9D8 /* NativeBridge.js */; };
 		AE98513A2320FCA700EAC9D8 /* WebViewCollectionVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE9851392320FCA700EAC9D8 /* WebViewCollectionVC.swift */; };
@@ -134,7 +135,7 @@
 		AE7123312320E0B800B715A8 /* hashes.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = hashes.h; sourceTree = "<group>"; };
 		AE7123322320E0B800B715A8 /* hashes.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = hashes.cpp; sourceTree = "<group>"; };
 		AE7123352320E64300B715A8 /* DataExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataExtensions.swift; sourceTree = "<group>"; };
-		AE7F330F2423C9E200528DAA /* BottomSheet.playground */ = {isa = PBXFileReference; lastKnownFileType = file.playground; path = BottomSheet.playground; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
+		AE80A398244DE1920012DFFA /* CubeLabel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CubeLabel.swift; sourceTree = "<group>"; };
 		AE9851332320FC7500EAC9D8 /* WebView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WebView.swift; sourceTree = "<group>"; };
 		AE9851342320FC7500EAC9D8 /* NativeBridge.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = NativeBridge.js; sourceTree = "<group>"; };
 		AE9851392320FCA700EAC9D8 /* WebViewCollectionVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WebViewCollectionVC.swift; sourceTree = "<group>"; };
@@ -149,7 +150,6 @@
 		AE98514E2325450600EAC9D8 /* AudioPlayer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AudioPlayer.swift; sourceTree = "<group>"; };
 		AE985152232547B000EAC9D8 /* Defaults.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Defaults.swift; sourceTree = "<group>"; };
 		AEA2EB14233CD841007AB59D /* ToString.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToString.swift; sourceTree = "<group>"; };
-		AECAC8F124406E2500D32175 /* Carousel.playground */ = {isa = PBXFileReference; lastKnownFileType = file.playground; path = Carousel.playground; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
 		AED2B5D723B0C61A00D9A087 /* File.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = File.swift; sourceTree = "<group>"; };
 		AED852A423C21F1A002F07E8 /* fileop.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = fileop.h; sourceTree = "<group>"; };
 		AED852A623C22241002F07E8 /* fileop.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = fileop.cpp; sourceTree = "<group>"; };
@@ -193,15 +193,6 @@
 				AED852A623C22241002F07E8 /* fileop.cpp */,
 			);
 			path = lowlevel;
-			sourceTree = "<group>";
-		};
-		AE4E50FB243B66050024609A /* Playgrounds */ = {
-			isa = PBXGroup;
-			children = (
-				AECAC8F124406E2500D32175 /* Carousel.playground */,
-				AE7F330F2423C9E200528DAA /* BottomSheet.playground */,
-			);
-			path = Playgrounds;
 			sourceTree = "<group>";
 		};
 		AE7122BB23197AFA00B715A8 = {
@@ -264,6 +255,7 @@
 				AEE31ED3242B733400683D1D /* Picker.swift */,
 				AE4E50F6243B44150024609A /* VariousViews.swift */,
 				AE4E50F8243B45870024609A /* CarouselView.swift */,
+				AE80A398244DE1920012DFFA /* CubeLabel.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -310,7 +302,6 @@
 		AE71230323197CB800B715A8 /* Test */ = {
 			isa = PBXGroup;
 			children = (
-				AE4E50FB243B66050024609A /* Playgrounds */,
 				AE71232623200E9500B715A8 /* test.zip */,
 				AE71230423197CB800B715A8 /* Test.swift */,
 				AE71230623197CB800B715A8 /* Info.plist */,
@@ -507,6 +498,7 @@
 				AE7122E923197B4000B715A8 /* DottedLineView.swift in Sources */,
 				AEA2EB15233CD841007AB59D /* ToString.swift in Sources */,
 				AE7122E523197B4000B715A8 /* NetAvailability.swift in Sources */,
+				AE80A399244DE1920012DFFA /* CubeLabel.swift in Sources */,
 				AE7122F223197B4000B715A8 /* ViewExtensions.swift in Sources */,
 				AE98513C2320FCB400EAC9D8 /* PageCollectionVC.swift in Sources */,
 				AE9851402320FDAF00EAC9D8 /* ArrayExtensions.swift in Sources */,
@@ -700,7 +692,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.2.0;
+				MARKETING_VERSION = 0.2.1;
 				PRODUCT_BUNDLE_IDENTIFIER = net.manoma.NorthLib;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
@@ -729,7 +721,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.2.0;
+				MARKETING_VERSION = 0.2.1;
 				PRODUCT_BUNDLE_IDENTIFIER = net.manoma.NorthLib;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;

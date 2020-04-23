@@ -41,6 +41,11 @@ class MathTests: XCTestCase {
     XCTAssertTrue((3.6 /~ 0.5) =~ 7.0)
   }
   
+  func testLog() {
+    let a: Double = 4
+    XCTAssertTrue(a.log(base: 2) =~ 2.0)
+  }
+  
 } // class MathTests
 
 class StringTests: XCTestCase {

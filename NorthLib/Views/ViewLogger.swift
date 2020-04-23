@@ -8,7 +8,7 @@
 import UIKit
 
 /// A LogView is used to display log messages
-public protocol LogView: UIView {
+public protocol LogView: Touchable {
   /// Append text at the end of the LogView (which is scrolled if necessary)
   func append(txt: String, color: UIColor?)
   /// Scroll to the bottom of the LogView
@@ -32,7 +32,7 @@ open class SimpleLogView: UITextView, LogView, Touchable {
   public static var font = UIFont(name: "Menlo-Regular", size: 14.0)
   
   /// The tap recognizer
-  public var recognizer = TapRecognizer()
+  public var tapRecognizer = TapRecognizer()
   
   /// Append colored text
   public func append(txt: String, color: UIColor? = UIColor.black) {

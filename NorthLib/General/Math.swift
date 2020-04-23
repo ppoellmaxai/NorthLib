@@ -30,8 +30,9 @@ public extension BinaryFloatingPoint {
     abs(lhs-rhs) < (2*Self.ulpOfOne)
   }
   
-  func log<T:BinaryFloatingPoint>(base: T = 10.0) -> Self { 
-    Self(Darwin.log(Double(self)/Double(base)))
+  func log<T:BinaryFloatingPoint>(base: T = 10.0) -> Self {
+    let v = Double(self), b = Double(base)
+    return Self( Darwin.log(v) / Darwin.log(b) )
   }
   
   func pow<T:BinaryFloatingPoint>(exp: T) -> Self {
