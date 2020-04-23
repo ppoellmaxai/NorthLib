@@ -8,11 +8,63 @@
 import UIKit
 
 /**
+ A CarouselFlowLayout models a horizontal cell layout with a scaling effect
+ to have the central cell enlarged.
+ */
+public class CarouselFlowLayout: UICollectionViewFlowLayout, DoesLog {
+  
+  /// The maximum scale to use when increasing the size of the central cell
+  var maxScale: CGFloat = 1.3
+
+  /// Increase the requested cell up to maxScale
+  private func scaleAttribute(_ attr: UICollectionViewLayoutAttributes) -> UICollectionViewLayoutAttributes {
+    guard let cv = self.collectionView else { return attr }
+    let visibleRect = CGRect(origin: cv.contentOffset, size: cv.bounds.size)
+    let attr = attr.copy() as! UICollectionViewLayoutAttributes
+    if attr.representedElementCategory == .cell {
+      if attr.frame.intersects(visibleRect) {
+        let dist = abs(visibleRect.midX - attr.center.x)
+        var cellSize: CGSize = self.itemSize
+        if let delegate = cv.delegate as? UICollectionViewDelegateFlowLayout,
+           let csize = delegate.collectionView?(cv, layout: self, sizeForItemAt: attr.indexPath) {
+          cellSize = csize
+        }
+        if dist < cellSize.width {
+          let scale = 1 + (maxScale - 1) * (1 - abs(dist/cellSize.width))
+          attr.transform3D = CATransform3DMakeScale(scale, scale, 1)
+        }
+      }
+    }
+    return attr
+  }
+  
+  /// Increase the visible cells up to maxScale
+  public override func layoutAttributesForElements(in rect: CGRect) -> [UICollectionViewLayoutAttributes]? {
+    guard let _ = self.collectionView else { return nil }
+    if let attrs = super.layoutAttributesForElements(in: rect) {
+      return attrs.map { attr in scaleAttribute(attr) }
+    }
+    return nil
+  }
+  
+  /// Increase the cell at indexPath up to maxScale
+  public override func layoutAttributesForItem(at indexPath: IndexPath) -> UICollectionViewLayoutAttributes? {
+    return super.layoutAttributesForItem(at: indexPath)
+  }
+  
+  /// Recalculate layout when scrolling
+  public override func shouldInvalidateLayout(forBoundsChange newBounds: CGRect) -> Bool {
+    return true
+  }
+  
+} // CarouselFlowLayout
+
+/**
  A CarouselView is a UICollectionView subclass presenting a number of views in a
  carousel like fashion.
  
  The Carousel presents a list of views (called pages) that are scrollable horizontally. 
- Its width determines the width of the pages:
+ Its width determines the width of the pages which all have the same width:
    - let cwidth be the width of the Carousel
    - let relativeInset (adjustable) be a factor to cwidth which defines the 
      spacing between pages
@@ -20,17 +72,26 @@ import UIKit
    - let relativePageWidth (adjustable) be a factor to cwidth which defines the 
      width of a page
    - then the page width pwidth = relativePageWidth * cwidth
+   - the page is pinned to the horizontal dimensions specified with these relative
+     mesasures and centered vertically in the height of the collection view.
+   - The page itself should either have been pinned to a height or to an aspect ratio
+   - The first and last pages are inset as follows:
+       inset = (cwidth - pwidth) / 2
  */
-
 open class CarouselView: UICollectionView, UICollectionViewDelegate, 
-  UICollectionViewDataSource, UIScrollViewDelegate {
+  UICollectionViewDataSource, UIScrollViewDelegate, UICollectionViewDelegateFlowLayout {
   
   /// relative spacing between pages (in relation to the Carousel's width)
-  open var relativeInset: CGFloat = 0.005
-  /// relative size of one page (in relation to the Carousel's width)
-  open var relativePageWidth: CGFloat = 0.7
-  /// use rounded corners
-  open var roundedCorners: Bool = false
+  open var relativeSpacing: CGFloat = 0.12
+  /// relative width of one page (in relation to the Carousel's width)
+  open var relativePageWidth: CGFloat = 0.6
+  /// maximum scale of center page
+  open var maxScale: CGFloat = 1.3 { 
+    didSet { 
+      (self.collectionViewLayout as? CarouselFlowLayout)?.maxScale = maxScale
+      self.setNeedsLayout() 
+    } 
+  }
   /// scroll from left to right or vice versa
   open var scrollFromLeftToRight: Bool = false {
     didSet { 
@@ -38,11 +99,22 @@ open class CarouselView: UICollectionView, UICollectionViewDelegate,
         transform = CGAffineTransform(rotationAngle: CGFloat.pi)
       }
       else { transform = .identity }
+      reloadData()
     }
   }
+  /// width of collection view
+  open var cwidth: CGFloat { return bounds.size.width }
+  /// width of page
+  open var pwidth: CGFloat { return cwidth * relativePageWidth }
+  /// width of spacing
+  open var swidth: CGFloat { return cwidth * relativeSpacing }
+  /// width of cell incl. spacing
+  open var cellWidth: CGFloat { return pwidth + swidth }
+  /// inset of first/last page
+  open var inset: CGFloat { return (cwidth - pwidth) / 2 }
   
   fileprivate static var countView = 0  // #CarouselViews instantiated
-  fileprivate static var reuseIdent: String = { countView += 1; return "PageCell\(countView)" }()
+  fileprivate static var reuseIdent: String = { countView += 1; return "CarouselCell\(countView)" }()
   
   /// The collection view cell getting presented in a page like fashion
   class PageCell: UICollectionViewCell {
@@ -59,13 +131,11 @@ open class CarouselView: UICollectionView, UICollectionViewDelegate,
         if let pv = pageView { pv.removeFromSuperview() }
         let page = provider(idx, self.page)
         let isAvailable = page.isAvailable
-        if carousel.roundedCorners { 
-          let cradius = 0.03 * contentView.bounds.size.height
-          contentView.layer.cornerRadius = cradius
-          contentView.clipsToBounds = true
-        }
         if carousel.scrollFromLeftToRight {
           page.activeView.transform = CGAffineTransform(rotationAngle: -CGFloat.pi)
+        }
+        else {
+          page.activeView.transform = .identity   
         }
         contentView.addSubview(page.activeView)
         pin(page.activeView, to: contentView)
@@ -87,135 +157,8 @@ open class CarouselView: UICollectionView, UICollectionViewDelegate,
     }
   } // PageCell
   
-  // The Layout driving the Carousel
-  class CarouselLayout: UICollectionViewLayout, DoesLog {
-    var carousel: CarouselView { collectionView as! CarouselView }
-    var count: Int { carousel.numberOfItems(inSection: 0) }
-    let scaleFactor: CGFloat = 0.2
-    var scale: CGFloat = 0.9      // factor to scale every cell with
-    var inset: CGFloat = 0        // inset of first/last cell from edge
-    var size = CGSize()           // size of one cell
-    var spacing: CGFloat = 0      // spacing between cells
-    // width of cell including spacing
-    var cellWidth: CGFloat { size.width + spacing }
-    // width of complete content
-    var contentWidth: CGFloat { CGFloat(count) * cellWidth }
-    // layout attributes
-    var attributes: [UICollectionViewLayoutAttributes] = []
-    
-    func position2index(_ position: CGFloat) -> Int {
-      let pos = position - inset
-      var idx: CGFloat
-      if scale =~ 1.0 {
-        idx = position/cellWidth
-      }
-      else {
-        let nearest = -(1 - pos*(1-scale)/cellWidth)
-        idx = nearest.log(base: scale)
-      }
-      return Int(round(idx))
-    }
-    
-    func totalWidth(position: CGFloat) -> CGFloat{
-      let n = count
-      if scale =~ 1.0 {
-        return 2*inset + CGFloat(n)*cellWidth
-      }
-      else {
-        let i = position2index(position)
-        let s = scale
-        let w = cellWidth
-        // The compiler is unable to type-check this expression in reasonable time; 
-        // try breaking up the expression into distinct sub-expressions:
-        // return w * ( (2 - s**i - s**(n-i)) / (1-s) + 1)
-        let a = 2 - s**i - s**(n-i)
-        let b = 1-s
-        return w * (a/b + 1)
-      }
-    }
-    
-    func position2attributes(position: CGFloat) -> [UICollectionViewLayoutAttributes] {
-      let count = self.count
-//      let i = position2index(position)
-      let arr = Array<UICollectionViewLayoutAttributes>(repeating: UICollectionViewLayoutAttributes(), count: count)
-      return arr
-    }
-    
-    // Setup layout attributes
-    func reset() {
-      guard let carousel = collectionView as? CarouselView 
-        else { return }
-      if attributes.count == 0 {
-        let count = carousel.numberOfItems(inSection: 0)
-        let csize = carousel.bounds.size
-        let cwidth = csize.width
-        size.width = cwidth * carousel.relativePageWidth
-        size.height = csize.height
-        spacing = cwidth * carousel.relativeInset
-        let centerY = size.height/2
-        var x: CGFloat = 0
-        let offset: CGFloat = carousel.contentOffset.x + carousel.center.x
-        for i in 0..<count {
-          let ipath = IndexPath(item: i, section: 0)
-          let attr = UICollectionViewLayoutAttributes(forCellWith: ipath)
-          attr.size = size
-          let centerX = x + size.width/2
-          attr.center = CGPoint(x: centerX, y: centerY)
-          let dist = abs(offset - centerX)
-          let distInWidth = dist/size.width
-          let scale = max(0.1, 1 - (scaleFactor*distInWidth))
-          //debug("offset: \(offset), dist: \(dist), scale: \(scale)")
-          attr.transform = CGAffineTransform.identity.scaledBy(x: scale, y: scale)
-          //////////
-          attr.size = CGSize(width: size.width * scale, height: size.height)
-          attr.center = CGPoint(x: x + attr.size.width/2, y: centerY)
-          //////////
-          attributes += attr
-          x += cellWidth
-        }
-      }
-    }
-    
-    // Return content size
-    override var collectionViewContentSize: CGSize {
-      guard let carousel = collectionView as? CarouselView else { return .zero }
-      reset()
-      return CGSize(width: contentWidth, height: carousel.frame.height)
-    }
-    
-    // Return attributes in rectangular area
-    override func layoutAttributesForElements(in rect: CGRect) -> 
-      [UICollectionViewLayoutAttributes]? {
-      reset()
-      return attributes.filter { rect.intersects($0.frame) }
-    }
-    
-    // Return attributes for a specific item
-    override func layoutAttributesForItem(at indexPath: IndexPath) -> 
-      UICollectionViewLayoutAttributes? {
-        reset()
-        return attributes[indexPath.item]
-    }
-    
-    // invalidate layout upon bounds change or user scrolling
-    override func shouldInvalidateLayout(forBoundsChange newBounds: CGRect) -> Bool {
-      true
-    }
-    override func invalidateLayout(with context: UICollectionViewLayoutInvalidationContext) {
-      if context.invalidateEverything || context.invalidateDataSourceCounts {
-        attributes = []
-       }
-      attributes = []
-      super.invalidateLayout(with: context)
-    }
-    
-  } // CarouselLayout
-  
-  // The layout object
-  private var layout = CarouselLayout()
-  
   // A closure providing the optional views to display
-  private var provider: ((Int, OptionalView?)->OptionalView)? = nil
+  public var provider: ((Int, OptionalView?)->OptionalView)? = nil
   
   /// Defines the closure which delivers the views to display
   open func viewProvider(provider: @escaping (Int, OptionalView?)->OptionalView) {
@@ -224,9 +167,12 @@ open class CarouselView: UICollectionView, UICollectionViewDelegate,
     
   // Setup the CarouselView
   private func setup() {
-    backgroundColor = UIColor.white
+    guard let layout = self.collectionViewLayout as? CarouselFlowLayout else { return }
+    backgroundColor = UIColor.clear
     contentInsetAdjustmentBehavior = .never
     register(PageCell.self, forCellWithReuseIdentifier: CarouselView.reuseIdent)
+    layout.scrollDirection = .horizontal
+    layout.maxScale = maxScale
     delegate = self
     dataSource = self
     if scrollFromLeftToRight {
@@ -236,7 +182,7 @@ open class CarouselView: UICollectionView, UICollectionViewDelegate,
   }
   
   public init(frame: CGRect) {
-    super.init(frame: frame, collectionViewLayout: layout)
+    super.init(frame: frame, collectionViewLayout: CarouselFlowLayout())
     setup()
   }
   
@@ -252,11 +198,24 @@ open class CarouselView: UICollectionView, UICollectionViewDelegate,
   fileprivate var initialIndex: Int? = nil
   
   // initialize with initialIndex when scroll view is ready
-  fileprivate func initialize() {
+  fileprivate func initialize(_ itemIndex: Int? = nil) {
+    guard let layout = self.collectionViewLayout as? CarouselFlowLayout 
+      else { return }
     if !isInitialized {
       isInitialized = true
+      layout.minimumLineSpacing = swidth
+      layout.sectionInset = UIEdgeInsets(top: 0, left: inset, bottom: 0, 
+                                         right: inset)
       if let idx = initialIndex { self.index = idx }
     }
+  }
+  
+  /// Returns the optional view at a given index (if that view is visible)
+  open func optionalView(at idx: Int) -> OptionalView? {
+    if let cell = cellForItem(at: IndexPath(item: idx, section: 0)) as? PageCell {
+      return cell.page
+    }
+    else { return nil }
   }
   
   /// Index of current page, change it to scroll to a certain cell
@@ -265,9 +224,8 @@ open class CarouselView: UICollectionView, UICollectionViewDelegate,
     set(idx) { 
       if let idx = idx, idx != _index { 
         if isInitialized {
-          _index = idx
           scrollto(idx)
-          if let closure = onDisplayClosure { closure(idx) }
+          onDisplayClosure?(idx, optionalView(at: idx))
         }
         else { initialIndex = idx }
       } 
@@ -285,10 +243,20 @@ open class CarouselView: UICollectionView, UICollectionViewDelegate,
     }
   }
   
-  fileprivate var onDisplayClosure: ((Int)->())?
+  /// Insert a new page at (in front of) a given index
+  open func insert(at idx: Int) {
+    let ipath = IndexPath(item: idx, section: 0)
+    _count += 1
+    insertItems(at: [ipath])
+  }
+  
+  /// Reload a single view
+  open func reload(index: Int) { reloadItems(at: [IndexPath(item: index, section: 0)]) }
+  
+  fileprivate var onDisplayClosure: ((Int, OptionalView?)->())?
   
   /// Define closure to call when a cell is displayed in the center
-  public func onDisplay(closure: ((Int)->())?) {
+  public func onDisplay(closure: ((Int, OptionalView?)->())?) {
     onDisplayClosure = closure
   }
   
@@ -297,15 +265,18 @@ open class CarouselView: UICollectionView, UICollectionViewDelegate,
   private func updateDisplaying(_ idx: Int) { 
     if _index != idx {
       _index = idx
-      if let closure = onDisplayClosure { closure(idx) }
+      onDisplayClosure?(idx, optionalView(at: idx))
     }
   }
   
   // Scroll to the cell at position index
-  fileprivate func scrollto(_ idx: Int, animated: Bool = false) {
-    debug("scrolling to: \(idx)")
-    let ipath = IndexPath(item: idx, section: 0)
-    scrollToItem(at: ipath, at: .centeredHorizontally, animated: animated)
+  open func scrollto(_ idx: Int, animated: Bool = false) {
+    if idx != _index {
+      debug("scrolling to: \(idx)")
+      _index = idx
+      let ipath = IndexPath(item: idx, section: 0)
+      scrollToItem(at: ipath, at: .centeredHorizontally, animated: animated)
+    }
   }
 
   // MARK: - UICollectionViewDataSource
@@ -315,8 +286,7 @@ open class CarouselView: UICollectionView, UICollectionViewDelegate,
   }
   
   open func collectionView(_ collectionView: UICollectionView, 
-                           numberOfItemsInSection section: Int) -> Int {
-    initialize()
+    numberOfItemsInSection section: Int) -> Int {
     return self.count
   }
   
@@ -325,290 +295,51 @@ open class CarouselView: UICollectionView, UICollectionViewDelegate,
       CarouselView.reuseIdent, for: indexPath) as? PageCell {
       let itemIndex = indexPath.item
       cell.update(carousel: self, idx: itemIndex)
+      initialize(itemIndex)
       return cell
     }
     return PageCell()
   }
   
+  // MARK: - UICollectionViewDelegateFlowLayout
+  
+  public func collectionView(_ collectionView: UICollectionView, 
+    layout collectionViewLayout: UICollectionViewLayout,
+    sizeForItemAt indexPath: IndexPath) -> CGSize {
+    let size = CGSize(width: pwidth, height: bounds.size.height)
+    return size
+  }
+  
   // MARK: - UIScrollViewDelegate
+  
+  // Return index at a given scroll offset
+  private func offset2index(_ offset: CGFloat) -> Int {
+    let centerX = offset + cwidth/2
+    let i = (centerX - inset) / cellWidth
+    var idx = Int(round(i))
+    if i - CGFloat(idx) > 0 { idx += 1 }
+    return max(idx - 1, 0)
+  }
+  
+  // Return scroll offset of given index
+  private func index2offset(_ idx: Int) -> CGFloat {
+    let offset = cellWidth * CGFloat(idx)
+    return offset
+  }
   
   // While scrolling update page index
   public func scrollViewDidScroll(_ scrollView: UIScrollView) {
-    let pageIndex = Int(round(scrollView.contentOffset.x/layout.cellWidth))
+    let pageIndex = offset2index(contentOffset.x)
     if pageIndex != _index { updateDisplaying(pageIndex) }  
   }
   
   // When dragging stops, position collection view to a complete page  
   public func scrollViewWillEndDragging(_ scrollView: UIScrollView, 
-                                        withVelocity velocity: CGPoint, 
-                                        targetContentOffset: UnsafeMutablePointer<CGPoint>) {
-    var offset = targetContentOffset.pointee
-    let cellwidth = layout.cellWidth
-    let idx = round((offset.x + scrollView.contentInset.left) / cellwidth)
-    offset = CGPoint(x: idx*cellwidth - scrollView.contentInset.left,
-                     y: scrollView.contentInset.top)
-    targetContentOffset.pointee = offset
+    withVelocity velocity: CGPoint, 
+    targetContentOffset: UnsafeMutablePointer<CGPoint>) {
+    let pointee = targetContentOffset.pointee.x
+    let idx = offset2index(pointee)
+    targetContentOffset.pointee.x = index2offset(idx)
   }
 
-  
 } // CarouselView
-
-////
-////  PageCollectionVC.swift
-////
-////  Created by Norbert Thies on 10.09.18.
-////  Copyright © 2018 Norbert Thies. All rights reserved.
-////
-//
-//import UIKit
-//
-//fileprivate var countVC = 0
-//
-//
-//open class PageCollectionVC: UIViewController, UICollectionViewDelegate,
-//  UICollectionViewDataSource, UICollectionViewDelegateFlowLayout, UIScrollViewDelegate {
-//
-//  /// The Cell that is presented as scrollable collection view item  
-//  class PageCell: UICollectionViewCell {
-//    
-//    /// The page to display
-//    var page: OptionalView?
-//    /// The View to display
-//    var pageView: UIView? { return page?.activeView }
-//    /// Index of View in collection view
-//    var index: Int?
-//    
-//    /// Request view from provider and put it into a PageCell
-//    func update(pcvc: PageCollectionVC, idx: Int) {
-//      if let provider = pcvc.provider {
-//        if let pv = pageView { pv.removeFromSuperview() }
-//        let page = provider(idx, self.page)
-//        let isAvailable = page.isAvailable
-//        self.contentView.addSubview(page.activeView)
-//        pin(page.activeView, to: self.contentView)
-//        self.index = idx
-//        self.page = page
-//        if isAvailable { page.loadView() }
-//        else {
-//          let iPath = IndexPath(item: idx, section: 0)
-//          page.whenAvailable { pcvc.collectionView.reloadItems(at: [iPath]) }
-//        }
-//      }
-//    }
-//    
-//    override init(frame: CGRect) {
-//      super.init(frame: frame)
-//    }
-//    required init?(coder: NSCoder) {
-//      super.init(coder: coder)
-//    }
-//  } // PageCell
-//  
-//  /// The collection view displaying OptionalViews
-//  open var collectionView: UICollectionView!
-//  
-//  /// The Layout object determining the size of the cells
-//  open var cvLayout: UICollectionViewFlowLayout!
-//
-//  /// A closure providing the optional views to display
-//  open var provider: ((Int, OptionalView?)->OptionalView)? = nil
-//  
-//  /// inset from top/bottom/left/right as factor to min(width,height)
-//  open var inset = 0.025
-//
-//  // The raw cell size (without bounds)
-//  private var rawCellsize: CGSize { return self.collectionView.bounds.size }
-//  
-//  // The default margin of cells (ie. left/right/top/bottom insets)
-//  private var margin: CGFloat {
-//    let s = rawCellsize
-//    return min(s.height, s.width) * CGFloat(inset)
-//  }
-//  
-//  // The size of a cell is defined by the collection views bounds minus margins
-//  private var cellsize: CGSize {
-//    let s = rawCellsize
-//    return CGSize(width: s.width - 2*margin, height: s.height - 2*margin)
-//  }
-//  
-//  // View which is currently displayed
-//  public var currentView: OptionalView?
-//  
-//  private var _index: Int?
-//  
-//  /// Index of current view, change it to scroll to a certain cell
-//  open var index: Int? {
-//    get { return _index }
-//    set(idx) { 
-//      if let idx = idx { 
-//        _index = idx
-//        scrollto(idx)
-//        if let closure = onDisplayClosure { closure(idx) }
-//      } 
-//    }
-//  }
-//
-//  fileprivate var _count: Int = 0
-//  
-//  /// Define and change the number of views to display, will reload data
-//  open var count: Int {
-//    get { return _count }
-//    set { 
-//      _count = newValue
-//      collectionView.reloadData()
-//    }
-//  }
-//  
-//  private var reuseIdent: String = { countVC += 1; return "PageCell\(countVC)" }()
-//  
-//  public init() { super.init(nibName: nil, bundle: nil) }
-//  
-//  public required init?(coder: NSCoder) { super.init(coder: coder) }
-//
-//  fileprivate var onDisplayClosure: ((Int)->())?
-//  
-//  /// Define closure to call when a cell is newly displayed  
-//  public func onDisplay(closure: ((Int)->())?) {
-//    onDisplayClosure = closure
-//  }
-// 
-//  // updateDisplaying is called when the scrollview has been scrolled which
-//  // might have changed the view currently visible
-//  private func updateDisplaying(_ idx: Int) { 
-//    if _index != idx {
-//      _index = idx
-//      if let closure = onDisplayClosure { closure(idx) }
-//    }
-//  }
-//  
-//  /// Defines the closure which delivers the views to display
-//  open func viewProvider(provider: @escaping (Int, OptionalView?)->OptionalView) {
-//    self.provider = provider
-//  }
-// 
-//  
-//  // Scroll to the cell at position index
-//  fileprivate var isInitializing = true
-//  fileprivate var initialIndex: Int? = nil
-//  fileprivate func scrollto(_ index: Int, animated: Bool = false) {
-//    if isInitializing { initialIndex = index }
-//    else {
-//      let ipath = IndexPath(item: index, section: 0)
-//      collectionView.scrollToItem(at: ipath, at: .centeredHorizontally, animated: animated)
-//    }
-//  }
-//
-//  // MARK: - Life Cycle
-//
-//  override open func loadView() {
-//    super.loadView()
-//    cvLayout = UICollectionViewFlowLayout()
-//    cvLayout.scrollDirection = .horizontal
-//    collectionView = UICollectionView(frame: .zero, collectionViewLayout: cvLayout)
-//    let m = margin
-//    collectionView.contentInset = UIEdgeInsets(top: m, left: m, bottom: m, right: m)
-//    collectionView.backgroundColor = UIColor.white
-//    collectionView.contentInsetAdjustmentBehavior = .never
-//    self.view.addSubview(collectionView)
-//    pin(collectionView.top, to: self.view.topGuide())
-//    pin(collectionView.bottom, to: self.view.bottom)
-//    pin(collectionView.left, to: self.view.left)
-//    pin(collectionView.right, to: self.view.right)
-//    collectionView.register(PageCell.self, forCellWithReuseIdentifier: reuseIdent)
-//    collectionView.delegate = self
-//    collectionView.dataSource = self
-//    collectionView.isPagingEnabled = true
-//  }
-//  
-//  open override func viewDidLoad() {
-//    super.viewDidLoad()
-//    if count != 0 { collectionView.reloadData() }
-//  }
-//  
-//  // TODO: transition/rotation better with collectionViewLayout subclass as described in:
-//  // https://www.matrixprojects.net/p/uicollectionviewcell-dynamic-width/
-//  open override func willTransition(to newCollection: UITraitCollection, with coordinator: UIViewControllerTransitionCoordinator) {
-//    super.willTransition(to: newCollection, with: coordinator)
-//    coordinator.animate(alongsideTransition: nil) { [weak self] ctx in
-//      self?.collectionView.collectionViewLayout.invalidateLayout()
-//    }
-//  }
-//  
-//  // MARK: - UICollectionViewDataSource
-//  
-//  open func numberOfSections(in collectionView: UICollectionView) -> Int {
-//    return 1
-//  }
-//  
-//  open func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-//    return self.count
-//  }
-//  
-//  open func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-//    if let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdent,
-//                  for: indexPath) as? PageCell {
-//      let idx = indexPath.item
-//      cell.update(pcvc: self, idx: idx)
-//      if isInitializing {
-//        isInitializing = false
-//        if initialIndex! != idx { scrollto(initialIndex!) }
-//      } 
-//      return cell
-//    }
-//    return PageCell()
-//  }
-//  
-//  // MARK: - UICollectionViewDelegate
-//  
-//  // ...
-//  
-//  // MARK: - UICollectionViewDelegateFlowLayout
-//    
-//  public func collectionView(_ collectionView: UICollectionView, 
-//    layout collectionViewLayout: UICollectionViewLayout,
-//    sizeForItemAt indexPath: IndexPath) -> CGSize {
-//    return cellsize
-//  }
-//  
-//  public func collectionView(_ collectionView: UICollectionView, 
-//    layout collectionViewLayout: UICollectionViewLayout,
-//    insetForSectionAt section: Int) -> UIEdgeInsets {
-//    let m = margin
-//    return UIEdgeInsets(top: m, left: m, bottom: m, right: m)
-//  }
-//  
-//  public func collectionView(_ collectionView: UICollectionView, 
-//    layout collectionViewLayout: UICollectionViewLayout,
-//    minimumInteritemSpacingForSectionAt section: Int) -> CGFloat {
-//    return 0
-//  }
-//  
-//  public func collectionView(_ collectionView: UICollectionView, 
-//    layout collectionViewLayout: UICollectionViewLayout, 
-//    minimumLineSpacingForSectionAt section: Int) -> CGFloat {
-//    return 2*margin
-//  }
-//  
-//  // MARK: - UIScrollViewDelegate
-// 
-//  // When dragging stops, position collection view to a complete page  
-////  public func scrollViewWillEndDragging(_ scrollView: UIScrollView, 
-////    withVelocity velocity: CGPoint, 
-////    targetContentOffset: UnsafeMutablePointer<CGPoint>) {
-////    var offset = targetContentOffset.pointee
-////    let cellwidth = rawCellsize.width
-////    let idx = round((offset.x + scrollView.contentInset.left) / cellwidth)
-////    offset = CGPoint(x: idx*cellwidth - scrollView.contentInset.left,
-////                     y: scrollView.contentInset.top)
-////    targetContentOffset.pointee = offset
-////    updateDisplaying(Int(idx))
-////  }
-// 
-//  // While scrolling update page index
-//  public func scrollViewDidScroll(_ scrollView: UIScrollView) {
-//    let pageIndex = Int(round(scrollView.contentOffset.x/view.bounds.size.width))
-//    if pageIndex != _index { updateDisplaying(pageIndex) }  
-//  }
-//  
-//} // PageCollectionVC
-

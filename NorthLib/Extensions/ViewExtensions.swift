@@ -118,9 +118,19 @@ public extension UIView {
   @discardableResult
   func pinHeight(_ height: Int) -> NSLayoutConstraint { return pinHeight(CGFloat(height)) }
   
+  /// Pin size (width + height)
   @discardableResult
   func pinSize(_ size: CGSize) -> (width: NSLayoutConstraint, height: NSLayoutConstraint) { 
     return (pinWidth(size.width), pinHeight(size.height))
+  }
+  
+  /// Pin aspect ratio (width/height)
+  @discardableResult
+  func pinAspect(ratio: CGFloat) -> NSLayoutConstraint {
+    translatesAutoresizingMaskIntoConstraints = false
+    let constraint = widthAnchor.constraint(equalTo: heightAnchor, multiplier: ratio)
+    constraint.isActive = true
+    return constraint
   }
   
   static func animate(seconds: Double, delay: Double = 0, closure: @escaping ()->()) {
@@ -173,10 +183,10 @@ public func pin(_ view: UIView, to: UIView, dist: CGFloat = 0) -> (top: NSLayout
 
 /// A simple UITapGestureRecognizer wrapper
 open class TapRecognizer: UITapGestureRecognizer {  
-  private var onTapClosure: ((UITapGestureRecognizer)->())?  
+  public var onTapClosure: ((UITapGestureRecognizer)->())?  
   @objc private func handleTap(sender: UITapGestureRecognizer) { onTapClosure?(sender) }
   /// Define closure to call upon Tap
-  open func onTap(view: UIView, closure: ((UITapGestureRecognizer)->())?) { 
+  open func onTap(view: UIView, closure: @escaping (UITapGestureRecognizer)->()) { 
     view.isUserInteractionEnabled = true
     view.addGestureRecognizer(self)
     onTapClosure = closure 
@@ -188,15 +198,13 @@ open class TapRecognizer: UITapGestureRecognizer {
 }
 
 /// An view with a tap gesture recognizer attached
-public protocol Touchable {
-  var recognizer: TapRecognizer { get }
+public protocol Touchable where Self: UIView {
+  var tapRecognizer: TapRecognizer { get }
 }
 
-extension UIView {
+extension Touchable {
   /// Define closure to call upon tap
-  public func onTap(closure: ((UITapGestureRecognizer)->())?) {
-    if let tview = self as? Touchable { 
-      tview.recognizer.onTap(view: self, closure: closure)
-    }
+  public func onTap(closure: @escaping (UITapGestureRecognizer)->()) {
+    self.tapRecognizer.onTap(view: self, closure: closure)
   }
 }
