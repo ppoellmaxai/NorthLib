@@ -160,6 +160,12 @@ public extension CGPoint {
     let angle = 2*CGFloat.pi * (deg/360.0)
     self.init(length: length, angle: angle)
   }
+  
+  /// return true if the point is inside a rect
+  func inRect(_ rect: CGRect) -> Bool {
+    (x >= rect.origin.x) && (x <= rect.origin.x + rect.size.width) &&
+    (y >= rect.origin.y) && (y <= rect.origin.y + rect.size.height)
+  }
 
 } // extension CGPoint
 
@@ -169,7 +175,21 @@ public extension UIBezierPath {
   /// or anti clockwise
   func circle( _ center:CGPoint, radius:CGFloat, clockwise:Bool = true ) {
     addArc(withCenter: center, radius: radius, startAngle: 0,
-                     endAngle: 2*CGFloat.pi, clockwise: clockwise)
+           endAngle: 2*CGFloat.pi, clockwise: clockwise)
+  }
+  
+  /// draw an x-like cross at *center* with *radius* of the enclosing
+  /// circle
+  func cross(_ center: CGPoint, radius: CGFloat) {
+    let l = radius * sin(CGFloat.pi/4)
+    let upperLeft = CGPoint(x: center.x-l, y: center.y-l)
+    let upperRight = CGPoint(x: center.x+l, y: center.y-l)
+    let lowerLeft = CGPoint(x: center.x-l, y: center.y+l)
+    let lowerRight = CGPoint(x: center.x+l, y: center.y+l)
+    move(to: upperRight)
+    addLine(to: lowerLeft)
+    move(to: upperLeft)
+    addLine(to: lowerRight)
   }
   
   /**
