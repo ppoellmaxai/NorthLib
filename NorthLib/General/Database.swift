@@ -53,8 +53,11 @@ open class Database: DoesLog {
     queue.async { [weak self] in
       guard let self = self else { return }
       do {
+        // let's do lightweight migration if possible
+        let options = [NSMigratePersistentStoresAutomaticallyOption: true, 
+                       NSInferMappingModelAutomaticallyOption: true]
         try self.coordinator.addPersistentStore(ofType: NSSQLiteStoreType, 
-                  configurationName: nil, at: dbURL, options: nil)
+                  configurationName: nil, at: dbURL, options: options)
         DispatchQueue.main.sync { closure(nil) }
       }
       catch let err {
