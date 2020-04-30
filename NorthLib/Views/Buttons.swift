@@ -1038,6 +1038,51 @@ open class ContentsTableView: ButtonView {
   
 } // class ContentsTableView
 
+/**
+  XCircleView displays an X optionally in a circle
+*/
+
+@IBDesignable
+open class CircledXView: ButtonView {
+
+  /// Draw circle around the X?
+  open var isCircle = true
+  /// Fill color of circle
+  open var circleColor = UIColor.clear
+  /// Draw cross in inner circle which radius is radius of 
+  /// outer circle * innerCircleFactor
+  open var innerCircleFactor: CGFloat = 0.8
+  
+  override open func setup() {
+    super.setup()
+  }
+  
+  override open func draw(_ rect: CGRect) {
+    let w = bounds.size.width, 
+        lw = (lineWidth+0.02) * w,
+        center = convert(self.center, from: self.superview),
+        radius = (w - 2*hinset - 2*lw)/2
+    let path = UIBezierPath()
+    path.lineWidth = lw
+    path.lineJoinStyle = .miter
+    strokeColor.setStroke()
+    if isCircle {
+      path.circle(center, radius: radius)
+      circleColor.setFill()
+      path.fill()
+      if circleColor == UIColor.clear {
+        strokeColor.setStroke()
+        path.stroke()        
+      }
+      path.removeAllPoints()
+    }
+    path.cross(center, radius: radius*innerCircleFactor)
+    strokeColor.setStroke()
+    path.stroke()
+  }
+  
+} // class CircledXView
+
 
 /**
   FlipFlopView drawing either a stylized
