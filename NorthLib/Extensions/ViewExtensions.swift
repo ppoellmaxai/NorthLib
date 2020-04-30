@@ -181,6 +181,17 @@ public func pin(_ view: UIView, to: UIView, dist: CGFloat = 0) -> (top: NSLayout
   return (top, bottom, left, right)
 }
 
+/// Pin all edges of one view to the edges of another view's safe layout guide
+@discardableResult
+public func pin(_ view: UIView, toSafe: UIView, dist: CGFloat = 0) -> (top: NSLayoutConstraint, 
+  bottom: NSLayoutConstraint, left: NSLayoutConstraint, right: NSLayoutConstraint) {
+  let top = pin(view.top, to: toSafe.topGuide(), dist: dist)
+  let bottom = pin(view.bottom, to: toSafe.bottomGuide(), dist: -dist)
+  let left = pin(view.left, to: toSafe.leftGuide(), dist: dist)
+  let right = pin(view.right, to: toSafe.rightGuide(), dist: -dist)
+  return (top, bottom, left, right)
+}
+
 /// A simple UITapGestureRecognizer wrapper
 open class TapRecognizer: UITapGestureRecognizer {  
   public var onTapClosure: ((UITapGestureRecognizer)->())?  
