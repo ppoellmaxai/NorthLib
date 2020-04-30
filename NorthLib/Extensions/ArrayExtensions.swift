@@ -30,7 +30,7 @@ public extension Array {
   }
   
   /// appends one element at the end
-  mutating func push(elem: Element) { self.append(elem) }  
+  mutating func push(_ elem: Element) { self.append(elem) }  
   
   /// rotates elements clockwise (n >0) or anti clockwise (n<0)
   func rotated(_ n: Int) -> Array {

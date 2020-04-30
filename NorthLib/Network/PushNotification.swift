@@ -280,7 +280,7 @@ open class PushNotification: NSObject, UNUserNotificationCenterDelegate, DoesLog
   
 } // PushNotification
 
-/// This is not the real status bar, it's a scrollview that resides below 
+/// This is not the real status bar, it's a scrollview that resides beneath 
 /// the status bar of the same dimensions. It is used to detect status bar
 /// touches.
 open class StatusBar: UIScrollView, UIScrollViewDelegate, HandleOrientation {

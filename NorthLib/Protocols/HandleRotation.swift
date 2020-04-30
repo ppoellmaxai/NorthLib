@@ -27,8 +27,8 @@ import Foundation
         selector: #selector(orientationChangedNotification),
         name: UIDevice.orientationDidChangeNotification, object: nil)
     }
-    else if let closure = orientationChangedClosure {
-      NotificationCenter.default.removeObserver(closure)
+    else if orientationChangedClosure != nil {
+      NotificationCenter.default.removeObserver(self)
     }
     orientationChangedClosure = closure 
   }
