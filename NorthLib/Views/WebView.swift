@@ -95,26 +95,48 @@ open class WebView: WKWebView, WKScriptMessageHandler, UIScrollViewDelegate {
   public var originalUrl: URL?
   
   // The closure to call when content scrolled more than _scrollRatio
-  private var _whenScrolled: ((CGFloat)->())?
-  private var _scrollRatio: CGFloat = 0
+  private var whenScrolledClosure: ((CGFloat)->())?
+  private var scrollRatio: CGFloat = 0
   
   /// Define closure to call when web content has been scrolled
   public func whenScrolled( minRatio: CGFloat, _ closure: @escaping (CGFloat)->() ) {
-    _scrollRatio = minRatio
-    _whenScrolled = closure
+    scrollRatio = minRatio
+    whenScrolledClosure = closure
   }
   
   // The closure to call when some dragging (scrolling) has been done
-  private var _whenDragged: ((CGFloat)->())?
+  private var whenDraggedClosure: ((CGFloat)->())?
 
   /// Define closure to call when web content has been dragged, the value passed
   /// is the number of points scrolled down divided by the content's height
   public func whenDragged(closure: @escaping (CGFloat)->()) {
-    _whenDragged = closure
+    whenDraggedClosure = closure
   }
   
   // content y offset at start of dragging
   private var startDragging: CGFloat?
+  
+  /// Define closure to call when the end of the web content will become 
+  /// visible
+  public func atEndOfContent(closure: @escaping (Bool)->()) {
+    atEndOfContentClosure = closure
+  }
+  
+  // end of content closure
+  private var atEndOfContentClosure: ((Bool)->())?
+  
+  /// Returns true if the end of the content is visible
+  /// (in vertical direction)
+  public var isAtEndOfContent: Bool {
+    return isAtEndOfContent(offset: scrollView.contentOffset.y)
+  }
+
+  /// Returns true if at a given offset the end of the content is visible
+  /// (in vertical direction)
+  public func isAtEndOfContent(offset: CGFloat) -> Bool {
+    let end = scrollView.contentSize.height
+    return (offset + bounds.size.height) >= end
+  }
   
   /// jsexec executes the passed string as JavaScript expression using
   /// evaluateJavaScript, if a closure is given, it is only called when
@@ -175,8 +197,10 @@ open class WebView: WKWebView, WKScriptMessageHandler, UIScrollViewDelegate {
   public func setup() {
   }
   
-  override public init(frame: CGRect, configuration: WKWebViewConfiguration) {
-    super.init(frame: frame, configuration: configuration)
+  override public init(frame: CGRect, configuration: WKWebViewConfiguration? = nil) {
+    var config = configuration
+    if config == nil { config = WKWebViewConfiguration() }
+    super.init(frame: frame, configuration: config!)
     setup()
   }
   
@@ -216,15 +240,155 @@ open class WebView: WKWebView, WKScriptMessageHandler, UIScrollViewDelegate {
     if let sd = startDragging {
       let scrolled = sd-scrollView.contentOffset.y
       let ratio = scrolled / scrollView.bounds.size.height
-      if let closure = _whenScrolled, abs(ratio) >= _scrollRatio {
+      if let closure = whenScrolledClosure, abs(ratio) >= scrollRatio {
         closure(ratio)
       }
     }
     startDragging = nil
-    if let closure = _whenDragged {
+    if let closure = whenDraggedClosure {
       let ratio = scrollView.contentOffset.y / scrollView.contentSize.height
       closure(ratio)
     }
   }
   
+  // When dragging stops, check whether the end of content is visible  
+  public func scrollViewWillEndDragging(_ scrollView: UIScrollView, 
+    withVelocity velocity: CGPoint, 
+    targetContentOffset: UnsafeMutablePointer<CGPoint>) {
+    if let closure = atEndOfContentClosure {
+      let offset = targetContentOffset.pointee.y
+      closure(isAtEndOfContent(offset: offset))
+    }
+  }
+
+  
 } // class WebView
+
+/**
+ An embedded WebView with a button at the bottom which is displayed when the 
+ WebView has been scrolled to its vertical end. In addition a cross (or X) button 
+ can be displayed using the "onX"-Method to define a closure that is called when 
+ the X-Button has been pressed.
+ */
+open class ButtonedWebView: UIView {
+  
+  public class LabelButton: UIView, Touchable {
+    public var tapRecognizer = TapRecognizer()
+    public var label = UILabel()
+    private var bwv: ButtonedWebView!
+    public var text: String? { 
+      get { label.text }
+      set { label.text = newValue; bwv.adaptLayoutConstraints() }     
+    }
+    public var textColor: UIColor {
+      get { label.textColor }
+      set { label.textColor = newValue }
+    }
+    public var font: UIFont {
+      get { label.font }
+      set { label.font = newValue }
+    }
+    public var hasContent: Bool { text != nil }
+    init(bwv: ButtonedWebView) {
+      self.bwv = bwv
+      super.init(frame: CGRect())
+      self.addSubview(label)
+      self.isUserInteractionEnabled = true
+      label.backgroundColor = .clear
+      pin(label.centerX, to: self.centerX)
+      pin(label.centerY, to: self.centerY)
+      pinHeight(50)
+      pinWidth(250)
+    }    
+    required init?(coder: NSCoder) { super.init(coder: coder) }
+  } 
+  
+  public var webView = WebView()
+  /// The label acting as a button
+  public lazy var buttonLabel = LabelButton(bwv: self)
+  /// The X-Button (may be used to close the webview)
+  public lazy var xButton = Button<CircledXView>()
+  /// Distance between button and bottom as well as button and webview
+  public var buttonMargin: CGFloat = 8 { didSet { adaptLayoutConstraints() } }
+  private var isButtonVisible = false
+  
+  private var buttonBottomConstraint: NSLayoutConstraint?
+  private var webViewBottomConstraint: NSLayoutConstraint?
+  
+  private var tapClosure: ((String)->())?
+  private var xClosure: (()->())?
+  
+  /// This closure is called when the buttonLabel has been pressed
+  public func onTap(closure: @escaping (String)->()) { tapClosure = closure }
+  /// This closure is called when the X-Button has been pressed
+  public func onX(closure: @escaping ()->()) {
+    xClosure = closure
+    xButton.isHidden = false
+    xButton.onPress {_ in
+      self.xClosure?()
+    }
+  }
+  
+  private func adaptLayoutConstraints() {
+    let willShow = buttonLabel.hasContent && isButtonVisible
+    let buttonDist = willShow ? -buttonMargin : buttonLabel.frame.height
+    let webViewDist = willShow ? -buttonMargin : 0
+    buttonBottomConstraint?.isActive = false
+    webViewBottomConstraint?.isActive = false
+    buttonBottomConstraint = pin(buttonLabel.bottom, to: self.bottom, dist: buttonDist)
+    webViewBottomConstraint = pin(webView.bottom, to: buttonLabel.top, dist: webViewDist)
+    layoutIfNeeded()
+  }  
+  
+  private func adaptLayout(animated: Bool = false) {
+    if animated {
+      UIView.animate(seconds: 0.5) { [weak self] in 
+        self?.adaptLayoutConstraints()
+      }
+    } 
+    else { adaptLayoutConstraints() }
+  }
+  
+  private func setup() {
+    self.backgroundColor = .white
+    self.addSubview(webView)
+    self.addSubview(buttonLabel)
+    self.addSubview(xButton)
+    pin(webView.top, to: self.top)
+    pin(webView.left, to: self.left)
+    pin(webView.right, to: self.right)
+    pin(buttonLabel.centerX, to: self.centerX)
+    pin(xButton.right, to: self.right, dist: -15)
+    pin(xButton.top, to: self.top, dist: 50)
+    xButton.pinHeight(35)
+    xButton.pinWidth(35)
+    xButton.color = .black
+    xButton.buttonView.isCircle = true
+    xButton.buttonView.circleColor = UIColor.rgb(0xdddddd)
+    xButton.buttonView.color = UIColor.rgb(0x707070)
+    xButton.buttonView.innerCircleFactor = 0.5
+    xButton.isHidden = true
+    webView.atEndOfContent { [weak self] isAtEnd in
+      guard let self = self else { return }
+      if self.isButtonVisible != isAtEnd {
+        self.isButtonVisible = isAtEnd
+        self.adaptLayout(animated: true)
+      }
+    }
+    buttonLabel.onTap { recog in self.tapClosure?(self.buttonLabel.text!) }
+  }
+  
+  public override init(frame: CGRect) {
+    super.init(frame: frame)
+    setup()
+  }
+  
+  public required init?(coder: NSCoder) {
+    super.init(coder: coder)
+    setup()
+  }
+  
+  public override func layoutSubviews() {
+    adaptLayoutConstraints()
+  }
+}
