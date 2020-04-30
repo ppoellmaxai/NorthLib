@@ -221,6 +221,7 @@ open class File: DoesLog {
       if dest.exists { dest.remove() }
     }
     do {
+      Dir(File.dirname(to)).create()
       try FileManager.default.copyItem(atPath: path, toPath: to)
       if hasStat { stat_write(&_status!, to.cstr) }
     }
@@ -235,6 +236,7 @@ open class File: DoesLog {
       if dest.exists { dest.remove() }
     }
     do {
+      Dir(File.dirname(to)).create()
       try FileManager.default.moveItem(atPath: path, toPath: to)
       if hasStat { stat_write(&_status!, to.cstr) }
     }
@@ -279,7 +281,7 @@ open class Dir: File {
     return super.exists && super.isDir
   }
   
-  /// Create directory at given path, not exist. parent dirs are created as well
+  /// Create directory at given path, if not existing. Parent dirs are created as well
   public func create(mode: Int = 0o777) {
     guard !exists else { return }
     var st: stat_t = stat()
