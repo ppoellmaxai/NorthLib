@@ -96,6 +96,7 @@ public class Log {
     public var funcName: String
     public var line: Int
     public var message: String?
+    public var onMainThread: Bool
     
     public var fileBaseName: String { return (fileName as NSString).lastPathComponent }
     public var id: String { return "\(fileBaseName):\(line)" }
@@ -111,6 +112,7 @@ public class Log {
       self.funcName = funcName
       self.line = line
       self.message = message
+      self.onMainThread = Thread.isMainThread
       Message.countQueue.sync { [weak self] in
         Message._messageCount += 1
         self?.serialNumber = Message._messageCount
@@ -119,14 +121,15 @@ public class Log {
     
     public convenience init( level: LogLevel, object: Any?, fileName: String, funcName: String,
                              line: Int, message: String? ) {
-      self.init( level: level, className: Log.class2s(object), fileName: fileName, funcName: funcName,
-                 line: line, message: message )
+      self.init( level: level, className: Log.class2s(object), fileName: fileName, 
+                 funcName: funcName, line: line, message: message )
     }
     
     /// toString returns a minimalistic string representing the current message
     public func toString() -> String {
       let t = tstamp.date.components()
-      var s = String( format: "(%02d %02d:%02d:%02d) ", serialNumber, t.hour!,
+      var s = String( format: "(%@:%02d %02d:%02d:%02d) ", 
+                      onMainThread ? "M" : "T",serialNumber, t.hour!,
                       t.minute!, t.second! )
       if let cn = className { s += cn + "." }
       s += "\(funcName) \(logLevel)"
