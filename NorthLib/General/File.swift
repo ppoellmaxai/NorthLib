@@ -162,8 +162,11 @@ open class File: DoesLog {
   
   /// Returns the contents of the file (if it is an existing file)
   public var data: Data { 
-    guard exists && isFile else { return Data() }
-    return try! Data(contentsOf: url) 
+    get {
+      guard exists && isFile else { return Data() }
+      return try! Data(contentsOf: url) 
+    }
+    set (data) { try! data.write(to: url) }
   }
   
   /// Returns the contents of the file as String (if it is an existing file)
