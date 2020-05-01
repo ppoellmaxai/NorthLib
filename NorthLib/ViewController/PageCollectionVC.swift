@@ -194,7 +194,7 @@ open class PageCollectionVC: UIViewController, UICollectionViewDelegate,
                   for: indexPath) as? PageCell {
       let idx = indexPath.item
       cell.update(pcvc: self, idx: idx)
-      if isInitializing {
+      if isInitializing && initialIndex != nil {
         isInitializing = false
         if initialIndex! != idx { scrollto(initialIndex!) }
       } 
