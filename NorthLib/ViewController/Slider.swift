@@ -351,7 +351,7 @@ open class ButtonSlider: Slider {
     }
   }
   public var button = UIButton(type: .custom)
-  public var buttonAlpha: CGFloat = 0.9 {
+  public var buttonAlpha: CGFloat = 1.0 {
     didSet { button.alpha = buttonAlpha }
   }
   public var shiftRatio: CGFloat = 0.1 { didSet { resetConstraints() } }
