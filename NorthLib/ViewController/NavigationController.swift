@@ -73,6 +73,13 @@ open class NavigationController: UINavigationController, UIGestureRecognizerDele
     }
   }
   
+  /// Replace the top view controller
+  public func replaceTopViewController(with vc: UIViewController, animated: Bool) {
+    var vcs = viewControllers
+    vcs[vcs.count - 1] = vc
+    setViewControllers(vcs, animated: animated)
+  }
+
   // UIGestureRecognizerDelegate protocol
   public func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldBeRequiredToFailBy otherGestureRecognizer: UIGestureRecognizer) -> Bool {
     return isEdgeDetection || isPopViewController
@@ -88,4 +95,4 @@ open class NavigationController: UINavigationController, UIGestureRecognizerDele
     return true
   }
   
-}
+} // NavigationController
