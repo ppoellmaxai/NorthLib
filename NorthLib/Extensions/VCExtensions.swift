@@ -123,5 +123,29 @@ public extension UIViewController {
    Returns true if the view controller is visible
    */
    var isVisible: Bool { return viewIfLoaded?.window != nil }
+
+  /**
+   Present a view controller at a certain view or at the view of the top level 
+   view controller
+   */
+  func presentAt(_ view: UIView? = nil) {
+    var v: UIView
+    var vc: UIViewController
+    var rect: CGRect
+    if view != nil { 
+      v = view!
+      if let pvc = v.parentViewController { vc = pvc }
+      else { return }
+      rect = CGRect(x: v.bounds.size.width/2, y: v.bounds.size.height-2, width: 1, height: 1)
+    }
+    else {
+      vc = UIViewController.top()!
+      v = vc.view
+      rect = CGRect(x: v.bounds.size.width/2, y: 20, width: 1, height: 1)
+    }
+    self.popoverPresentationController?.sourceView = v
+    self.popoverPresentationController?.sourceRect = rect
+    vc.present(self, animated: true, completion: nil)
+  }
   
 } // extension UIViewController

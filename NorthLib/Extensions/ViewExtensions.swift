@@ -9,6 +9,13 @@
 
 import UIKit
 
+/// Find view controller of given UIView: UIResponder
+public extension UIResponder {
+  var parentViewController: UIViewController? {
+    return next as? UIViewController ?? next?.parentViewController
+  }
+}
+
 /// A CALayer extension to produce a snapshot
 public extension CALayer {
   /// Returns snapshot of current layer as UIImage
