@@ -328,6 +328,7 @@ open class ButtonControl: UIControl {
     view?.frame = bounds
     view?.isUserInteractionEnabled = false
     addSubview(view!)
+    pin(view!, to: self)
     addTarget(self, action: #selector(self.buttonPressed), for: .touchUpInside)
   }
   
@@ -1187,6 +1188,62 @@ open class ImportView: ExportView {
 
 
 /**
+  ButtonView displaying an Image. 
+*/
+@IBDesignable
+open class ImageView: ButtonView {
+
+  open var imageView = UIImageView()
+  
+  private var aspectConstraint: NSLayoutConstraint?
+  private var widthConstraint: NSLayoutConstraint?
+  
+  open var image: UIImage? {
+    get { imageView.image }
+    set (img) { 
+      imageView.image = img 
+      aspectConstraint?.isActive = false
+      if let img = img {
+        aspectConstraint = imageView.pinAspect(ratio: img.size.width/img.size.height)
+        imageView.tintColor = strokeColor
+      }
+    }
+  }
+  
+  open var symbol: String? {
+    didSet {
+      if let sym = symbol {
+        if #available(iOS 13.0, *) {
+          self.image = UIImage(systemName: sym)
+        } else {
+          // Fallback on earlier versions
+        }
+      }
+    }
+  }
+  
+  open override var color: UIColor {
+    didSet { imageView.tintColor = strokeColor }
+  }
+    
+  override open func setup() {
+    super.setup()
+    addSubview(imageView)
+    pin(imageView.centerX, to: self.centerX)
+    pin(imageView.centerY, to: self.centerY)
+  }
+    
+  override open func layoutSubviews() {
+    super.layoutSubviews()
+    let w = bounds.size.width * (1-2*hinset)
+    widthConstraint?.isActive = false
+    widthConstraint = imageView.pinWidth(w)
+  }
+  
+} // class ImageView
+
+
+/**
   ButtonView drawing text into a UILabel that just fits the bounds minus insets.
  
   A TextView puts the given text into a UILabel that just fits the bounds of
@@ -1206,8 +1263,17 @@ open class TextView: ButtonView {
   @IBInspectable
   open var text: String? {
     get { return label.text }
-    set { label.text = newValue }
+    set { label.text = newValue; layoutIfNeeded() }
   }
+  
+  @IBInspectable
+  open var font: UIFont {
+    get { return label.font }
+    set { 
+      label.adjustsFontSizeToFitWidth = false
+      label.font = newValue; layoutIfNeeded() 
+    }
+  }  
   
   override open func setup() {
     super.setup()
