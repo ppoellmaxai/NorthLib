@@ -196,6 +196,7 @@ open class CarouselView: UICollectionView, UICollectionViewDelegate,
   fileprivate var _index: Int?
   fileprivate var isInitialized = false
   fileprivate var initialIndex: Int? = nil
+  fileprivate var collectionViewInitialized = false
   
   // initialize with initialIndex when scroll view is ready
   fileprivate func initialize(_ itemIndex: Int? = nil) {
@@ -245,9 +246,11 @@ open class CarouselView: UICollectionView, UICollectionViewDelegate,
   
   /// Insert a new page at (in front of) a given index
   open func insert(at idx: Int) {
-    let ipath = IndexPath(item: idx, section: 0)
     _count += 1
-    insertItems(at: [ipath])
+    if collectionViewInitialized {
+      let ipath = IndexPath(item: idx, section: 0)
+      insertItems(at: [ipath])
+    }
   }
   
   /// Reload a single view
@@ -287,6 +290,7 @@ open class CarouselView: UICollectionView, UICollectionViewDelegate,
   
   open func collectionView(_ collectionView: UICollectionView, 
     numberOfItemsInSection section: Int) -> Int {
+    collectionViewInitialized = true
     return self.count
   }
   

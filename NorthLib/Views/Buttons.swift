@@ -1222,6 +1222,14 @@ open class ImageView: ButtonView {
     }
   }
   
+  open var name: String? {
+    didSet {
+      if let name = name {
+        self.image = UIImage(named: name)
+      }
+    }
+  }
+
   open override var color: UIColor {
     didSet { imageView.tintColor = strokeColor }
   }
