@@ -37,7 +37,12 @@ public extension Date {
   
 } // extension Date
 
-/// Time as seconds and microseconds since 1970-01-01 00:00:00 UTC
+/**
+ Time as seconds and microseconds since 1970-01-01 00:00:00 UTC
+ 
+ This class is a simple wrapper around the timeval() library function and provides
+ some integration with class Date.
+ */ 
 public struct UsTime: Comparable, ToString, DoesLog {
   
   private var tv = timeval()

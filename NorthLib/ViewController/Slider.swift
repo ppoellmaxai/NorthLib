@@ -355,8 +355,9 @@ open class ButtonSlider: Slider {
     didSet { button.alpha = buttonAlpha }
   }
   public var shiftRatio: CGFloat = 0.1 { didSet { resetConstraints() } }
-  public var shift: CGFloat { return (image?.size.width ?? 0) * shiftRatio }
-  public var topInset: CGFloat = 7 { didSet { resetConstraints() } }
+  public var shift: CGFloat { (image?.size.width ?? 0) * shiftRatio }
+  public var visibleButtonWidth: CGFloat { (image?.size.width ?? 0) * (1-shiftRatio) }
+  public var topInset: CGFloat = 10 { didSet { resetConstraints() } }
   public override var fromLeft: Bool { didSet { resetConstraints() } }
   
   public lazy var leadingButtonConstraint: NSLayoutConstraint =

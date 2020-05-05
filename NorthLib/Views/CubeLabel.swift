@@ -18,6 +18,12 @@ open class CubeLabel: UILabel, Touchable {
     set { cubeTransition(text: newValue, isUp: scrollUp) }
   }
   
+  /// The label's text without rotation
+  open var pureText: String? {
+    get { return super.text }
+    set { super.text = newValue }
+  }
+  
   /// Define text and scroll direction
   public func setText(_ text: String?, isUp: Bool) 
     { cubeTransition(text: text, isUp: isUp) }
@@ -39,7 +45,7 @@ open class CubeLabel: UILabel, Touchable {
     newLabel.textAlignment = self.textAlignment
     newLabel.textColor = self.textColor
     newLabel.backgroundColor = self.backgroundColor
-    let direction: CGFloat = isUp ? 1 : -1
+    let direction: CGFloat = isUp ? -1 : 1
     let offset = (self.frame.size.height/2) * direction
     newLabel.transform = CGAffineTransform(translationX: 0.0, y: offset).scaledBy(x: 1.0, y: 0.1)
     self.superview?.addSubview(newLabel)
