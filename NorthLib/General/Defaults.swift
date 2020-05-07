@@ -81,7 +81,7 @@ open class Defaults: NSObject {
       self.scope = scope
       super.init()
     }
-    private static let name = NSNotification.Name(rawValue: "Defaults.Notification")
+    public static let name = NSNotification.Name(rawValue: "Defaults.Notification")
     static func send( _ key: String, _ val: String?, _ scope: String? ) {
       NotificationCenter.default.post( name: Notification.name,
         object: Notification(key: key, val: val, scope: scope) )
@@ -97,6 +97,22 @@ open class Defaults: NSObject {
     static func removeObserver( _ observer: Any ) {
       NotificationCenter.default.removeObserver(observer)
     }
+  }
+  
+  public typealias Observer = NSObjectProtocol?
+
+  /// Receive Defaults change notification
+  @discardableResult
+  public static func receive(closure: @escaping (Defaults.Notification)->()) 
+    -> Observer {
+    let nn = Notification.name
+    let observer = NotificationCenter.default.addObserver(forName: nn, 
+                     object: nil, queue: nil) { notification in
+      if let dnfc = notification.object as? Defaults.Notification {
+        closure(dnfc)
+      }
+    }
+    return observer
   }
   
   /// The Values class used to set a dictionary of key/values
