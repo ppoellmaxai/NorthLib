@@ -391,7 +391,7 @@ open class HttpSession: NSObject, URLSessionDelegate, URLSessionTaskDelegate, UR
       req.httpMethod = "GET"
       let task = session.downloadTask(with: req)
       Dir(toDir).create()
-      createJob(task: task, filename: toFile.path) { (job) in
+      createJob(task: task, filename: toFile.path) { [weak self] job in
         if job.wasError { closure(.failure(job.httpError!)) }
         else { 
           var err: Error? = nil
@@ -401,7 +401,10 @@ open class HttpSession: NSObject, URLSessionDelegate, URLSessionTaskDelegate, UR
           else if toFile.sha256 != file.sha256
             { err = HttpError.invalidSHA256(toFile.sha256) }
           else { closure(.success(job)) }
-          if let err = err { closure(.failure(err)) }
+          if let err = err { 
+            self?.error(err)
+            closure(.failure(err)) 
+          }
         }
       }
     }
@@ -438,14 +441,15 @@ open class HttpSession: NSObject, URLSessionDelegate, URLSessionTaskDelegate, UR
   public func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError completionError: Swift.Error?) {
     let tid = task.taskIdentifier
     var err = completionError
-    if err != nil { 
-      if let resp = task.response as? HTTPURLResponse {
-        let statusCode = resp.statusCode
-        if !(200...299).contains(statusCode) {
-          err = HttpError.serverError(statusCode)
-        }
+    if let resp = task.response as? HTTPURLResponse {
+      let statusCode = resp.statusCode
+      if !(200...299).contains(statusCode) {
+        err = HttpError.serverError(statusCode)
       }
-      error(err!)
+    }
+    if err != nil { 
+      error("Task \(tid): Download failed.")
+      error(err!) 
     }
     else { debug("Task \(tid): Finished data transfer successfully") }
     closeJob(tid: tid, error: err)
