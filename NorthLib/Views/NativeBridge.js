@@ -47,8 +47,8 @@ class NativeBridge {
 
 }  // class NativeBridge
 
-var Test = new NativeBridge("Test")
-
-Test.f1 = function() { Test.call("testf1", Test.f3) }
-Test.f2 = function() { Test.call("testf2", Test.f3) }
-Test.f3 = function(arg) { console.log("called back: ", arg) }
+//var Test = new NativeBridge("Test")
+//
+//Test.f1 = function() { Test.call("testf1", Test.f3) }
+//Test.f2 = function() { Test.call("testf2", Test.f3) }
+//Test.f3 = function(arg) { console.log("called back: ", arg) }

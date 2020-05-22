@@ -87,10 +87,10 @@ open class WebViewCollectionVC: PageCollectionVC, WKUIDelegate,
   public var currentWebView: WebView? { return currentView?.activeView as? WebView }
   
   // The closure to call when link is pressed
-  private var _whenLinkPressed: ((URL,URL)->())?
+  private var _whenLinkPressed: ((URL?,URL?)->())?
   
   /// Define closure to call when link is pressed
-  public func whenLinkPressed( _ closure: @escaping (URL,URL)->() ) {
+  public func whenLinkPressed( _ closure: @escaping (URL?,URL?)->() ) {
     _whenLinkPressed = closure
   }
   
@@ -202,18 +202,17 @@ open class WebViewCollectionVC: PageCollectionVC, WKUIDelegate,
   
   public func webView(_ webView: WKWebView, decidePolicyFor nav: WKNavigationAction,
                       decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
-    //debug("\(nav.toString())")
-    if let url = nav.request.url {
-      let type = nav.navigationType
-      if type == .linkActivated {
-        if let closure = _whenLinkPressed { 
-          closure(webView.url!, url) 
-          decisionHandler(.cancel)
-          return
+    if let wv = webView as? WebView {
+      let from = wv.originalUrl?.absoluteString
+      let to = nav.request.description
+      if from != to {
+        if let closure = _whenLinkPressed {
+          closure(wv.originalUrl, URL(string: to)) 
         }
+        decisionHandler(.cancel)
       }
+      else { decisionHandler(.allow) }
     }
-    decisionHandler(.allow)
   }
   
 //  override public func scrollViewDidScroll(_ scrollView: UIScrollView) {
