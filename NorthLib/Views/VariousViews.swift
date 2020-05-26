@@ -36,7 +36,7 @@ open class UndefinedView: UIView {
   }
 }
 
-/// A view consisting of a main view that is usually to show and a so called
+/// A view consisting of a main view that is intended to be shown and a so called
 /// waiting view that is presented until the main view is available (eg. loaded
 /// from the internet)
 public protocol OptionalView {
