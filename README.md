@@ -8,4 +8,4 @@ Norbert Thies, norbert@taz.de
 
 ## License
 
-NorthLib is available under the AGPL. See the LICENSE file for more info.
+NorthLib is available under the LGPL. See the LICENSE file for more info.
