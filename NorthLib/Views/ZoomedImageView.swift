@@ -186,5 +186,7 @@ extension ZoomedImageView: UIScrollViewDelegate{
       || scrollView.frame.size.height > scrollView.contentSize.height {
       centerImageInScrollView(animated: true)
     }
+    //ensure scrolling is enabled due pinch-zoom
+    scrollView.isScrollEnabled = true
   }
 }
