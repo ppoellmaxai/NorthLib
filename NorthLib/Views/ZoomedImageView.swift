@@ -12,21 +12,23 @@ public class OptionalImageItem: OptionalImage{
   private var availableClosure: (()->())?
   public var image: UIImage?{
     didSet {
-      self.availableClosure?()
+      availableClosure?()
     }
   }
   public var waitingImage: UIImage
-
+  
   public func whenAvailable(closure: @escaping ()->()) {
     availableClosure = closure
   }
-
+  
   public required init(waitingImage: UIImage) {
     self.waitingImage = waitingImage
   }
 }
 
-open class ZoomedImageView: UIView, UIScrollViewDelegate, ZoomedImageViewSpec {
+// MARK: -
+open class ZoomedImageView: UIView, ZoomedImageViewSpec {
+  private var initiallyCenteredImage = false
   public private(set) var scrollView: UIScrollView = UIScrollView()
   public private(set) var imageView: UIImageView = UIImageView()
   public private(set) var optionalImage: OptionalImage
@@ -37,13 +39,13 @@ open class ZoomedImageView: UIView, UIScrollViewDelegate, ZoomedImageViewSpec {
   public required init(optionalImage: OptionalImage) {
     self.optionalImage = optionalImage
     super.init(frame: CGRect.zero)
-    self.setup()
+    setup()
   }
   
   override public init(frame: CGRect) {
     fatalError("init(frame:) has not been implemented");
   }
-
+  
   public required init?(coder aDecoder: NSCoder) {
     fatalError("init(coder:) has not been implemented");
   }
@@ -52,171 +54,137 @@ open class ZoomedImageView: UIView, UIScrollViewDelegate, ZoomedImageViewSpec {
     menu.addMenuItem(title: title, icon: icon, closure: closure)
   }
   
-  public func viewForZooming(in scrollView: UIScrollView) -> UIView? {
-      return imageView
+  override public func layoutSubviews() {
+    super.layoutSubviews()
+    //Wenn 1:1 war dann nichts sonnst center? reset zoom
+    if initiallyCenteredImage == false {
+      initiallyCenteredImage = true
+      centerImageInScrollView(animated: false)
+    } else if scrollView.zoomScale != 1.0 {
+      centerImageInScrollView(animated: false)
+    }
   }
-  
-  // Handles a double tap by either resetting the zoom or zooming to where was tapped
+}
+
+// MARK: Handler
+extension ZoomedImageView{
   @objc func handleDoubleTap(sender : Any) {
-      guard let gestureRecognizer = sender as? UITapGestureRecognizer else {
-        return
-      }
-    
-    //Do not allow zoom on preview image
-    if self.optionalImage.isAvailable == false {
+    guard let tapR = sender as? UITapGestureRecognizer else {
       return
     }
-    if scrollView.zoomScale == 1 {
-      print("zoom Out")
-//      let targetRect = zoomRectForScale(1, center: CGPoint.zero)
-//      let targetRect2 = CGRect(origin: CGPoint(x:0.0, y:-216.3125), size: targetRect.size)
-//      scrollView.rect
-//       scrollView.zoom(to: targetRect2, animated: true)
-//     scrollView.setZoomScale(<#T##scale: CGFloat##CGFloat#>, animated: <#T##Bool#>)
-//     scrollView.setContentOffset(centerPoint, animated: animated)
-      //works but ugly
-      scrollView.zoom(to: zoomRectForScale(1, center: gestureRecognizer.location(in: gestureRecognizer.view)), animated: true)
-        self.centerImageInScrollView(animated: true)
-      } else {
-        print("zoom In")
-        scrollView.setZoomScale(1, animated: true)
+    //Do not allow zoom on preview image
+    if optionalImage.isAvailable == false {
+      return
+    }
+    //Zoom Out if current zoom is maximum zoom
+    if scrollView.zoomScale == scrollView.maximumZoomScale {
+      
+      scrollView.setZoomScale(scrollView.minimumZoomScale,
+                              animated: true)
+      scrollView.isScrollEnabled = false
+      centerImageInScrollView(animated: true)
+      
+    }
+      //Otherwise Zoom Out in to tap loacation
+    else {
+      let tapLocation = tapR.location(in: tapR.view)
+      let newCenter = imageView.convert(tapLocation, from: scrollView)
+      let zoomRect = CGRect(origin: newCenter, size: CGSize(width: 1, height: 1))
+      scrollView.zoom(to: zoomRect,
+                      animated: true)
+      scrollView.isScrollEnabled = true
+    }
+  }
+}
+
+// MARK: Setup
+extension ZoomedImageView{
+  
+  func setup() {
+    setupScrollView()
+    setupXButton()
+    setupSpinner()
+    setupGestureRecognizer()
+    setupImage()
+  }
+  
+  func setupImage() {
+    if optionalImage.isAvailable, let detailImage = optionalImage.image {
+      setImage(detailImage)
+    }
+    else {
+      //show waitingImage if detailImage is not available yet
+      setImage(optionalImage.waitingImage)
+      
+      //img is bigger/smaller //center max width /scale factor???
+      optionalImage.whenAvailable {
+        if let img = self.optionalImage.image {
+          self.setImage(img)
+          self.scrollView.isScrollEnabled = false
+          let zoom = self.minimalZoomFactorFor(self.scrollView.frame.size, img.size)
+          self.scrollView.minimumZoomScale = zoom//Needs to be calculated
+          self.scrollView.zoomScale = zoom
+          self.centerImageInScrollView(animated: false)
+        }
       }
-  }
-  
-  
-  func centerImageInScrollView(animated:Bool) {
-//    let size = imageView.image?.size ?? CGSize.zero//too big real img size
-    let size = imageView.frame.size
-    let centerOffsetX
-      = (size.width - scrollView.frame.size.width) / 2
-    let centerOffsetY
-      = (size.height - scrollView.frame.size.height) / 2
-    let centerPoint = CGPoint(x: centerOffsetX, y: centerOffsetY)
-    print(">>>>> Center\nSV.size: ", scrollView.frame.size, " SV.ContentSize: ", size, " SV.CenterPoint: ", centerPoint, "\n ")
-    scrollView.setContentOffset(centerPoint, animated: animated)
-    printSizesFrom("after centerImageInScrollView")
-    
-//    self.imageView.setNeedsLayout()
-//    self.imageView.layoutIfNeeded()
-//    
-//    self.scrollView.setNeedsLayout()
-//    self.scrollView.layoutIfNeeded()
-    
-  }
-  
-  func printSizesFrom(_ from: String){
-    print(">>>>> ", from,
-          "\nSV.size: ", scrollView.frame.size,
-          " SV.contentSize: ", scrollView.contentSize,
-          " SV.zoomScale: ", scrollView.zoomScale,
-          " imageView.frame: ", imageView.frame,
-          " SV.contentOffset: ", scrollView.contentOffset)
-  }
-  
-  // Calculates the zoom rectangle for the scale
-  func zoomRectForScale(_ scale: CGFloat, center: CGPoint) -> CGRect {
-      var zoomRect = CGRect.zero
-      zoomRect.size.height = imageView.frame.size.height / scale
-      zoomRect.size.width = imageView.frame.size.width / scale
-      let newCenter = convert(center, from: imageView)
-      zoomRect.origin.x = newCenter.x - (zoomRect.size.width / 2.0)
-      zoomRect.origin.y = newCenter.y - (zoomRect.size.height / 2.0)
-      print("zoomRectForScale: ", zoomRect)
-      return zoomRect
-  }
-  
-  // Sets up the gesture recognizer that receives double taps to auto-zoom
-  func setupGestureRecognizer() {
-      let gestureRecognizer = UITapGestureRecognizer(target: self,
-                                                     action: #selector(handleDoubleTap))
-      gestureRecognizer.numberOfTapsRequired = 2
-      self.scrollView.addGestureRecognizer(gestureRecognizer)
-  }
-  
-  
-  private func initialZoomFactor(parent: CGSize, child: CGSize) -> CGFloat{
-    let xZF = parent.width / max(1, child.width)
-    let yZF = parent.height / max(1, child.height)
-    return min(xZF, yZF)
+    }
   }
   
   func setupScrollView() {
     imageView.contentMode = .scaleAspectFit
-    
     scrollView.delegate = self
-    scrollView.minimumZoomScale = 0.1//Needs to be calculated
     scrollView.maximumZoomScale = 1.0
     scrollView.zoomScale = 1.0
     
     scrollView.addSubview(imageView)
-    self.addSubview(scrollView)
-    NorthLib.pin(imageView, to: scrollView)
-
+    addSubview(scrollView)
+    
     NorthLib.pin(scrollView, to: self)
   }
   
-  private func setup() {
-    setupScrollView()
-    self.setupXButton()
-    self.onX {
-      self.printSizesFrom("onX Button")
-      self.centerImageInScrollView(animated: false)
-    }
-    
-    self.setupSpinner()
-    self.setupGestureRecognizer()
-    
-    if !self.optionalImage.isAvailable {
-      
-      //show waitingImage if detailImage is not available yet
-      imageView.image = optionalImage.waitingImage
-     
-      //img is bigger/smaller //center max width /scale factor???
-      self.optionalImage.whenAvailable {
-        if let img = self.optionalImage.image {
-          self.imageView.image = img
-          self.spinner.stopAnimating()
-          self.scrollView.pinchGestureRecognizer?.isEnabled = true
-          self.scrollView.zoomScale = 0.16171875
-                    
-          self.imageView.setNeedsLayout()
-          self.imageView.layoutIfNeeded()
-          
-          self.scrollView.setNeedsLayout()
-           self.scrollView.layoutIfNeeded()
-          
-          self.setNeedsLayout()
-          self.layoutIfNeeded()
-          
-          self.centerImageInScrollView(animated: true)
-        }
-      }
-    }
-    else {
-        imageView.image = optionalImage.image
-    }
+  // Sets up the gesture recognizer that receives double taps to auto-zoom
+  func setupGestureRecognizer() {
+    let gestureRecognizer = UITapGestureRecognizer(target: self,
+                                                   action: #selector(handleDoubleTap))
+    gestureRecognizer.numberOfTapsRequired = 2
+    scrollView.addGestureRecognizer(gestureRecognizer)
+  }
+}
+
+// MARK: Helper
+extension ZoomedImageView{
+  func setImage(_ image: UIImage) {
+    imageView.image = image
+    imageView.frame = CGRect(origin: CGPoint.zero, size: image.size)
+    scrollView.contentSize = image.size
   }
   
-  var inited = false
+  func centerImageInScrollView(animated:Bool) {
+    let imageSize = imageView.frame.size
+    let centerOffsetX = (imageSize.width - scrollView.frame.size.width) / 2
+    let centerOffsetY = (imageSize.height - scrollView.frame.size.height) / 2
+    let centerPoint = CGPoint(x: centerOffsetX, y: centerOffsetY)
+    scrollView.setContentOffset(centerPoint, animated: animated)
+  }
   
-  override public func layoutSubviews() {
-    print("layout subviews")
-    super.layoutSubviews()
-    //Wenn 1:1 war dann nichts sonnst center? reset zoom
-    if inited == false {
-      inited = true
-      self.imageView.setNeedsLayout()
-      self.imageView.layoutIfNeeded()
-      
-      self.scrollView.setNeedsLayout()
-       self.scrollView.layoutIfNeeded()
-      self.centerImageInScrollView(animated: false)
-    } else if scrollView.zoomScale != 1.0 {
-      print("show not 1:1 zoomed, do center")
-      self.centerImageInScrollView(animated: false)
-    }
+  func minimalZoomFactorFor(_ parent: CGSize, _ child: CGSize) -> CGFloat{
+    let xZf = parent.width / (child.width > 0 ? child.width : 1)
+    let yZf = parent.height / (child.height > 0 ? child.height : 1)
+    return min(xZf, yZf)
+  }
+}
 
-    
-    
+// MARK: UIScrollViewDelegate
+extension ZoomedImageView: UIScrollViewDelegate{
+  public func viewForZooming(in scrollView: UIScrollView) -> UIView? {
+    return imageView
+  }
+  
+  public func scrollViewDidEndZooming(_ scrollView: UIScrollView, with view: UIView?, atScale scale: CGFloat) {
+    //prevent Image aligned on top-left after pinch zoom out
+    if scrollView.frame.size.width > scrollView.contentSize.width
+      || scrollView.frame.size.height > scrollView.contentSize.height {
+      centerImageInScrollView(animated: true)
+    }
   }
 }
