@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		00E4E36B247E694C00BEEC4A /* ZoomedImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00E4E36A247E694C00BEEC4A /* ZoomedImageView.swift */; };
 		AE08C493240D476300D41E91 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE08C492240D476300D41E91 /* Theme.swift */; };
 		AE08C49724101CA900D41E91 /* FontExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE08C49624101CA900D41E91 /* FontExtensions.swift */; };
 		AE1D62732403FA270004D8AD /* Keychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE1D62722403FA270004D8AD /* Keychain.swift */; };
@@ -90,6 +91,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		00E4E36A247E694C00BEEC4A /* ZoomedImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZoomedImageView.swift; sourceTree = "<group>"; };
 		AE08C492240D476300D41E91 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		AE08C49624101CA900D41E91 /* FontExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FontExtensions.swift; sourceTree = "<group>"; };
 		AE1D62722403FA270004D8AD /* Keychain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Keychain.swift; sourceTree = "<group>"; };
@@ -268,6 +270,7 @@
 				AE4E50F8243B45870024609A /* CarouselView.swift */,
 				AE80A398244DE1920012DFFA /* CubeLabel.swift */,
 				AEE3D4E0247C234600BEDEA3 /* ContextMenu.swift */,
+				00E4E36A247E694C00BEEC4A /* ZoomedImageView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -530,6 +533,7 @@
 				AE7122F523197B4000B715A8 /* CoreGraphicsExtensions.swift in Sources */,
 				AE7122F123197B4000B715A8 /* FileLogger.swift in Sources */,
 				AE7122F323197B4000B715A8 /* StringExtensions.swift in Sources */,
+				00E4E36B247E694C00BEEC4A /* ZoomedImageView.swift in Sources */,
 				AE7122EE23197B4000B715A8 /* Error.swift in Sources */,
 				AED2B5D823B0C61A00D9A087 /* File.swift in Sources */,
 				AE7122EC23197B4000B715A8 /* Math.swift in Sources */,
