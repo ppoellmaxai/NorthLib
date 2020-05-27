@@ -29,6 +29,7 @@ public class OptionalImageItem: OptionalImage{
 // MARK: -
 open class ZoomedImageView: UIView, ZoomedImageViewSpec {
   private var initiallyCenteredImage = false
+  private var orientationClosure = OrientationClosure()
   public private(set) var scrollView: UIScrollView = UIScrollView()
   public private(set) var imageView: UIImageView = UIImageView()
   public private(set) var optionalImage: OptionalImage
@@ -106,6 +107,9 @@ extension ZoomedImageView{
     setupSpinner()
     setupGestureRecognizer()
     setupImage()
+    orientationClosure.onOrientationChange(closure: {
+      self.handleOrientationChange()
+    })
   }
   
   func setupImage() {
@@ -122,7 +126,7 @@ extension ZoomedImageView{
           self.setImage(img)
           self.scrollView.isScrollEnabled = false
           let zoom = self.minimalZoomFactorFor(self.scrollView.frame.size, img.size)
-          self.scrollView.minimumZoomScale = zoom//Needs to be calculated
+          self.scrollView.minimumZoomScale = zoom
           self.scrollView.zoomScale = zoom
           self.centerImageInScrollView(animated: false)
         }
@@ -171,6 +175,20 @@ extension ZoomedImageView{
     let xZf = parent.width / (child.width > 0 ? child.width : 1)
     let yZf = parent.height / (child.height > 0 ? child.height : 1)
     return min(xZf, yZf)
+  }
+  
+  func handleOrientationChange() {
+    if let img = self.optionalImage.image {
+      //After Rotation if there is a detailImage, set new minimumZoomScale
+      self.scrollView.minimumZoomScale
+        = self.minimalZoomFactorFor (self.scrollView.frame.size, img.size)
+      //remove the condition if zoomScale should be adjusted after each rotation
+      //attend: the current zoomScale will be lost than!
+      if self.scrollView.zoomScale < self.scrollView.minimumZoomScale {
+        self.scrollView.setZoomScale(self.scrollView.minimumZoomScale,
+                                     animated: true)
+      }
+    }
   }
 }
 
