@@ -10,13 +10,17 @@ import UIKit
 /// An Image with a smaller "Waiting Image"
 public protocol OptionalImage {
   /// The main image to display
-  var image: UIImage { get }
+  var image: UIImage? { get }
   /// An alternate image to display when the main image is not yet available
   var waitingImage: UIImage { get }
   /// Returns true if 'image' is available
   var isAvailable: Bool { get }
   /// Defines a closure to call when the main image becomes available
   func whenAvailable(closure: @escaping ()->())
+}
+
+extension OptionalImage {
+  public var isAvailable: Bool { return image != nil }
 }
 
 /**
