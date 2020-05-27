@@ -46,6 +46,15 @@ class MathTests: XCTestCase {
     XCTAssertTrue(a.log(base: 2) =~ 2.0)
   }
   
+  func testGcd() {
+    XCTAssertEqual(gcd(2,3), 1)
+    XCTAssertEqual(gcd([]), 1)
+    XCTAssertEqual(gcd([3]), 3)
+    XCTAssertEqual(gcd([2,3]), 1)
+    XCTAssertEqual(gcd([2,4,8]), 2)
+    XCTAssertEqual(gcd([8,16,4]), 4)
+  }
+  
 } // class MathTests
 
 class StringTests: XCTestCase {
