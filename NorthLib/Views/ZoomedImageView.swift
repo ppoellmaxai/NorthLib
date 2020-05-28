@@ -28,7 +28,10 @@ public class OptionalImageItem: OptionalImage{
 
 // MARK: -
 open class ZoomedImageView: UIView, ZoomedImageViewSpec {
-  private var initiallyCenteredImage = false
+  private var zoomEnabled = true
+  private var initiallyCentered = false
+  private var lastLayoutSubviewsOrientationWasPortrait = false
+  private var needUpdateScaleLimitAfterLayoutSubviews = true
   private var orientationClosure = OrientationClosure()
   public private(set) var scrollView: UIScrollView = UIScrollView()
   public private(set) var imageView: UIImageView = UIImageView()
@@ -57,12 +60,11 @@ open class ZoomedImageView: UIView, ZoomedImageViewSpec {
   
   override public func layoutSubviews() {
     super.layoutSubviews()
-    //Wenn 1:1 war dann nichts sonnst center? reset zoom
-    if initiallyCenteredImage == false {
-      initiallyCenteredImage = true
-      centerImageInScrollView()
-    } else if scrollView.zoomScale != 1.0 {
-      centerImageInScrollView()
+    lastLayoutSubviewsOrientationWasPortrait
+      = UIDevice.current.orientation.isPortrait
+    if needUpdateScaleLimitAfterLayoutSubviews {
+      needUpdateScaleLimitAfterLayoutSubviews = false
+      setScaleLimitsAndCenterIfNeeded()
     }
   }
 }
@@ -73,20 +75,13 @@ extension ZoomedImageView{
     guard let tapR = sender as? UITapGestureRecognizer else {
       return
     }
-    //Do not allow zoom on preview image
-    if optionalImage.isAvailable == false {
-      return
-    }
     //Zoom Out if current zoom is maximum zoom
     if scrollView.zoomScale == scrollView.maximumZoomScale {
-      
       scrollView.setZoomScale(scrollView.minimumZoomScale,
                               animated: true)
-      scrollView.isScrollEnabled = false
       centerImageInScrollView()
-      
     }
-      //Otherwise Zoom Out in to tap loacation
+    //Otherwise Zoom Out in to tap loacation
     else {
       let tapLocation = tapR.location(in: tapR.view)
       let newCenter = imageView.convert(tapLocation, from: scrollView)
@@ -108,7 +103,7 @@ extension ZoomedImageView{
     setupGestureRecognizer()
     setupImage()
     orientationClosure.onOrientationChange(closure: {
-      self.handleOrientationChange()
+      self.setScaleLimitsAndCenterIfNeeded()
     })
   }
   
@@ -119,16 +114,13 @@ extension ZoomedImageView{
     else {
       //show waitingImage if detailImage is not available yet
       setImage(optionalImage.waitingImage)
-      
-      //img is bigger/smaller //center max width /scale factor???
       optionalImage.whenAvailable {
         if let img = self.optionalImage.image {
           self.setImage(img)
-          self.scrollView.isScrollEnabled = false
-          let zoom = self.minimalZoomFactorFor(self.scrollView.frame.size, img.size)
-          self.scrollView.minimumZoomScale = zoom
-          self.scrollView.zoomScale = zoom
-          self.centerImageInScrollView()
+          //due all previewImages are not allowed to zoom,
+          //exchanged image should be shown fully
+          self.initiallyCentered = false
+          self.setScaleLimitsAndCenterIfNeeded()
         }
       }
     }
@@ -139,10 +131,8 @@ extension ZoomedImageView{
     scrollView.delegate = self
     scrollView.maximumZoomScale = 1.0
     scrollView.zoomScale = 1.0
-    
     scrollView.addSubview(imageView)
     addSubview(scrollView)
-    
     NorthLib.pin(scrollView, to: self)
   }
   
@@ -152,25 +142,32 @@ extension ZoomedImageView{
                                                    action: #selector(handleDoubleTap))
     gestureRecognizer.numberOfTapsRequired = 2
     scrollView.addGestureRecognizer(gestureRecognizer)
+    gestureRecognizer.isEnabled = zoomEnabled
+    self.scrollView.pinchGestureRecognizer?.isEnabled = zoomEnabled
   }
 }
 
 // MARK: Helper
 extension ZoomedImageView{
   func setImage(_ image: UIImage) {
+    scrollView.zoomScale = 1.0//ensure contentsize is correct!
     imageView.image = image
     imageView.frame = CGRect(origin: CGPoint.zero, size: image.size)
     scrollView.contentSize = image.size
   }
   
   /** Centers the Image in the ScrollView
-    * using ScrollView's ContentOffset did not work if scrolling is enabled, image jumped to top/left
-    * Solution using ScrollViews ContentInsets from: https://stackoverflow.com/a/35680604
-    * simplified for our requirements
+   * using ScrollView's ContentOffset did not work if scrolling is enabled, image jumped to top/left
+   * Solution using ScrollViews ContentInsets from: https://stackoverflow.com/a/35680604
+   * simplified for our requirements
    */
   func centerImageInScrollView() {
     //Set Center by setting Insets
-    let contentSize = imageView.frame.size
+    guard let img = imageView.image else {
+      return;
+    }
+    let contentSize = CGSize(width: img.size.width * scrollView.zoomScale,
+                             height: img.size.height * scrollView.zoomScale)
     let screenSize  = scrollView.frame.size
     let offx = screenSize.width > contentSize.width ? (screenSize.width - contentSize.width) / 2 : 0
     let offy = screenSize.height > contentSize.height ? (screenSize.height - contentSize.height) / 2 : 0
@@ -202,27 +199,43 @@ extension ZoomedImageView{
     if scrollView.contentSize.height < scrollViewSize.height {
       imageCenter.y = center.y
     }
-    
     imageView.center = imageCenter
   }
   
   func minimalZoomFactorFor(_ parent: CGSize, _ child: CGSize) -> CGFloat{
     let xZf = parent.width / (child.width > 0 ? child.width : 1)
     let yZf = parent.height / (child.height > 0 ? child.height : 1)
-    return min(xZf, yZf)
+    return min(xZf, yZf, 1.0)
   }
   
-  func handleOrientationChange() {
-    if let img = self.optionalImage.image {
-      //After Rotation if there is a detailImage, set new minimumZoomScale
-      self.scrollView.minimumZoomScale
-        = self.minimalZoomFactorFor (self.scrollView.frame.size, img.size)
-      //remove the condition if zoomScale should be adjusted after each rotation
-      //attend: the current zoomScale will be lost than!
-      if self.scrollView.zoomScale < self.scrollView.minimumZoomScale {
-        self.scrollView.setZoomScale(self.scrollView.minimumZoomScale,
-                                     animated: true)
-      }
+  func setScaleLimitsAndCenterIfNeeded() {
+    if lastLayoutSubviewsOrientationWasPortrait
+      != UIDevice.current.orientation.isPortrait {
+      //handle device rotation happen but layout not updated yet
+      setNeedsLayout()
+      layoutIfNeeded()
+      needUpdateScaleLimitAfterLayoutSubviews = true
+      return;
+    }
+    //max zoom factor is fix 1.0!
+    let img = optionalImage.image ?? optionalImage.waitingImage
+    //after rotation there is a new minimumZoomScale
+    scrollView.minimumZoomScale
+      = minimalZoomFactorFor (scrollView.frame.size, img.size)
+    //this new minimum needs to be set if current is smaller
+    if scrollView.zoomScale < scrollView.minimumZoomScale {
+      scrollView.setZoomScale(scrollView.minimumZoomScale, animated: true)
+    }
+    
+    if initiallyCentered == false {
+      scrollView.zoomScale = scrollView.minimumZoomScale
+      self.centerImageInScrollView()
+      initiallyCentered = true
+    }
+    //if Letterbox  minimum zoom scale is 1 ensure centeren Image
+    if scrollView.frame.size.width > img.size.width * scrollView.zoomScale
+      || scrollView.frame.size.height > img.size.height * scrollView.zoomScale {
+      self.centerImageInScrollView()
     }
   }
 }
@@ -232,14 +245,14 @@ extension ZoomedImageView: UIScrollViewDelegate{
   public func viewForZooming(in scrollView: UIScrollView) -> UIView? {
     return imageView
   }
-  
-  public func scrollViewDidEndZooming(_ scrollView: UIScrollView, with view: UIView?, atScale scale: CGFloat) {
-    //prevent Image aligned on top-left after pinch zoom out
-    if scrollView.frame.size.width > scrollView.contentSize.width
-      || scrollView.frame.size.height > scrollView.contentSize.height {
-      centerImageInScrollView()
-    }
-    //ensure scrolling is enabled due pinch-zoom
-    scrollView.isScrollEnabled = true
-  }
+  //
+  //  public func scrollViewDidEndZooming(_ scrollView: UIScrollView, with view: UIView?, atScale scale: CGFloat) {
+  //    //prevent Image aligned on top-left after pinch zoom out
+  //    if scrollView.frame.size.width > scrollView.contentSize.width
+  //      || scrollView.frame.size.height > scrollView.contentSize.height {
+  //      centerImageInScrollView()
+  //    }
+  //    //ensure scrolling is enabled due pinch-zoom
+  //    scrollView.isScrollEnabled = true
+  //  }
 }
