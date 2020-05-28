@@ -60,9 +60,9 @@ open class ZoomedImageView: UIView, ZoomedImageViewSpec {
     //Wenn 1:1 war dann nichts sonnst center? reset zoom
     if initiallyCenteredImage == false {
       initiallyCenteredImage = true
-      centerImageInScrollView(animated: false)
+      centerImageInScrollView()
     } else if scrollView.zoomScale != 1.0 {
-      centerImageInScrollView(animated: false)
+      centerImageInScrollView()
     }
   }
 }
@@ -83,7 +83,7 @@ extension ZoomedImageView{
       scrollView.setZoomScale(scrollView.minimumZoomScale,
                               animated: true)
       scrollView.isScrollEnabled = false
-      centerImageInScrollView(animated: true)
+      centerImageInScrollView()
       
     }
       //Otherwise Zoom Out in to tap loacation
@@ -128,7 +128,7 @@ extension ZoomedImageView{
           let zoom = self.minimalZoomFactorFor(self.scrollView.frame.size, img.size)
           self.scrollView.minimumZoomScale = zoom
           self.scrollView.zoomScale = zoom
-          self.centerImageInScrollView(animated: false)
+          self.centerImageInScrollView()
         }
       }
     }
@@ -163,12 +163,47 @@ extension ZoomedImageView{
     scrollView.contentSize = image.size
   }
   
-  func centerImageInScrollView(animated:Bool) {
-    let imageSize = imageView.frame.size
-    let centerOffsetX = (imageSize.width - scrollView.frame.size.width) / 2
-    let centerOffsetY = (imageSize.height - scrollView.frame.size.height) / 2
-    let centerPoint = CGPoint(x: centerOffsetX, y: centerOffsetY)
-    scrollView.setContentOffset(centerPoint, animated: animated)
+  /** Centers the Image in the ScrollView
+    * using ScrollView's ContentOffset did not work if scrolling is enabled, image jumped to top/left
+    * Solution using ScrollViews ContentInsets from: https://stackoverflow.com/a/35680604
+    * simplified for our requirements
+   */
+  func centerImageInScrollView() {
+    //Set Center by setting Insets
+    let contentSize = imageView.frame.size
+    let screenSize  = scrollView.frame.size
+    let offx = screenSize.width > contentSize.width ? (screenSize.width - contentSize.width) / 2 : 0
+    let offy = screenSize.height > contentSize.height ? (screenSize.height - contentSize.height) / 2 : 0
+    scrollView.contentInset = UIEdgeInsets(top: offy,
+                                           left: offx,
+                                           bottom: offy,
+                                           right: offx)
+    
+    // The scroll view has zoomed, so you need to re-center the contents
+    var scrollViewSize: CGSize{
+      var size = scrollView.frame.size
+      size.width -= 2*offx
+      size.height -= 2*offy
+      return size
+    }
+    
+    // First assume that image center coincides with the contents box center.
+    // This is correct when the image is bigger than scrollView due to zoom
+    var imageCenter = CGPoint(x: scrollView.contentSize.width / 2.0,
+                              y: scrollView.contentSize.height / 2.0)
+    
+    let center = CGPoint(x: scrollViewSize.width/2, y: scrollViewSize.height/2)
+    
+    //if image is smaller than the scrollView visible size - fix the image center accordingly
+    if scrollView.contentSize.width < scrollViewSize.width {
+      imageCenter.x = center.x
+    }
+    
+    if scrollView.contentSize.height < scrollViewSize.height {
+      imageCenter.y = center.y
+    }
+    
+    imageView.center = imageCenter
   }
   
   func minimalZoomFactorFor(_ parent: CGSize, _ child: CGSize) -> CGFloat{
@@ -202,7 +237,7 @@ extension ZoomedImageView: UIScrollViewDelegate{
     //prevent Image aligned on top-left after pinch zoom out
     if scrollView.frame.size.width > scrollView.contentSize.width
       || scrollView.frame.size.height > scrollView.contentSize.height {
-      centerImageInScrollView(animated: true)
+      centerImageInScrollView()
     }
     //ensure scrolling is enabled due pinch-zoom
     scrollView.isScrollEnabled = true
