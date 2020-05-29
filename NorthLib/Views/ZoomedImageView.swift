@@ -64,6 +64,7 @@ open class ZoomedImageView: UIView, ZoomedImageViewSpec {
       = UIDevice.current.orientation.isPortrait
     if needUpdateScaleLimitAfterLayoutSubviews {
       needUpdateScaleLimitAfterLayoutSubviews = false
+      scrollView.pinchGestureRecognizer?.isEnabled = zoomEnabled
       setScaleLimitsAndCenterIfNeeded()
     }
   }
@@ -114,9 +115,11 @@ extension ZoomedImageView{
     else {
       //show waitingImage if detailImage is not available yet
       setImage(optionalImage.waitingImage)
+      zoomEnabled = false
       optionalImage.whenAvailable {
         if let img = self.optionalImage.image {
           self.setImage(img)
+          self.zoomEnabled = true
           //due all previewImages are not allowed to zoom,
           //exchanged image should be shown fully
           self.initiallyCentered = false
@@ -143,7 +146,6 @@ extension ZoomedImageView{
     gestureRecognizer.numberOfTapsRequired = 2
     scrollView.addGestureRecognizer(gestureRecognizer)
     gestureRecognizer.isEnabled = zoomEnabled
-    self.scrollView.pinchGestureRecognizer?.isEnabled = zoomEnabled
   }
 }
 
