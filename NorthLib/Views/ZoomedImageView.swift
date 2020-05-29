@@ -217,6 +217,8 @@ extension ZoomedImageView{
       needUpdateScaleLimitAfterLayoutSubviews = true
       return;
     }
+    let isMinimumZoomScale = scrollView.zoomScale == scrollView.minimumZoomScale
+    
     //max zoom factor is fix 1.0!
     let img = optionalImage.image ?? optionalImage.waitingImage
     //after rotation there is a new minimumZoomScale
@@ -227,7 +229,7 @@ extension ZoomedImageView{
       scrollView.setZoomScale(scrollView.minimumZoomScale, animated: true)
     }
     
-    if initiallyCentered == false {
+    if isMinimumZoomScale || initiallyCentered == false {
       scrollView.zoomScale = scrollView.minimumZoomScale
       self.centerImageInScrollView()
       initiallyCentered = true
