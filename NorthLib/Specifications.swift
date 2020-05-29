@@ -85,7 +85,7 @@ public extension ZoomedImageViewSpec {
     xButton.buttonView.innerCircleFactor = 0.5
     self.addSubview(xButton)
     pin(xButton.right, to: self.right, dist: -15)
-    pin(xButton.top, to: self.top, dist: 50)
+    pin(xButton.top, to: self.topGuide(), dist: 15)
     xButton.isHidden = true
   }
   
