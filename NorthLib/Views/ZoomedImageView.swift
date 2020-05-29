@@ -249,14 +249,12 @@ extension ZoomedImageView: UIScrollViewDelegate{
   public func viewForZooming(in scrollView: UIScrollView) -> UIView? {
     return imageView
   }
-  //
-  //  public func scrollViewDidEndZooming(_ scrollView: UIScrollView, with view: UIView?, atScale scale: CGFloat) {
-  //    //prevent Image aligned on top-left after pinch zoom out
-  //    if scrollView.frame.size.width > scrollView.contentSize.width
-  //      || scrollView.frame.size.height > scrollView.contentSize.height {
-  //      centerImageInScrollView()
-  //    }
-  //    //ensure scrolling is enabled due pinch-zoom
-  //    scrollView.isScrollEnabled = true
-  //  }
+  
+  public func scrollViewDidEndZooming(_ scrollView: UIScrollView, with view: UIView?, atScale scale: CGFloat) {
+    //prevent Image aligned on top-left after pinch zoom out
+    if scrollView.frame.size.width > scrollView.contentSize.width
+      || scrollView.frame.size.height > scrollView.contentSize.height {
+      centerImageInScrollView()
+    }
+  }
 }
