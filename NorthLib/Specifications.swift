@@ -12,7 +12,7 @@ public protocol OptionalImage {
   /// The main image to display
   var image: UIImage? { get }
   /// An alternate image to display when the main image is not yet available
-  var waitingImage: UIImage { get }
+  var waitingImage: UIImage? { get }
   /// Returns true if 'image' is available
   var isAvailable: Bool { get }
   /// Defines a closure to call when the main image becomes available

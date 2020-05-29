@@ -15,13 +15,13 @@ public class OptionalImageItem: OptionalImage{
       availableClosure?()
     }
   }
-  public var waitingImage: UIImage
+  public var waitingImage: UIImage?
   
   public func whenAvailable(closure: @escaping ()->()) {
     availableClosure = closure
   }
   
-  public required init(waitingImage: UIImage) {
+  public required init(waitingImage: UIImage? = nil) {
     self.waitingImage = waitingImage
   }
 }
@@ -114,12 +114,15 @@ extension ZoomedImageView{
     }
     else {
       //show waitingImage if detailImage is not available yet
-      setImage(optionalImage.waitingImage)
-      zoomEnabled = false
+      if let img = optionalImage.waitingImage {
+        setImage(img)
+        zoomEnabled = false
+      }
       optionalImage.whenAvailable {
         if let img = self.optionalImage.image {
           self.setImage(img)
           self.zoomEnabled = true
+          self.scrollView.pinchGestureRecognizer?.isEnabled = self.zoomEnabled
           //due all previewImages are not allowed to zoom,
           //exchanged image should be shown fully
           self.initiallyCentered = false
@@ -221,8 +224,10 @@ extension ZoomedImageView{
     }
     let isMinimumZoomScale = scrollView.zoomScale == scrollView.minimumZoomScale
     
-    //max zoom factor is fix 1.0!
-    let img = optionalImage.image ?? optionalImage.waitingImage
+    guard let img = imageView.image else {
+      return
+    }
+    
     //after rotation there is a new minimumZoomScale
     scrollView.minimumZoomScale
       = minimalZoomFactorFor (scrollView.frame.size, img.size)
