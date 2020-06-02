@@ -116,6 +116,12 @@ public extension ZoomedImageViewSpec {
  (no 'onX' closure was specified) performs 
     self.navigationController?.popViewController(animated: true)
  if the X has been tapped.
+ 
+ To indicate on which page a user is currently positioned a PageControl is displayed 
+ if there are more than one image. The ImageCollectionVC only updates the pageControl
+ attributes:
+   currentPage - to indicate which image is displayed
+   numberOfPages - to specify how many dots are displayed in total
  */
 public protocol ImageCollectionVCSpec where Self: PageCollectionVC {
   
@@ -125,6 +131,12 @@ public protocol ImageCollectionVCSpec where Self: PageCollectionVC {
   /// The X-Button (may be used to close the ImageCollectionVC)
   var xButton: Button<CircledXView> { get }
   
+  /// The PageControl used to display an indicator of how many images are available
+  var pageControl: UIPageControl { get }
+  
+  /// The color used for pageControl
+  var pageControlColors: (current: UIColor?, other: UIColor?) { get set }
+  
 } // ImageCollectionVC
 
 public extension ImageCollectionVCSpec {
@@ -133,6 +145,31 @@ public extension ImageCollectionVCSpec {
   func onX(closure: @escaping ()->()) {
     xButton.isHidden = false
     xButton.onPress {_ in closure() }
+  }
+  
+  /// An example of setting up the PageControl
+  func setupPageControl() {
+    self.pageControl.hidesForSinglePage = true
+    self.view.addSubview(self.pageControl)
+    pin(self.pageControl.centerX, to: self.view.centerX)
+    // Example values for dist to bottom and height
+    pin(self.pageControl.bottom, to: self.view.bottomGuide(), dist: 15)
+    self.pageControl.pinHeight(8)
+    // PageControl example color
+    self.pageControlColors = (current: UIColor.rgb(0xcccccc), 
+                              other: UIColor.rgb(0xcccccc, alpha: 0.3))
+  }
+  
+  /// Setting pageControl's colors:
+  var pageControlColors: (current: UIColor?, other: UIColor?) {
+    get { 
+      (current: pageControl.currentPageIndicatorTintColor,
+       other: pageControl.pageIndicatorTintColor) 
+    }
+    set {
+      pageControl.currentPageIndicatorTintColor = newValue.current
+      pageControl.pageIndicatorTintColor = newValue.other
+    }
   }
   
 } // ImageCollectionVC
