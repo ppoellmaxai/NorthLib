@@ -117,7 +117,6 @@ extension ZoomedImageView{
     setupGestureRecognizer()
     setupImage()
     orientationClosure.onOrientationChange(closure: {
-      print("OrientationChange!")
       self.setScaleLimitsAndCenterIfNeeded()
     })
   }
