@@ -19,6 +19,10 @@ public protocol OptionalImage {
   func whenAvailable(closure: @escaping ()->())
 }
 
+extension OptionalImage {
+  public var isAvailable: Bool { return image != nil }
+}
+
 /**
  A ZoomedImageView presents an Image in an ImageView that is scrollable
  and zoomable.
