@@ -10,9 +10,9 @@ import UIKit
 /// An Image with a smaller "Waiting Image"
 public protocol OptionalImage {
   /// The main image to display
-  var image: UIImage? { get }
+  var image: UIImage? { get set }
   /// An alternate image to display when the main image is not yet available
-  var waitingImage: UIImage? { get }
+  var waitingImage: UIImage? { get set }
   /// Returns true if 'image' is available
   var isAvailable: Bool { get }
   /// Defines a closure to call when the main image becomes available
@@ -49,7 +49,7 @@ public protocol ZoomedImageViewSpec where Self: UIView
   /// The Imageview displaying either the main or the waiting image
   var imageView: UIImageView { get }
   /// The image to display
-  var optionalImage: OptionalImage { get }
+  var optionalImage: OptionalImage { get set }
   /// The X-Button (may be used to close the ZoomedImageView)
   var xButton: Button<CircledXView> { get }
   // Spinner indicating activity if !OptionalImage.isAvailable
@@ -84,7 +84,7 @@ public extension ZoomedImageViewSpec {
     xButton.buttonView.color = UIColor.rgb(0x707070)
     xButton.buttonView.innerCircleFactor = 0.5
     self.addSubview(xButton)
-    pin(xButton.right, to: self.right, dist: -15)
+    pin(xButton.right, to: self.rightGuide(), dist: -15)
     pin(xButton.top, to: self.topGuide(), dist: 15)
     xButton.isHidden = true
   }
@@ -104,3 +104,8 @@ public extension ZoomedImageViewSpec {
   }
     
 } // ZoomedImageViewSpec
+
+
+public protocol ImageCollectionViewControllerSpec where Self: PageCollectionVC {
+    var images: [OptionalImage] { get set }
+}
