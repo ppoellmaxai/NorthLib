@@ -29,8 +29,16 @@ open class ImageCollectionViewController: PageCollectionVC, ImageCollectionViewC
     }
   }
   
-
-  
+  open override func viewWillLayoutSubviews() {
+    super.viewWillLayoutSubviews()
+    /* FIX the Issue:
+     The behavior of the UICollectionViewFlowLayout is not defined because:
+     the item height must be less than the height of the UICollectionView
+     minus the section insets top and bottom values,
+     minus the content insets top and bottom values.
+     */
+    collectionView.collectionViewLayout.invalidateLayout()
+  }
   
   //max dots in pageControll, set to 0 for disable
   let maxPageControlDotsCount = 4
