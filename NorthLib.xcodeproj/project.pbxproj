@@ -55,7 +55,6 @@
 		AE7123362320E64300B715A8 /* DataExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE7123352320E64300B715A8 /* DataExtensions.swift */; };
 		AE80A399244DE1920012DFFA /* CubeLabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE80A398244DE1920012DFFA /* CubeLabel.swift */; };
 		AE9851352320FC7500EAC9D8 /* WebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE9851332320FC7500EAC9D8 /* WebView.swift */; };
-		AE9851372320FC7500EAC9D8 /* NativeBridge.js in Resources */ = {isa = PBXBuildFile; fileRef = AE9851342320FC7500EAC9D8 /* NativeBridge.js */; };
 		AE98513A2320FCA700EAC9D8 /* WebViewCollectionVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE9851392320FCA700EAC9D8 /* WebViewCollectionVC.swift */; };
 		AE98513C2320FCB400EAC9D8 /* PageCollectionVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE98513B2320FCB400EAC9D8 /* PageCollectionVC.swift */; };
 		AE98513E2320FD6500EAC9D8 /* Json.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE98513D2320FD6500EAC9D8 /* Json.swift */; };
@@ -143,7 +142,6 @@
 		AE7123352320E64300B715A8 /* DataExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataExtensions.swift; sourceTree = "<group>"; };
 		AE80A398244DE1920012DFFA /* CubeLabel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CubeLabel.swift; sourceTree = "<group>"; };
 		AE9851332320FC7500EAC9D8 /* WebView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WebView.swift; sourceTree = "<group>"; };
-		AE9851342320FC7500EAC9D8 /* NativeBridge.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = NativeBridge.js; sourceTree = "<group>"; };
 		AE9851392320FCA700EAC9D8 /* WebViewCollectionVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WebViewCollectionVC.swift; sourceTree = "<group>"; };
 		AE98513B2320FCB400EAC9D8 /* PageCollectionVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PageCollectionVC.swift; sourceTree = "<group>"; };
 		AE98513D2320FD6500EAC9D8 /* Json.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Json.swift; sourceTree = "<group>"; };
@@ -257,7 +255,6 @@
 		AE7122D323197B4000B715A8 /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				AE9851342320FC7500EAC9D8 /* NativeBridge.js */,
 				AE9851332320FC7500EAC9D8 /* WebView.swift */,
 				AE7122D423197B4000B715A8 /* Toolbar.swift */,
 				AE7122D523197B4000B715A8 /* Buttons.swift */,
@@ -475,7 +472,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AE9851372320FC7500EAC9D8 /* NativeBridge.js in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
