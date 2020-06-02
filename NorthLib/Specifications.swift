@@ -10,9 +10,9 @@ import UIKit
 /// An Image with a smaller "Waiting Image"
 public protocol OptionalImage {
   /// The main image to display
-  var image: UIImage { get }
+  var image: UIImage? { get }
   /// An alternate image to display when the main image is not yet available
-  var waitingImage: UIImage { get }
+  var waitingImage: UIImage? { get }
   /// Returns true if 'image' is available
   var isAvailable: Bool { get }
   /// Defines a closure to call when the main image becomes available
@@ -38,8 +38,7 @@ public protocol OptionalImage {
  its resolution matches the resolution of the screen or (if already enlarged) 
  it is shrinked to its initial size and position.
  */
-public protocol ZoomedImageViewSpec where Self: UIView
-  /* Self: UIContextMenuInteractionDelegate */ {
+public protocol ZoomedImageViewSpec where Self: UIView {
   /// The scrollview managing the ImageView
   var scrollView: UIScrollView { get }
   /// The Imageview displaying either the main or the waiting image
@@ -81,7 +80,7 @@ public extension ZoomedImageViewSpec {
     xButton.buttonView.innerCircleFactor = 0.5
     self.addSubview(xButton)
     pin(xButton.right, to: self.right, dist: -15)
-    pin(xButton.top, to: self.top, dist: 50)
+    pin(xButton.top, to: self.topGuide(), dist: 15)
     xButton.isHidden = true
   }
   
@@ -100,3 +99,36 @@ public extension ZoomedImageViewSpec {
   }
     
 } // ZoomedImageViewSpec
+
+/**
+ An ImageCollectionVC utilizes PageCollectionVC to show a collection of ZoomedImageViews.
+ 
+ After being initialized the attribute 'images' is set to contain an array of 
+ ZoomedImageViews. The attribute 'index' (from PageCollectionVC) is used to point
+ to that image which is to display on the screen. Each zoomable image fills the complete
+ space of ImageCollectionVCs view. Hence the size of every cell of the collection 
+ view is identical to the size of the collection view's self.view.
+ ImageCollectionVC displays an xButton alike ZoomedImageView's xButton which by default
+ (no 'onX' closure was specified) performs 
+    self.navigationController?.popViewController(animated: true)
+ if the X has been tapped.
+ */
+public protocol ImageCollectionVCSpec where Self: PageCollectionVC {
+  
+  /// The Images to display
+  var images: [OptionalImage] { get set }
+
+  /// The X-Button (may be used to close the ImageCollectionVC)
+  var xButton: Button<CircledXView> { get }
+  
+} // ImageCollectionVC
+
+public extension ImageCollectionVCSpec {
+  
+  /// This closure is called when the X-Button has been pressed
+  func onX(closure: @escaping ()->()) {
+    xButton.isHidden = false
+    xButton.onPress {_ in closure() }
+  }
+  
+} // ImageCollectionVC
