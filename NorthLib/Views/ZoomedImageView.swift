@@ -84,6 +84,11 @@ extension ZoomedImageView{
     guard let tapR = sender as? UITapGestureRecognizer else {
       return
     }
+    
+    if zoomEnabled == false {
+      return
+    }
+    
     //Zoom Out if current zoom is maximum zoom
     if scrollView.zoomScale == scrollView.maximumZoomScale {
       scrollView.setZoomScale(scrollView.minimumZoomScale,
@@ -119,6 +124,8 @@ extension ZoomedImageView{
   func updateImage() {
     if optionalImage.isAvailable, let detailImage = optionalImage.image {
       setImage(detailImage)
+      zoomEnabled = true
+      spinner.stopAnimating()
     }
     else {
       //show waitingImage if detailImage is not available yet
@@ -129,10 +136,12 @@ extension ZoomedImageView{
         //Due re-use its needed to unset probably existing old image
         imageView.image = nil
       }
+      spinner.startAnimating()
       optionalImage.whenAvailable {
         if let img = self.optionalImage.image {
           self.setImage(img)
           self.zoomEnabled = true
+          self.spinner.stopAnimating()
           self.scrollView.pinchGestureRecognizer?.isEnabled = self.zoomEnabled
           //due all previewImages are not allowed to zoom,
           //exchanged image should be shown fully
