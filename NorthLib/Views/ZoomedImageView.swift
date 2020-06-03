@@ -33,7 +33,6 @@ open class ZoomedImageView: UIView, ZoomedImageViewSpec {
   private var lastLayoutSubviewsOrientationWasPortrait = false
   private var needUpdateScaleLimitAfterLayoutSubviews = true
   private var orientationClosure = OrientationClosure()
-  public var handleOrientationChange = true
   public private(set) var scrollView: UIScrollView = UIScrollView()
   public private(set) var imageView: UIImageView = UIImageView()
   public private(set) var xButton: Button<CircledXView> = Button<CircledXView>()
@@ -113,7 +112,6 @@ extension ZoomedImageView{
     setupGestureRecognizer()
     updateImage()
     orientationClosure.onOrientationChange(closure: {
-      if self.handleOrientationChange == false { return; }
       self.setScaleLimitsAndCenterIfNeeded()
     })
   }
@@ -226,11 +224,7 @@ extension ZoomedImageView{
     return min(xZf, yZf, 1.0)
   }
   
-  public func updateUiAfterRotationWithTargetSize(_ targetSize: CGSize){
-    setScaleLimitsAndCenterIfNeeded(targetSize)
-  }
-  
-  func setScaleLimitsAndCenterIfNeeded(_ _targetSize: CGSize = CGSize.zero) {
+  func setScaleLimitsAndCenterIfNeeded() {
     if lastLayoutSubviewsOrientationWasPortrait
       != UIDevice.current.orientation.isPortrait {
       //handle device rotation happen but layout not updated yet
@@ -245,15 +239,9 @@ extension ZoomedImageView{
       return
     }
     
-    let targetSize = _targetSize == CGSize.zero ?
-                                    scrollView.frame.size :
-                                    _targetSize
-    
-    print("Updateing View and UI for TargetSize: ", targetSize, " SV Size: ", scrollView.frame.size)
-    
     //after rotation there is a new minimumZoomScale
     scrollView.minimumZoomScale
-      = minimalZoomFactorFor (targetSize, img.size)
+      = minimalZoomFactorFor (scrollView.frame.size, img.size)
     //this new minimum needs to be set if current is smaller
     if scrollView.zoomScale < scrollView.minimumZoomScale {
       scrollView.setZoomScale(scrollView.minimumZoomScale, animated: true)
@@ -265,8 +253,8 @@ extension ZoomedImageView{
       initiallyCentered = true
     }
     //if Letterbox  minimum zoom scale is 1 ensure centeren Image
-    if targetSize.width > img.size.width * scrollView.zoomScale
-      || targetSize.height > img.size.height * scrollView.zoomScale {
+    if scrollView.frame.size.width > img.size.width * scrollView.zoomScale
+      || scrollView.frame.size.height > img.size.height * scrollView.zoomScale {
       self.centerImageInScrollView()
     }
   }
