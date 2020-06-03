@@ -53,7 +53,7 @@ public extension Array where Element==Any {
     return ret
   }
   
-  static func json(_ str: String) -> Dictionary<String,Any>? {
+  static func json(_ str: String) -> Array<Element>? {
     return json2Object(str)
   }
   
