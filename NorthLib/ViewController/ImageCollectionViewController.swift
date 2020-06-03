@@ -11,10 +11,12 @@ import UIKit
 
 /** ToDo's
  - Handle rotation from this not from View
+ - implement X CLose Callback DONE
  
  */
 
 open class ImageCollectionViewController: PageCollectionVC, ImageCollectionViewControllerSpec {
+    public private(set) var xButton: Button<CircledXView> = Button<CircledXView>()
   public var images: [OptionalImage] = []
   
   
@@ -68,11 +70,17 @@ open class ImageCollectionViewController: PageCollectionVC, ImageCollectionViewC
   // MARK: - Life Cycle
   open override func viewDidLoad() {
     super.viewDidLoad()
+    self.inset = 0.0
     prepareCollectionView()
+    setupXButton()
     preparePageControl()
     setupViewProvider()
     //initially render CollectionView
     self.collectionView.reloadData()
+    self.onX {
+      self.index = 3
+      print("X Press!!")
+    }
   }
   
   // MARK: UI Helper Methods

@@ -108,4 +108,32 @@ public extension ZoomedImageViewSpec {
 
 public protocol ImageCollectionViewControllerSpec where Self: PageCollectionVC {
     var images: [OptionalImage] { get set }
+    /// The X-Button (may be used to close the ZoomedImageView)
+    var xButton: Button<CircledXView> { get }
+    /// Define closure to call when the X-Button is pressed
+    func onX(closure: @escaping ()->())
 }
+
+public extension ImageCollectionViewControllerSpec {
+  
+  /// This closure is called when the X-Button has been pressed
+  func onX(closure: @escaping ()->()) {
+    xButton.isHidden = false
+    xButton.onPress {_ in closure() }
+  }
+  
+  /// Setup the xButton
+  func setupXButton() {
+    xButton.pinHeight(35)
+    xButton.pinWidth(35)
+    xButton.color = .black
+    xButton.buttonView.isCircle = true
+    xButton.buttonView.circleColor = UIColor.rgb(0xdddddd)
+    xButton.buttonView.color = UIColor.rgb(0x707070)
+    xButton.buttonView.innerCircleFactor = 0.5
+    self.view.addSubview(xButton)
+    pin(xButton.right, to: self.view.rightGuide(), dist: -15)
+    pin(xButton.top, to: self.view.topGuide(), dist: 15)
+    xButton.isHidden = true
+  }
+} // ZoomedImageViewSpec
