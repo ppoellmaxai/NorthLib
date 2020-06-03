@@ -6,7 +6,7 @@
 //  Copyright © 2020 Norbert Thies. All rights reserved.
 //
 
-import Foundation
+import UIKit
 
 public class OptionalImageItem: OptionalImage{
   private var availableClosure: (()->())?
