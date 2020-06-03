@@ -35,7 +35,6 @@ open class ZoomedImageView: UIView, ZoomedImageViewSpec {
   private var orientationClosure = OrientationClosure()
   public private(set) var scrollView: UIScrollView = UIScrollView()
   public private(set) var imageView: UIImageView = UIImageView()
-//  public var optionalImage: OptionalImage
   public private(set) var xButton: Button<CircledXView> = Button<CircledXView>()
   public private(set) var spinner: UIActivityIndicatorView = UIActivityIndicatorView()
   public private(set) lazy var menu = ContextMenu(view: imageView)
@@ -49,13 +48,9 @@ open class ZoomedImageView: UIView, ZoomedImageViewSpec {
   
   public var optionalImage: OptionalImage{
     didSet {
-      setupImage()
-      
+      updateImage()
       initiallyCentered = false
       setScaleLimitsAndCenterIfNeeded()
-//      needUpdateScaleLimitAfterLayoutSubviews = true
-//      self.setNeedsLayout()
-//      self.layoutIfNeeded()
     }
   }
   
@@ -95,7 +90,7 @@ extension ZoomedImageView{
                               animated: true)
       centerImageInScrollView()
     }
-    //Otherwise Zoom Out in to tap loacation
+      //Otherwise Zoom Out in to tap loacation
     else {
       let tapLocation = tapR.location(in: tapR.view)
       let newCenter = imageView.convert(tapLocation, from: scrollView)
@@ -115,7 +110,7 @@ extension ZoomedImageView{
     setupXButton()
     setupSpinner()
     setupGestureRecognizer()
-    setupImage()
+    updateImage()
     orientationClosure.onOrientationChange(closure: {
       self.setScaleLimitsAndCenterIfNeeded()
     })
@@ -130,31 +125,9 @@ extension ZoomedImageView{
       if let img = optionalImage.waitingImage {
         setImage(img)
         zoomEnabled = false
-      }
-      optionalImage.whenAvailable {
-        if let img = self.optionalImage.image {
-          self.setImage(img)
-          self.zoomEnabled = true
-          self.scrollView.pinchGestureRecognizer?.isEnabled = self.zoomEnabled
-          //due all previewImages are not allowed to zoom,
-          //exchanged image should be shown fully
-          self.initiallyCentered = false
-          self.setScaleLimitsAndCenterIfNeeded()
-        }
-      }
-    }
-  }
-  
-  //deprecated
-  func setupImage() {
-    if optionalImage.isAvailable, let detailImage = optionalImage.image {
-      setImage(detailImage)
-    }
-    else {
-      //show waitingImage if detailImage is not available yet
-      if let img = optionalImage.waitingImage {
-        setImage(img)
-        zoomEnabled = false
+      } else {
+        //Due re-use its needed to unset probably existing old image
+        imageView.image = nil
       }
       optionalImage.whenAvailable {
         if let img = self.optionalImage.image {
