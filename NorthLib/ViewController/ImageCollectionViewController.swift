@@ -9,7 +9,10 @@
 import Foundation
 import UIKit
 
-
+/** ToDo's
+ - Handle rotation from this not from View
+ 
+ */
 
 open class ImageCollectionViewController: PageCollectionVC, ImageCollectionViewControllerSpec {
   public var images: [OptionalImage] = []
@@ -40,7 +43,7 @@ open class ImageCollectionViewController: PageCollectionVC, ImageCollectionViewC
     collectionView.collectionViewLayout.invalidateLayout()
   }
   
-  //max dots in pageControll, set to 0 for disable
+  //max dots in pageControl, set to 0 for disable
   let maxPageControlDotsCount = 4
   var pageControl:UIPageControl = UIPageControl()
   
@@ -49,37 +52,55 @@ open class ImageCollectionViewController: PageCollectionVC, ImageCollectionViewC
 //    self.provider = provider
 //  }
   
+  /** the default way to initialize/render the PageCollectionVC is to set its count
+      this triggers collectionView.reloadData()
+      this will be done automatic in ImageCollectionViewController->viewDidLoad
+      To get rid of this default behaviour, we overwrite the Count Setter
+  */
+  override open var count: Int {
+    get { return self.images.count }
+    set {
+      //Not used, not allowed
+    }
+  }
+  
   
   // MARK: - Life Cycle
   open override func viewDidLoad() {
-    self.inset = 0.0
-    
-    if self.count == 0 && self.images.count > 0 {
-      self.count = self.images.count
-      self.collectionView.backgroundColor = UIColor.black
-      self.collectionView.showsHorizontalScrollIndicator = false
-      self.collectionView.showsVerticalScrollIndicator = false
-      //TODO Maybe other place
-      //Todo refer 2 diff implementation for used practice for setup
-      if maxPageControlDotsCount == 0 || self.count < maxPageControlDotsCount {
-             self.pageControl.numberOfPages = self.count
-         } else {
-             self.pageControl.numberOfPages = maxPageControlDotsCount
-         }
-      //Set the delegate
-      self.collectionView.delegate = self
-    }
     super.viewDidLoad()
-    
+    prepareCollectionView()
+    preparePageControl()
+    setupViewProvider()
+    //initially render CollectionView
+    self.collectionView.reloadData()
+  }
+  
+  // MARK: UI Helper Methods
+  func prepareCollectionView() {
+    self.collectionView.backgroundColor = UIColor.black
+    //
+    self.collectionView.showsHorizontalScrollIndicator = false
+    self.collectionView.showsVerticalScrollIndicator = false
+    self.collectionView.delegate = self
+  }
+  
+  func preparePageControl() {
+    //setup number of dots
+    if maxPageControlDotsCount == 0 || self.count < maxPageControlDotsCount {
+      self.pageControl.numberOfPages = self.count
+    } else {
+      self.pageControl.numberOfPages = maxPageControlDotsCount
+    }
+    //Setup UI
     self.view.addSubview(self.pageControl)
     pin(pageControl.right, to: self.view.rightGuide(), dist: -15)
     pin(pageControl.left, to: self.view.leftGuide(), dist: 15)
     pin(pageControl.bottom, to: self.view.bottomGuide(), dist: -15)
-    
+  }
+  
+  func setupViewProvider(){
     viewProvider { [weak self] (index, oview) in
       guard let this = self else { return UIView() }
-      
-//      return ZoomedImageView(optionalImage: this.images[index])
       if let ziv = oview as? ZoomedImageView {
         ziv.optionalImage = this.images[index]
         print("reuse ziv")
@@ -88,7 +109,6 @@ open class ImageCollectionViewController: PageCollectionVC, ImageCollectionViewC
       else {
         print("init new ziv")
         return ZoomedImageView(optionalImage: this.images[index])
-        
       }
     }
   }
