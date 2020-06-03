@@ -283,7 +283,7 @@ open class HttpSession: NSObject, URLSessionDelegate, URLSessionTaskDelegate, UR
     config.httpShouldSetCookies = true
     config.urlCredentialStorage = URLCredentialStorage.shared
     config.httpAdditionalHeaders = [:]
-    config.waitsForConnectivity = true
+    config.waitsForConnectivity = false
     if isCache {
       config.urlCache = URLCache.shared
       config.requestCachePolicy = .useProtocolCachePolicy

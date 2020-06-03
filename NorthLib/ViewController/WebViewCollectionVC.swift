@@ -84,6 +84,11 @@ open class WebViewCollectionVC: PageCollectionVC, WKUIDelegate,
   }
   fileprivate var initialUrl: URL?
   
+  /// The bridge (if any) to use for JS interaction
+  public var bridge: JSBridgeObject?
+  /// Set to true if JS logging should be bridged
+  public var isBridgeLogging = false
+  
   public var currentWebView: WebView? { return currentView?.activeView as? WebView }
   
   // The closure to call when link is pressed
@@ -166,7 +171,14 @@ open class WebViewCollectionVC: PageCollectionVC, WKUIDelegate,
     viewProvider { [weak self] (index, oview) in
       guard let this = self else { return UIView() }
       if var ov = oview as? OptionalWebView { return ov.update(vc: this, url: this.urls[index]) }
-      else { return OptionalWebView(vc: this, url: this.urls[index]) }
+      else { 
+        let owv = OptionalWebView(vc: this, url: this.urls[index]) 
+        if let bridge = this.bridge { 
+          owv.webView?.addBridge(bridge)
+          if this.isBridgeLogging { owv.webView?.log2bridge(bridge) }
+        }
+        return owv
+      }
     }
   }
   

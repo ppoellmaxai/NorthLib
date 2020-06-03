@@ -171,8 +171,13 @@ open class File: DoesLog {
   
   /// Returns the contents of the file as String (if it is an existing file)
   public var string: String { 
-    guard exists && isFile else { return String() }
-    return data.string
+    get {
+      guard exists && isFile else { return String() }
+      return data.string
+    }
+    set (string) {
+      self.data = string.data(using: .utf8)!
+    }
   }
 
   /// Returns the SHA256 checksum of the file's contents

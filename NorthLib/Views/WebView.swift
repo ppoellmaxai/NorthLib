@@ -9,10 +9,10 @@ import UIKit
 import WebKit
 
 /// A JSCall-Object describes a native call from JavaScript to Swift
-open class JSCall: DoesLog {
+open class JSCall: DoesLog, ToString {
   
   /// name of the NativeBridge object
-  public var bridgeObject = ""
+  public var objectName = ""
   /// name of the method called
   public var method = ""
   /// callback ID
@@ -25,7 +25,8 @@ open class JSCall: DoesLog {
   /// A new JSCall object is created using a WKScriptMessage
   public init(_ msg: WKScriptMessage) throws {
     if let dict = msg.body as? Dictionary<String,Any> {
-      bridgeObject = msg.name
+      objectName = msg.name
+      webView = msg.webView as? WebView
       if let m = dict["method"] as? String {
         method = m
         callback = dict["callback"] as? Int
@@ -36,7 +37,43 @@ open class JSCall: DoesLog {
     else { throw exception( "JSCall without proper message body" ) }
   }
   
-  // TODO: implement callback to return value to JS callback function
+  /// Call back to JS
+  public func callback(arg: Any) {
+    if let callbackIndex = self.callback {
+      let dict: [String:Any] = ["callback": callbackIndex, "result": arg]
+      let callbackJson = dict.json
+      let execString = "\(self.objectName).callback(\(callbackJson))"
+      webView?.jsexec(execString, closure: nil)
+    }
+  }
+  
+  /// Return arguments as String
+  public func arguments2s(delimiter: String = "") -> String {
+    var ret = ""
+    if let args = args, args.count > 0 {
+      for arg in args {
+        if let str = arg as? CustomStringConvertible {
+          if ret.isEmpty { ret = str.description }
+          else { ret += "\(delimiter)\(str.description)" }
+        }
+      }
+    }
+    return ret
+  }
+  
+  public func toString() -> String {
+    var ret = "JSCall: \(objectName).\(method)\n"
+    if let cb = callback { ret += "  callback ID: \(cb)" }
+    if let args = args, args.count > 0 {
+      ret += "\n  \(args.count) Argument(s):"
+      for arg in args {
+        if let str = arg as? CustomStringConvertible {
+          ret += "\n    \(type(of: arg)) \"\(str.description)\""
+        }
+      }
+    }
+    return ret
+  }
   
 } // class JSCall
 
@@ -44,19 +81,109 @@ open class JSCall: DoesLog {
 /// methods that are passed to native functions
 open class JSBridgeObject: DoesLog {
   
+  /// Name of JS object
+  public var name: String
   /// Dictionary of JS function names to native closures
-  public var functions: [String:(JSCall)->()] = [:]
+  public var functions: [String:(JSCall)->Any] = [:]
   
   /// calls a native closure
   public func call(_ jscall: JSCall) {
     if let f = functions[jscall.method] {
-      debug( "From JS: '\(jscall.bridgeObject).\(jscall.method)' called" )
-      f(jscall)
+      debug( "From JS: '\(jscall.objectName).\(jscall.method)' called" )
+      let retval = f(jscall)
+      jscall.callback(arg: retval)
     }
     else {
-      error( "From JS: undefined function '\(jscall.bridgeObject).\(jscall.method)' called" )
+      error( "From JS: undefined function '\(jscall.objectName).\(jscall.method)' called" )
     }
   }
+  
+  /// Initialize with name of JS object
+  public init(name: String) { 
+    self.name = name 
+    addfunc("log") { jscall in
+      self.log("JS: \(jscall.arguments2s())")
+      return NSNull()
+    }
+    addfunc("alert") { jscall in
+      Alert.message(message: jscall.arguments2s())
+      return NSNull()
+    }
+  }
+  
+  /// Add a JS function defined by a native closure
+  public func addfunc(_ name: String, closure: @escaping (JSCall)->Any) {
+    self.functions[name] = closure
+  }
+
+  /// The JS code defining the JS class for the bridge object:
+  public static var js: String = """
+  /// The NativeBridge offers an interface to iOS native functions. By default
+  /// every bridge offers the functions 'log' and 'alert'.
+  class NativeBridge {
+
+    /// Initialize with a String defining the name of the bridge object,
+    /// this name is also used on the native side to identify this object.
+    constructor(bridgeName) {
+      this.bridgeName = bridgeName;
+      this.callbacks = {};
+      this.lastId = 1;
+    }
+
+    /// call a native function named 'method', give a callback function 'func'
+    /// and a number of arguments to pass to the native side as native objects.
+    call(method, func, ...args) {
+      var nativeCall = {};
+      nativeCall.method = method;
+      if ( func != undefined && typeof func == "function" ) {
+        nativeCall.callback = this.lastId;
+        this.callbacks[this.lastId] = func;
+        this.lastId++;
+      }
+      if ( args.length > 0 ) {
+        nativeCall.args = args;
+      }
+      let str = "webkit.messageHandlers." + this.bridgeName + ".postMessage(nativeCall)"
+      try { eval(str) }
+      catch (error) {
+        this.log("Native call error: " + error )
+      }
+    }
+    
+    /// Is called by the native side to call the callback function
+    callback(ret) {
+      if (ret.callback) {
+        var func = this.callbacks[ret.callback];
+        if ( func ) {
+          delete this.callbacks[ret.callback];
+          func.apply( null, [ret.result] );
+        }
+      }
+    } 
+    
+    /// Send a log message to the native side
+    log(...args) {
+      var callArgs = ["log", undefined];
+      callArgs = callArgs.concat(args);
+      this.call.apply(this, callArgs);
+    }
+    
+    /// Pop up a native alert message
+    alert(...args) {
+      var callArgs = ["alert", undefined];
+      callArgs = callArgs.concat(args);
+      this.call.apply(this, callArgs);    
+    }
+    
+  }  // class NativeBridge
+
+  /// Define window.alert and console.log as bridge functions
+  function log2bridge(bridge) {
+    console.log = function (...args) { bridge.log.apply(bridge, args); };
+    window.alert = function (...args) { bridge.alert.apply(bridge, args); };
+  }
+
+  """
   
 } // class JSBridgeObject
 
@@ -94,7 +221,28 @@ open class WebView: WKWebView, WKScriptMessageHandler, UIScrollViewDelegate {
   /// The original URL to load
   public var originalUrl: URL?
   
-  // The closure to call when content scrolled more than _scrollRatio
+  /// Define Bridge Object
+  public func addBridge(_ object: JSBridgeObject, isExec: Bool = false) {
+    if isExec {
+      if self.bridgeObjects.isEmpty { self.jsexec(JSBridgeObject.js) }
+      self.jsexec("var \(object.name) = new NativeBridge(\"\(object.name)\")")
+    }
+    self.bridgeObjects[object.name] = object
+    self.configuration.userContentController.add(self, name: object.name)
+  }
+  
+  /// Perform console.log and window.alert via bridge
+  public func log2bridge(name: String) {
+    if let bridge = bridgeObjects[name] {
+      self.jsexec("log2bridge(\(bridge.name))")
+    }
+  }
+  /// Perform console.log and window.alert via bridge
+  public func log2bridge(_ bridge: JSBridgeObject) {
+    self.jsexec("log2bridge(\(bridge.name))")
+  }
+
+  // The closure to call when content scrolled more than scrollRatio
   private var whenScrolledClosure: ((CGFloat)->())?
   private var scrollRatio: CGFloat = 0
   
@@ -141,7 +289,7 @@ open class WebView: WKWebView, WKScriptMessageHandler, UIScrollViewDelegate {
   /// jsexec executes the passed string as JavaScript expression using
   /// evaluateJavaScript, if a closure is given, it is only called when
   /// there is no error.
-  public func jsexec(_ expr: String, closure: ((Any?)->Void)?) {
+  public func jsexec(_ expr: String, closure: ((Any?)->Void)? = nil) {
     self.evaluateJavaScript(expr) {
       [weak self] (retval, error) in
       if let err = error {
@@ -157,11 +305,11 @@ open class WebView: WKWebView, WKScriptMessageHandler, UIScrollViewDelegate {
   
   /// calls a native closure
   public func call(_ jscall: JSCall) {
-    if let bo = bridgeObjects[jscall.bridgeObject] {
+    if let bo = bridgeObjects[jscall.objectName] {
       bo.call(jscall)
     }
     else {
-      error("From JS: undefined bridge object '\(jscall.bridgeObject) used")
+      error("From JS: undefined bridge object '\(jscall.objectName) used")
     }
   }
   

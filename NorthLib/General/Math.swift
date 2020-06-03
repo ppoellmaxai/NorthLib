@@ -43,3 +43,28 @@ public extension BinaryFloatingPoint {
   static func **(lhs: Self, rhs: Int) -> Self { lhs.pow(exp: Double(rhs)) }
   
 } // extension FloatingPoint
+
+
+/// Returns greatest common divisor of two integers
+public func gcd(_ a: Int, _ b: Int) -> Int {
+  var a = abs(a)
+  var b = abs(b)
+  if a < b { swap(&a, &b) }
+  var mod: Int
+  while true {
+    mod = a % b
+    if mod == 0 { return b }
+    a = b
+    b = mod
+  }    
+}
+
+/// Returns greatest common divisor of an integer array
+public func gcd(_ args: [Int]) -> Int {
+  if args.isEmpty { return 1 }
+  var ret = args[0]
+  for i in 1..<args.count {
+    ret = gcd(args[i], ret)
+  }
+  return ret
+}
