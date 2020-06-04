@@ -146,6 +146,7 @@ extension ZoomedImageView{
     scrollView.delegate = self
     scrollView.maximumZoomScale = 1.0
     scrollView.zoomScale = 1.0
+    scrollView.contentInsetAdjustmentBehavior = .never
     scrollView.addSubview(imageView)
     addSubview(scrollView)
     NorthLib.pin(scrollView, to: self)
