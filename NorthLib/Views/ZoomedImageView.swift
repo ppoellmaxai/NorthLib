@@ -28,7 +28,11 @@ public class OptionalImageItem: OptionalImage{
 
 // MARK: -
 open class ZoomedImageView: UIView, ZoomedImageViewSpec {
-  private var zoomEnabled = true
+  private var zoomEnabled :Bool = true {
+    didSet{
+      self.scrollView.pinchGestureRecognizer?.isEnabled = zoomEnabled
+    }
+  }
   private var initiallyCentered = false
   private var lastLayoutSubviewsOrientationWasPortrait = false
   private var needUpdateScaleLimitAfterLayoutSubviews = true
@@ -142,7 +146,6 @@ extension ZoomedImageView{
           self.setImage(img)
           self.zoomEnabled = true
           self.spinner.stopAnimating()
-          self.scrollView.pinchGestureRecognizer?.isEnabled = self.zoomEnabled
           //due all previewImages are not allowed to zoom,
           //exchanged image should be shown fully
           self.initiallyCentered = false
