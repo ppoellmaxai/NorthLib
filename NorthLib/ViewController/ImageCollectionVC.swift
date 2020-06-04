@@ -118,7 +118,7 @@ open class ImageCollectionVC: PageCollectionVC, ImageCollectionVCSpec {
   open override func viewDidLayoutSubviews() {
     super.viewDidLayoutSubviews()
     if let iPath = scrollToIndexPathAfterLayoutSubviews {
-      collectionView?.scrollToItem(at: iPath, at: .centeredHorizontally, animated: true)
+      collectionView?.scrollToItem(at: iPath, at: .centeredHorizontally, animated: false)
       scrollToIndexPathAfterLayoutSubviews = nil
     }
   }
