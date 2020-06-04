@@ -359,6 +359,9 @@ open class StatusBar: UIScrollView, UIScrollViewDelegate, HandleOrientation {
   
 } // StatusBar
 
+/// A Protocol indicating that a view controller may be rotated.
+public protocol CanRotate {}
+
 /// An AppDelegate that handles notifications and status bars
 open class NotifiedDelegate: UIResponder, UIApplicationDelegate, 
            UIScrollViewDelegate, DoesLog {
@@ -413,6 +416,28 @@ open class NotifiedDelegate: UIResponder, UIApplicationDelegate,
     completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
     notifier.receive(userInfo)
     completionHandler(UIBackgroundFetchResult.noData)
+  }
+  
+  /// Lock all view controllers not obeying the CanRotate protocol to portrait orientation
+  public func application(_ application: UIApplication, supportedInterfaceOrientationsFor 
+    window: UIWindow?) -> UIInterfaceOrientationMask {
+    if topViewController(in: window?.rootViewController) is CanRotate {
+      return .allButUpsideDown
+    } else {
+      return .portrait
+    }
+  }  
+  
+  func topViewController(in rootViewController: UIViewController?) -> UIViewController? {
+    guard let rootViewController = rootViewController else { return nil }
+    if let tabBarController = rootViewController as? UITabBarController {
+      return topViewController(in: tabBarController.selectedViewController)
+    } else if let navigationController = rootViewController as? UINavigationController {
+      return topViewController(in: navigationController.visibleViewController)
+    } else if let presentedViewController = rootViewController.presentedViewController {
+      return topViewController(in: presentedViewController)
+    }
+    return rootViewController
   }
   
 } // NotifiedDelegate
