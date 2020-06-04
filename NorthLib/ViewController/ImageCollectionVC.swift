@@ -9,27 +9,31 @@
 import Foundation
 import UIKit
 
-/** ToDo's
- - Handle rotation from this not from View DONE
-      - Issue: small Image displayed => rotate => the nearby Image is also shown
-             => ToDo Solution fade Out & In or just set the transparency!
- - implement X CLose Callback DONE
- 
- */
-
-open class ImageCollectionViewController: PageCollectionVC, ImageCollectionViewControllerSpec {
-    public private(set) var xButton: Button<CircledXView> = Button<CircledXView>()
+open class ImageCollectionVC: PageCollectionVC, ImageCollectionVCSpec {
+  public private(set) var xButton = Button<CircledXView>()
+  public private(set) var pageControl = UIPageControl()
   
-  public var images: [OptionalImage] = []
+  public var pageControlMaxDotsCount: Int = 0 {
+    didSet{ updatePageControllDots() }
+  }
   
-  private var reuseableViews: [ZoomedImageView] = []
+  public var images: [OptionalImage] = []{
+    didSet{ updatePageControllDots() }
+  }
   
-  
+  private func updatePageControllDots() {
+    if pageControlMaxDotsCount == 0 || self.count < pageControlMaxDotsCount {
+      self.pageControl.numberOfPages = self.count
+    } else {
+      self.pageControl.numberOfPages = pageControlMaxDotsCount
+    }
+  }
+    
   public override func scrollViewDidScroll(_ scrollView: UIScrollView) {
-    if maxPageControlDotsCount != 0 {
+    if pageControlMaxDotsCount != 0 {
       let pageWidth = scrollView.frame.width
       let currentPage = Int((scrollView.contentOffset.x + pageWidth / 2) / pageWidth)
-      self.pageControl.currentPage = Int(round(Float(currentPage) * Float(maxPageControlDotsCount) / Float(self.count)))
+      self.pageControl.currentPage = Int(round(Float(currentPage) * Float(pageControlMaxDotsCount) / Float(self.count)))
     }
     else {
       let witdh = scrollView.frame.width - (scrollView.contentInset.left*2)
@@ -49,10 +53,7 @@ open class ImageCollectionViewController: PageCollectionVC, ImageCollectionViewC
      */
     collectionView.collectionViewLayout.invalidateLayout()
   }
-  
-  //max dots in pageControl, set to 0 for disable
-  let maxPageControlDotsCount = 4
-  var pageControl:UIPageControl = UIPageControl()
+
   
 //  /// Defines the closure which delivers the views to display
 //  open override func viewProvider(provider: @escaping (Int, OptionalView?)->OptionalView) {
@@ -71,6 +72,23 @@ open class ImageCollectionViewController: PageCollectionVC, ImageCollectionViewC
     }
   }
   
+  private var onXClosure: (()->())? = nil
+  private var fallbackOnXClosure: (()->())? = nil
+  
+  public func onX(closure: @escaping () -> ()) {
+    self.onXClosure = closure
+  }
+  
+  func defaultOnXHandler() {
+    Log.log("Close from Child!")
+    if let nc = self.navigationController {
+      nc.popViewController(animated: true)
+    }
+    else if let pvc = self.presentingViewController {
+      pvc.dismiss(animated: true, completion: nil)
+    }
+  }
+  
   
   // MARK: - Life Cycle
   open override func viewDidLoad() {
@@ -78,14 +96,21 @@ open class ImageCollectionViewController: PageCollectionVC, ImageCollectionViewC
     self.inset = 0.0
     prepareCollectionView()
     setupXButton()
-    preparePageControl()
+    setupPageControl()
     setupViewProvider()
+    
+    xButton.isHidden = false
+    xButton.onPress {_ in
+      if let closure = self.onXClosure {
+        closure()
+      }
+      else {
+        self.defaultOnXHandler()
+      }
+    }
+    
     //initially render CollectionView
     self.collectionView.reloadData()
-    self.onX {
-      self.index = 3
-      print("X Press!!")
-    }
   }
   
   var scrollToIndexPathAfterLayoutSubviews : IndexPath?
@@ -110,20 +135,7 @@ open class ImageCollectionViewController: PageCollectionVC, ImageCollectionViewC
     self.collectionView.showsVerticalScrollIndicator = false
     self.collectionView.delegate = self
   }
-  
-  func preparePageControl() {
-    //setup number of dots
-    if maxPageControlDotsCount == 0 || self.count < maxPageControlDotsCount {
-      self.pageControl.numberOfPages = self.count
-    } else {
-      self.pageControl.numberOfPages = maxPageControlDotsCount
-    }
-    //Setup UI
-    self.view.addSubview(self.pageControl)
-    pin(pageControl.right, to: self.view.rightGuide(), dist: -15)
-    pin(pageControl.left, to: self.view.leftGuide(), dist: 15)
-    pin(pageControl.bottom, to: self.view.bottomGuide(), dist: -15)
-  }
+
   
   func setupViewProvider(){
     viewProvider { [weak self] (index, oview) in
