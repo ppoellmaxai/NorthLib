@@ -92,7 +92,7 @@ public extension ZoomedImageViewSpec {
   func setupSpinner() {
     if #available(iOS 13, *) {
       spinner.style = .large
-      spinner.color = .black
+      spinner.color = .white
     }
     else { spinner.style = .whiteLarge }
     spinner.hidesWhenStopped = true
