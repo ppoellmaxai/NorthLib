@@ -63,6 +63,16 @@ public protocol ZoomedImageViewSpec where Self: UIView {
   
   /// Define closure to call when the X-Button is pressed
   func onX(closure: @escaping ()->())
+  
+  /// Define closure to call when the user is zooming beyond the resolution
+  /// of the image. 'zoomFactor' defines the maximum zoom after which a higher
+  /// resolution image is requested.
+  //func whenNeedHighRes(zoomFactor: CGFloat, closure: ()->UIImage?)
+  
+  /// Defines a closure to call when the user has tapped into the image.
+  /// The coordinates passed to the closure are relative content size 
+  /// coordinates: 0 <= x,y <= 1
+  //func onTap(closure: (_ x: Double, _ y: Double)->())
 }
 
 public extension ZoomedImageViewSpec {
