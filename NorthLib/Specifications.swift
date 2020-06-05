@@ -118,7 +118,7 @@ public extension ZoomedImageViewSpec {
  An ImageCollectionVC utilizes PageCollectionVC to show a collection of ZoomedImageViews.
  
  After being initialized the attribute 'images' is set to contain an array of
- ZoomedImageViews **EXPECTED OptionalImageItem!**. The attribute 'index' (from PageCollectionVC) is used to point
+ OptionalImageItem. The attribute 'index' (from PageCollectionVC) is used to point
  to that image which is to display on the screen. Each zoomable image fills the complete
  space of ImageCollectionVCs view. Hence the size of every cell of the collection
  view is identical to the size of the collection view's self.view.
