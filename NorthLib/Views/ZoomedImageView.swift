@@ -28,14 +28,17 @@ public class OptionalImageItem: OptionalImage{
 
 // MARK: -
 open class ZoomedImageView: UIView, ZoomedImageViewSpec {
-  private var zoomEnabled = true
+  private var zoomEnabled :Bool = true {
+    didSet{
+      self.scrollView.pinchGestureRecognizer?.isEnabled = zoomEnabled
+    }
+  }
   private var initiallyCentered = false
   private var lastLayoutSubviewsOrientationWasPortrait = false
   private var needUpdateScaleLimitAfterLayoutSubviews = true
   private var orientationClosure = OrientationClosure()
   public private(set) var scrollView: UIScrollView = UIScrollView()
   public private(set) var imageView: UIImageView = UIImageView()
-  public private(set) var optionalImage: OptionalImage
   public private(set) var xButton: Button<CircledXView> = Button<CircledXView>()
   public private(set) var spinner: UIActivityIndicatorView = UIActivityIndicatorView()
   public private(set) lazy var menu = ContextMenu(view: imageView)
@@ -44,6 +47,15 @@ open class ZoomedImageView: UIView, ZoomedImageViewSpec {
     self.optionalImage = optionalImage
     super.init(frame: CGRect.zero)
     setup()
+  }
+  
+  
+  public var optionalImage: OptionalImage{
+    didSet {
+      updateImage()
+      initiallyCentered = false
+      setScaleLimitsAndCenterIfNeeded()
+    }
   }
   
   override public init(frame: CGRect) {
@@ -87,7 +99,7 @@ extension ZoomedImageView{
                               animated: true)
       centerImageInScrollView()
     }
-    //Otherwise Zoom Out in to tap loacation
+      //Otherwise Zoom Out in to tap loacation
     else {
       let tapLocation = tapR.location(in: tapR.view)
       let newCenter = imageView.convert(tapLocation, from: scrollView)
@@ -107,13 +119,13 @@ extension ZoomedImageView{
     setupXButton()
     setupSpinner()
     setupGestureRecognizer()
-    setupImage()
+    updateImage()
     orientationClosure.onOrientationChange(closure: {
       self.setScaleLimitsAndCenterIfNeeded()
     })
   }
   
-  func setupImage() {
+  func updateImage() {
     if optionalImage.isAvailable, let detailImage = optionalImage.image {
       setImage(detailImage)
       zoomEnabled = true
@@ -124,6 +136,9 @@ extension ZoomedImageView{
       if let img = optionalImage.waitingImage {
         setImage(img)
         zoomEnabled = false
+      } else {
+        //Due re-use its needed to unset probably existing old image
+        imageView.image = nil
       }
       spinner.startAnimating()
       optionalImage.whenAvailable {
@@ -131,7 +146,6 @@ extension ZoomedImageView{
           self.setImage(img)
           self.zoomEnabled = true
           self.spinner.stopAnimating()
-          self.scrollView.pinchGestureRecognizer?.isEnabled = self.zoomEnabled
           //due all previewImages are not allowed to zoom,
           //exchanged image should be shown fully
           self.initiallyCentered = false
