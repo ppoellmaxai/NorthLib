@@ -28,7 +28,6 @@ public class OptionalImageItem: OptionalImage{
 
 // MARK: -
 open class ZoomedImageView: UIView, ZoomedImageViewSpec {
-  private var applyIgnoredDeviceInterfaceOrientation = false
   private var zoomEnabled = true
   private var initiallyCentered = false
   private var lastLayoutSubviewsOrientationWasPortrait = false
@@ -44,19 +43,6 @@ open class ZoomedImageView: UIView, ZoomedImageViewSpec {
   public required init(optionalImage: OptionalImage) {
     self.optionalImage = optionalImage
     super.init(frame: CGRect.zero)
-    setup()
-  }
-  
-  public required init(optionalImage: OptionalImage, verifyInterfaceOrientationOnStart:Bool) {
-    self.optionalImage = optionalImage
-    super.init(frame: CGRect.zero)
-   
-    if verifyInterfaceOrientationOnStart
-      && UIDevice.current.orientation.isLandscape
-      && UIScreen.main.bounds.size.width < UIScreen.main.bounds.size.height
-    {
-      applyIgnoredDeviceInterfaceOrientation = true
-    }
     setup()
   }
   
@@ -122,38 +108,9 @@ extension ZoomedImageView{
     setupSpinner()
     setupGestureRecognizer()
     setupImage()
-    if applyIgnoredDeviceInterfaceOrientation == false {
-      orientationClosure.onOrientationChange(closure: {
-        self.setScaleLimitsAndCenterIfNeeded()
-      })
-    }
-  }
-  
-  /// Setup the xButton, overwrites the function in Spec
-  func setupXButton() {
-    xButton.pinHeight(35)
-    xButton.pinWidth(35)
-    xButton.color = .black
-    xButton.buttonView.isCircle = true
-    xButton.buttonView.circleColor = UIColor.rgb(0xdddddd)
-    xButton.buttonView.color = UIColor.rgb(0x707070)
-    xButton.buttonView.innerCircleFactor = 0.5
-    self.addSubview(xButton)
-    
-    if applyIgnoredDeviceInterfaceOrientation
-      && UIDevice.current.orientation == .landscapeLeft{
-      pin(xButton.right, to: self.right, dist: -15)
-      pin(xButton.bottom, to: self.bottomGuide(), dist: -15)
-    }
-    else if applyIgnoredDeviceInterfaceOrientation
-      && UIDevice.current.orientation == .landscapeRight{
-      pin(xButton.left, to: self.left, dist: 15)
-      pin(xButton.top, to: self.topGuide(), dist: 15)
-    } else {
-      pin(xButton.right, to: self.right, dist: -15)
-      pin(xButton.top, to: self.topGuide(), dist: 15)
-    }
-    xButton.isHidden = true
+    orientationClosure.onOrientationChange(closure: {
+      self.setScaleLimitsAndCenterIfNeeded()
+    })
   }
   
   func setupImage() {
@@ -208,19 +165,6 @@ extension ZoomedImageView{
 // MARK: Helper
 extension ZoomedImageView{
   func setImage(_ image: UIImage) {
-    var image = image
-    if applyIgnoredDeviceInterfaceOrientation {
-      if UIDevice.current.orientation == .landscapeLeft {
-        image = UIImage(cgImage: image.cgImage!,
-                        scale: image.scale,
-                        orientation: .right)
-      }
-      else if UIDevice.current.orientation == .landscapeRight {
-        image = UIImage(cgImage: image.cgImage!,
-                        scale: image.scale,
-                        orientation: .left)
-      }
-    }
     scrollView.zoomScale = 1.0//ensure contentsize is correct!
     imageView.image = image
     imageView.frame = CGRect(origin: CGPoint.zero, size: image.size)
