@@ -10,6 +10,9 @@ import UIKit
 
 public class OptionalImageItem: OptionalImage{
   private var availableClosure: (()->())?
+  fileprivate var onUpdatingClosureClosure: (()->())? = nil
+  fileprivate var onHigherImageResolutionNeededClosure: (()->UIImage?)? = nil
+  fileprivate var onImageTapClosure: ((_ x:Double, _ y:Double)->())? = nil
   public var image: UIImage?{
     didSet {
       availableClosure?()
@@ -24,6 +27,15 @@ public class OptionalImageItem: OptionalImage{
   public required init(waitingImage: UIImage? = nil) {
     self.waitingImage = waitingImage
   }
+  public func onHigherImageResolutionNeeded(zoomFactor: CGFloat, closure:  @escaping ()->UIImage?){
+    onHigherImageResolutionNeededClosure = closure
+    onUpdatingClosureClosure?()
+  }
+  public func onTap(closure: @escaping (_ x: Double, _ y: Double)->()){
+    onImageTapClosure = closure
+    onUpdatingClosureClosure?()
+  }
+
 }
 
 // MARK: -
@@ -36,7 +48,10 @@ open class ZoomedImageView: UIView, ZoomedImageViewSpec {
   private var initiallyCentered = false
   private var lastLayoutSubviewsOrientationWasPortrait = false
   private var needUpdateScaleLimitAfterLayoutSubviews = true
+  private let imageTapRecognizer = UITapGestureRecognizer()
   private var orientationClosure = OrientationClosure()
+  private var imageTapClosure : ((Double, Double) -> ())? = nil
+  private var higherImageResolutionNeededClosure : (() -> ())? = nil
   public private(set) var scrollView: UIScrollView = UIScrollView()
   public private(set) var imageView: UIImageView = UIImageView()
   public private(set) var xButton: Button<CircledXView> = Button<CircledXView>()
@@ -53,6 +68,10 @@ open class ZoomedImageView: UIView, ZoomedImageViewSpec {
   public var optionalImage: OptionalImage{
     didSet {
       updateImage()
+      if let itm = optionalImage as? OptionalImageItem {
+        itm.onUpdatingClosureClosure = { self.updateClosures() }
+      }
+      updateClosures()
       initiallyCentered = false
       setScaleLimitsAndCenterIfNeeded()
     }
@@ -79,6 +98,37 @@ open class ZoomedImageView: UIView, ZoomedImageViewSpec {
       scrollView.pinchGestureRecognizer?.isEnabled = zoomEnabled
       setScaleLimitsAndCenterIfNeeded()
     }
+  }
+}
+
+// MARK: - Request high res image
+extension ZoomedImageView{
+  public func onHigherImageResolutionNeeded(closure: @escaping () -> ()) {
+    self.higherImageResolutionNeededClosure = closure
+  }
+}
+
+// MARK: - Image Tap
+extension ZoomedImageView{
+  public func onImageTap(closure: ((Double, Double) -> ())?) {
+    if closure == nil {
+      imageTapRecognizer.isEnabled = false
+      return
+    }
+    imageTapRecognizer.numberOfTapsRequired = 1
+    imageTapRecognizer.isEnabled = true
+    imageTapRecognizer.addTarget(self, action: #selector(imageTapHandler))
+    imageView.addGestureRecognizer(imageTapRecognizer)
+    imageView.isUserInteractionEnabled = true
+    imageTapClosure = closure
+  }
+  
+  @objc func imageTapHandler(sender: UITapGestureRecognizer){
+    let loc = sender.location(in: imageView)
+    let size = imageView.frame.size
+    guard let closure = imageTapClosure else { return }
+    closure(Double(loc.x / (size.width / scrollView.zoomScale )),
+            Double(loc.y / (size.height / scrollView.zoomScale )))
   }
 }
 
@@ -119,6 +169,7 @@ extension ZoomedImageView{
     setupXButton()
     setupSpinner()
     setupGestureRecognizer()
+    updateClosures()
     updateImage()
     orientationClosure.onOrientationChange(closure: {
       self.setScaleLimitsAndCenterIfNeeded()
@@ -154,6 +205,15 @@ extension ZoomedImageView{
       }
     }
   }
+
+  func updateClosures() {
+    guard let itm = optionalImage as? OptionalImageItem else { return }
+    self.onImageTap(closure: itm.onImageTapClosure)
+//    self.onHigherImageResolutionNeeded {
+//      <#code#>
+//      }(closure: optionalImage.onImageTapClosure)
+  }
+  
   
   func setupScrollView() {
     imageView.contentMode = .scaleAspectFit
@@ -171,6 +231,7 @@ extension ZoomedImageView{
     let gestureRecognizer = UITapGestureRecognizer(target: self,
                                                    action: #selector(handleDoubleTap))
     gestureRecognizer.numberOfTapsRequired = 2
+    imageTapRecognizer.require(toFail: gestureRecognizer)
     scrollView.addGestureRecognizer(gestureRecognizer)
     gestureRecognizer.isEnabled = zoomEnabled
   }
