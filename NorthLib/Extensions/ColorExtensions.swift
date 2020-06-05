@@ -82,4 +82,18 @@ public extension UIColor {
     else { return self + 0.2 }
   }
   
+  /// Returns a Hex-String describing the RGB values plus alpha
+  func toString() -> String {
+    func toHex(_ val: CGFloat) -> String {
+      let v = Int(round(val*255))
+      return String(format: "%02X", v)
+    }
+    let (r,g,b,a) = self.rgba()
+    var ret = toHex(r)
+    ret += toHex(g)
+    ret += toHex(b)
+    ret += " a:" + String(format: "%.2f", a)
+    return ret
+  }
+  
 }
