@@ -15,7 +15,7 @@ public extension UIColor {
     let blue:CGFloat = CGFloat(color & 0xff),
         green:CGFloat = CGFloat( (color >> 8) & 0xff ),
         red:CGFloat = CGFloat( (color >> 16) & 0xff )
-    return UIColor(red: red/255, green: green/255, blue: blue/255, alpha: 1.0)
+    return UIColor(red: red/255, green: green/255, blue: blue/255, alpha: alpha)
   }
   
   /// Returns a tuple (red,green,blue,alpha) of CGFloat values (0<=value<=1)

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		008F9A2024864F9400EF5EA5 /* ImageCollectionVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 008F9A1F24864F9400EF5EA5 /* ImageCollectionVC.swift */; };
 		00E4E36B247E694C00BEEC4A /* ZoomedImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00E4E36A247E694C00BEEC4A /* ZoomedImageView.swift */; };
 		AE08C493240D476300D41E91 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE08C492240D476300D41E91 /* Theme.swift */; };
 		AE08C49724101CA900D41E91 /* FontExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE08C49624101CA900D41E91 /* FontExtensions.swift */; };
@@ -90,6 +91,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		008F9A1F24864F9400EF5EA5 /* ImageCollectionVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageCollectionVC.swift; sourceTree = "<group>"; };
 		00E4E36A247E694C00BEEC4A /* ZoomedImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZoomedImageView.swift; sourceTree = "<group>"; };
 		AE08C492240D476300D41E91 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		AE08C49624101CA900D41E91 /* FontExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FontExtensions.swift; sourceTree = "<group>"; };
@@ -354,6 +356,7 @@
 				AE480F5A24094D720014F9D9 /* Alert.swift */,
 				AE2A0EA0245B31B500E91595 /* NavigationController.swift */,
 				AEEB1A08245DB5EC0083CB55 /* ExportDialogue.swift */,
+				008F9A1F24864F9400EF5EA5 /* ImageCollectionVC.swift */,
 			);
 			path = ViewController;
 			sourceTree = "<group>";
@@ -521,6 +524,7 @@
 				AE98513C2320FCB400EAC9D8 /* PageCollectionVC.swift in Sources */,
 				AE9851402320FDAF00EAC9D8 /* ArrayExtensions.swift in Sources */,
 				AE4E50F9243B45870024609A /* CarouselView.swift in Sources */,
+				008F9A2024864F9400EF5EA5 /* ImageCollectionVC.swift in Sources */,
 				AED852A723C22241002F07E8 /* fileop.cpp in Sources */,
 				AE7122F023197B4000B715A8 /* Globals.swift in Sources */,
 				AE7122E823197B4000B715A8 /* Buttons.swift in Sources */,
