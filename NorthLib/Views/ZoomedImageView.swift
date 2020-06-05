@@ -160,6 +160,8 @@ extension ZoomedImageView{
     scrollView.delegate = self
     scrollView.maximumZoomScale = 1.0
     scrollView.zoomScale = 1.0
+    ///prevent pinch/zoom smaller than min while pinch
+    scrollView.bouncesZoom = false
     scrollView.contentInsetAdjustmentBehavior = .never
     scrollView.addSubview(imageView)
     addSubview(scrollView)
@@ -284,6 +286,12 @@ extension ZoomedImageView: UIScrollViewDelegate{
     if scrollView.frame.size.width > scrollView.contentSize.width
       || scrollView.frame.size.height > scrollView.contentSize.height {
       centerImageInScrollView()
+    }
+    else if scrollView.frame.size.width < scrollView.contentSize.width
+      || scrollView.frame.size.height < scrollView.contentSize.height{
+      /// removed unneeded content insets if zoomed in
+      /// improve imageCollectionVc swipe to left neighbour
+      scrollView.contentInset = UIEdgeInsets.zero
     }
   }
 }
