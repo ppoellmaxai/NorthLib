@@ -20,7 +20,7 @@ public protocol OptionalImage {
   
   /// Define closure to call when the user is zooming beyond the resolution
   /// of the image. 'zoomFactor' defines the maximum zoom after which a higher
-  /// resolution image is requested.
+  /// resolution image is requested. //TBD
   func onHigherImageResolutionNeeded(zoomFactor: CGFloat,
                                      closure: @escaping ()->UIImage?)
   
