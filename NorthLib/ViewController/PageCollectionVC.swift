@@ -60,6 +60,9 @@ open class PageCollectionVC: UIViewController, UICollectionViewDelegate,
   
   /// inset from top/bottom/left/right as factor to min(width,height)
   open var inset = 0.025
+  
+  /// Pin collection view to top safe area?
+  open var pinTopToSafeArea = true
 
   // The raw cell size (without bounds)
   private var rawCellsize: CGSize { return self.collectionView.bounds.size }
@@ -155,7 +158,8 @@ open class PageCollectionVC: UIViewController, UICollectionViewDelegate,
     collectionView.backgroundColor = UIColor.white
     collectionView.contentInsetAdjustmentBehavior = .never
     self.view.addSubview(collectionView)
-    pin(collectionView.top, to: self.view.topGuide())
+    if self.pinTopToSafeArea { pin(collectionView.top, to: self.view.topGuide()) }
+    else { pin(collectionView.top, to: self.view.top) }
     pin(collectionView.bottom, to: self.view.bottom)
     pin(collectionView.left, to: self.view.left)
     pin(collectionView.right, to: self.view.right)
