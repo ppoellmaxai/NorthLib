@@ -96,6 +96,15 @@ open class File: DoesLog {
     self.path = path
   }
   
+  /// A File searched for in the main bundle
+  public convenience init?(inMain fn: String) {
+    let pref = File.progname(fn)
+    let ext = File.extname(fn)
+    guard let path = Bundle.main.path(forResource: pref, ofType: ext)
+      else { return nil }
+    self.init(path)
+  }
+  
   /// Initialisation with directory and file name
   public convenience init(dir: String, fname: String) {
     var str = fn_pathname(dir.cstr, fname.cstr)

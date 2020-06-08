@@ -75,6 +75,16 @@ public protocol ZoomedImageViewSpec where Self: UIView {
   
   /// Define closure to call when the X-Button is pressed
   func onX(closure: @escaping ()->())
+  
+  /// Define closure to call when the user is zooming beyond the resolution
+  /// of the image. 'zoomFactor' defines the maximum zoom after which a higher
+  /// resolution image is requested.
+  //func whenNeedHighRes(zoomFactor: CGFloat, closure: ()->UIImage?)
+  
+  /// Defines a closure to call when the user has tapped into the image.
+  /// The coordinates passed to the closure are relative content size 
+  /// coordinates: 0 <= x,y <= 1
+  //func onTap(closure: (_ x: Double, _ y: Double)->())
 }
 
 public extension ZoomedImageViewSpec {
@@ -120,7 +130,7 @@ public extension ZoomedImageViewSpec {
  An ImageCollectionVC utilizes PageCollectionVC to show a collection of ZoomedImageViews.
  
  After being initialized the attribute 'images' is set to contain an array of
- ZoomedImageViews **EXPECTED OptionalImageItem!**. The attribute 'index' (from PageCollectionVC) is used to point
+ OptionalImageItem. The attribute 'index' (from PageCollectionVC) is used to point
  to that image which is to display on the screen. Each zoomable image fills the complete
  space of ImageCollectionVCs view. Hence the size of every cell of the collection
  view is identical to the size of the collection view's self.view.
