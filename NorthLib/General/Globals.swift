@@ -14,6 +14,13 @@ public func delay(seconds: Double, completion:@escaping ()->()) {
   DispatchQueue.main.asyncAfter(deadline: .now() + seconds) { completion() }
 }
 
+/// Calls a closure every n seconds
+@discardableResult
+public func every(seconds: Double, closure: @escaping (Timer)->()) -> Timer {
+  return Timer.scheduledTimer(withTimeInterval: seconds, repeats: true, 
+                              block: closure)
+}
+
 /// perform closure on main thread
 public func onMain(closure: @escaping ()->()) {
   DispatchQueue.main.async(execute: closure)
