@@ -1,5 +1,5 @@
 //
-//  ZoomedImageView.swift
+//    
 //  NorthLib
 //
 //  Created by Ringo Müller on 27.05.20.
@@ -43,10 +43,17 @@ open class OptionalImageItem: OptionalImage{
   fileprivate var onImageTapClosure: ((_ x:Double, _ y:Double)->())? = nil
   
   public var waitingImage: UIImage?
+  fileprivate var _image: UIImage?
   public var image: UIImage?{
-    didSet {
+    get { return _image }
+    set {
+      _image = newValue
       availableClosure?()
     }
+  }
+  
+  func setImg(i:UIImage){
+    _image = i
   }
   
   public required init(waitingImage: UIImage? = nil) {
@@ -410,6 +417,7 @@ extension ZoomedImageView: UIScrollViewDelegate{
         if let img = image {
           self.updateImagewithHighResImage(img)
           self.highResImageRequested = false
+          oImage._image = img
         }
       })
     }
