@@ -8,10 +8,33 @@
 
 import UIKit
 
-/**
- ToDO Performance Improvement:
- if HighRes Image was set, and due re use the ZoomedImageView will use another Model the rendered detail will be lost so save it to image (the high Res Image!)
- */
+/// An Image with a smaller "Waiting Image"
+public protocol OptionalImage {
+  /// The main image to display
+  var image: UIImage? { get set }
+  /// An alternate image to display when the main image is not yet available
+  var waitingImage: UIImage? { get set }
+  /// Returns true if 'image' is available
+  var isAvailable: Bool { get }
+  /// Defines a closure to call when the main image becomes available
+  func whenAvailable(closure: @escaping ()->())
+  
+  /// Define closure to call when the user is zooming beyond the resolution
+  /// of the image. 'zoomFactor' defines the maximum zoom after which a higher
+  /// resolution image is requested.
+  func onHighResImgNeeded(zoomFactor: CGFloat,
+                          closure: @escaping (@escaping (UIImage?) -> ()) -> ())
+
+  /// Defines a closure to call when the user has tapped into the image.
+  /// The coordinates passed to the closure are relative content size
+  /// coordinates: 0 <= x,y <= 1
+  func onTap(closure: @escaping (_ x: Double, _ y: Double)->())
+}
+
+extension OptionalImage {
+  public var isAvailable: Bool { return image != nil }
+}
+
 open class OptionalImageItem: OptionalImage{
   private var availableClosure: (()->())?
   fileprivate var needHighRes:((@escaping (UIImage?)->()) -> ())? = nil
