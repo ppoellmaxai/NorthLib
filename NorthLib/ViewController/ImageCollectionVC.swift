@@ -12,6 +12,9 @@ import UIKit
 open class ImageCollectionVC: PageCollectionVC, ImageCollectionVCSpec {
   public private(set) var xButton = Button<CircledXView>()
   public private(set) var pageControl = UIPageControl()
+  private var onXClosure: (()->())? = nil
+  private var fallbackOnXClosure: (()->())? = nil
+  private var scrollToIndexPathAfterLayoutSubviews : IndexPath?
   
   public var pageControlMaxDotsCount: Int = 0 {
     didSet{ updatePageControllDots() }
@@ -21,6 +24,16 @@ open class ImageCollectionVC: PageCollectionVC, ImageCollectionVCSpec {
     didSet{ updatePageControllDots() }
   }
   
+  /** the default way to initialize/render the PageCollectionVC is to set its count
+   this triggers collectionView.reloadData()
+   this will be done automatic in ImageCollectionViewController->viewDidLoad
+   To get rid of this default behaviour, we overwrite the Count Setter
+   */
+  override open var count: Int {
+    get { return self.images.count }
+    set { /**Not used, not allowed**/ }
+  }
+  
   private func updatePageControllDots() {
     if pageControlMaxDotsCount == 0 || self.count < pageControlMaxDotsCount {
       self.pageControl.numberOfPages = self.count
@@ -28,7 +41,7 @@ open class ImageCollectionVC: PageCollectionVC, ImageCollectionVCSpec {
       self.pageControl.numberOfPages = pageControlMaxDotsCount
     }
   }
-    
+  
   public override func scrollViewDidScroll(_ scrollView: UIScrollView) {
     if pageControlMaxDotsCount != 0 {
       let pageWidth = scrollView.frame.width
@@ -53,34 +66,12 @@ open class ImageCollectionVC: PageCollectionVC, ImageCollectionVCSpec {
      */
     collectionView.collectionViewLayout.invalidateLayout()
   }
-
-  
-//  /// Defines the closure which delivers the views to display
-//  open override func viewProvider(provider: @escaping (Int, OptionalView?)->OptionalView) {
-//    self.provider = provider
-//  }
-  
-  /** the default way to initialize/render the PageCollectionVC is to set its count
-      this triggers collectionView.reloadData()
-      this will be done automatic in ImageCollectionViewController->viewDidLoad
-      To get rid of this default behaviour, we overwrite the Count Setter
-  */
-  override open var count: Int {
-    get { return self.images.count }
-    set {
-      //Not used, not allowed
-    }
-  }
-  
-  private var onXClosure: (()->())? = nil
-  private var fallbackOnXClosure: (()->())? = nil
   
   public func onX(closure: @escaping () -> ()) {
     self.onXClosure = closure
   }
   
   func defaultOnXHandler() {
-    Log.log("Close from Child!")
     if let nc = self.navigationController {
       nc.popViewController(animated: true)
     }
@@ -88,7 +79,6 @@ open class ImageCollectionVC: PageCollectionVC, ImageCollectionVCSpec {
       pvc.dismiss(animated: true, completion: nil)
     }
   }
-  
   
   // MARK: - Life Cycle
   open override func viewDidLoad() {
@@ -98,7 +88,6 @@ open class ImageCollectionVC: PageCollectionVC, ImageCollectionVCSpec {
     setupXButton()
     setupPageControl()
     setupViewProvider()
-    
     xButton.isHidden = false
     xButton.onPress {_ in
       if let closure = self.onXClosure {
@@ -108,12 +97,9 @@ open class ImageCollectionVC: PageCollectionVC, ImageCollectionVCSpec {
         self.defaultOnXHandler()
       }
     }
-    
     //initially render CollectionView
     self.collectionView.reloadData()
   }
-  
-  var scrollToIndexPathAfterLayoutSubviews : IndexPath?
   
   open override func viewDidLayoutSubviews() {
     super.viewDidLayoutSubviews()
@@ -130,26 +116,21 @@ open class ImageCollectionVC: PageCollectionVC, ImageCollectionVCSpec {
   // MARK: UI Helper Methods
   func prepareCollectionView() {
     self.collectionView.backgroundColor = UIColor.black
-    //
     self.collectionView.showsHorizontalScrollIndicator = false
     self.collectionView.showsVerticalScrollIndicator = false
     self.collectionView.delegate = self
   }
-
   
   func setupViewProvider(){
     viewProvider { [weak self] (index, oview) in
       guard let this = self else { return UIView() }
       if let ziv = oview as? ZoomedImageView {
         ziv.optionalImage = this.images[index]
-        print("reuse ziv")
         return ziv
       }
       else {
-        print("init new ziv")
         return ZoomedImageView(optionalImage: this.images[index])
       }
     }
   }
-  
 } // PageCollectionVC
