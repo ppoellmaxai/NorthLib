@@ -12,7 +12,7 @@ import UIKit
  ToDO Performance Improvement:
  if HighRes Image was set, and due re use the ZoomedImageView will use another Model the rendered detail will be lost so save it to image (the high Res Image!)
  */
-public class OptionalImageItem: OptionalImage{
+open class OptionalImageItem: OptionalImage{
   private var availableClosure: (()->())?
   fileprivate var needHighRes:((@escaping (UIImage?)->()) -> ())? = nil
   fileprivate var onUpdatingClosureClosure: (()->())? = nil
