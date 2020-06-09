@@ -12,7 +12,6 @@ import UIKit
  ToDO Performance Improvement:
  if HighRes Image was set, and due re use the ZoomedImageView will use another Model the rendered detail will be lost so save it to image (the high Res Image!)
  */
-
 public class OptionalImageItem: OptionalImage{
   private var availableClosure: (()->())?
   fileprivate var needHighRes:((@escaping (UIImage?)->()) -> ())? = nil
@@ -162,7 +161,7 @@ extension ZoomedImageView{
                               animated: true)
       centerImageInScrollView()
     }
-      //Otherwise Zoom Out in to tap loacation
+    //Otherwise Zoom Out in to tap loacation
     else {
       let maxZoom = scrollView.maximumZoomScale
       if maxZoom > 2 { scrollView.maximumZoomScale = 2  }
