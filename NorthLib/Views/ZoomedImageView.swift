@@ -1,5 +1,5 @@
 //
-//  ZoomedImageView.swift
+//    
 //  NorthLib
 //
 //  Created by Ringo Müller on 27.05.20.
@@ -8,11 +8,34 @@
 
 import UIKit
 
-/**
- ToDO Performance Improvement:
- if HighRes Image was set, and due re use the ZoomedImageView will use another Model the rendered detail will be lost so save it to image (the high Res Image!)
- */
-public class OptionalImageItem: OptionalImage{
+/// An Image with a smaller "Waiting Image"
+public protocol OptionalImage {
+  /// The main image to display
+  var image: UIImage? { get set }
+  /// An alternate image to display when the main image is not yet available
+  var waitingImage: UIImage? { get set }
+  /// Returns true if 'image' is available
+  var isAvailable: Bool { get }
+  /// Defines a closure to call when the main image becomes available
+  func whenAvailable(closure: @escaping ()->())
+  
+  /// Define closure to call when the user is zooming beyond the resolution
+  /// of the image. 'zoomFactor' defines the maximum zoom after which a higher
+  /// resolution image is requested.
+  func onHighResImgNeeded(zoomFactor: CGFloat,
+                          closure: @escaping (@escaping (UIImage?) -> ()) -> ())
+
+  /// Defines a closure to call when the user has tapped into the image.
+  /// The coordinates passed to the closure are relative content size
+  /// coordinates: 0 <= x,y <= 1
+  func onTap(closure: @escaping (_ x: Double, _ y: Double)->())
+}
+
+extension OptionalImage {
+  public var isAvailable: Bool { return image != nil }
+}
+
+open class OptionalImageItem: OptionalImage{
   private var availableClosure: (()->())?
   fileprivate var needHighRes:((@escaping (UIImage?)->()) -> ())? = nil
   fileprivate var onUpdatingClosureClosure: (()->())? = nil
@@ -20,10 +43,17 @@ public class OptionalImageItem: OptionalImage{
   fileprivate var onImageTapClosure: ((_ x:Double, _ y:Double)->())? = nil
   
   public var waitingImage: UIImage?
+  fileprivate var _image: UIImage?
   public var image: UIImage?{
-    didSet {
+    get { return _image }
+    set {
+      _image = newValue
       availableClosure?()
     }
+  }
+  
+  func setImg(i:UIImage){
+    _image = i
   }
   
   public required init(waitingImage: UIImage? = nil) {
@@ -387,6 +417,7 @@ extension ZoomedImageView: UIScrollViewDelegate{
         if let img = image {
           self.updateImagewithHighResImage(img)
           self.highResImageRequested = false
+          oImage._image = img
         }
       })
     }
