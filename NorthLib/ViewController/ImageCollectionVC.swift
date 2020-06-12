@@ -35,16 +35,6 @@ open class ImageCollectionVC: PageCollectionVC, ImageCollectionVCSpec {
     didSet{ updatePageControllDots() }
   }
   
-//  public var currentItem : OptionalImage?{
-//    get{
-//      if self.pageControl.currentPage < self.images.count {
-//        return self.images[self.pageControl.currentPage]
-//      }
-//      return nil
-//    }
-//  }
-
-  
   /** the default way to initialize/render the PageCollectionVC is to set its count
    this triggers collectionView.reloadData()
    this will be done automatic in ImageCollectionViewController->viewDidLoad
