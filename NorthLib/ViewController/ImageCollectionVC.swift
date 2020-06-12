@@ -10,9 +10,20 @@ import Foundation
 import UIKit
 
 open class ImageCollectionVC: PageCollectionVC, ImageCollectionVCSpec {
+  public func onTap(closure: ((Double, Double) -> ())?) {
+    onTapClosure = closure
+    for case let cell as PageCell in self.collectionView.visibleCells {
+      if let ziv = cell.page?.activeView as? ZoomedImageView {
+          /// add/remove onTap to currently visible Cell
+          ziv.onTap(closure: closure)
+        }
+    }
+  }
+  
   public private(set) var xButton = Button<CircledXView>()
   public private(set) var pageControl = UIPageControl()
   private var onXClosure: (()->())? = nil
+  private var onTapClosure : ((Double, Double) -> ())? = nil
   private var fallbackOnXClosure: (()->())? = nil
   private var scrollToIndexPathAfterLayoutSubviews : IndexPath?
   
@@ -23,6 +34,16 @@ open class ImageCollectionVC: PageCollectionVC, ImageCollectionVCSpec {
   public var images: [OptionalImage] = []{
     didSet{ updatePageControllDots() }
   }
+  
+//  public var currentItem : OptionalImage?{
+//    get{
+//      if self.pageControl.currentPage < self.images.count {
+//        return self.images[self.pageControl.currentPage]
+//      }
+//      return nil
+//    }
+//  }
+
   
   /** the default way to initialize/render the PageCollectionVC is to set its count
    this triggers collectionView.reloadData()
@@ -123,13 +144,16 @@ open class ImageCollectionVC: PageCollectionVC, ImageCollectionVCSpec {
   
   func setupViewProvider(){
     viewProvider { [weak self] (index, oview) in
-      guard let this = self else { return UIView() }
+      guard let strongSelf = self else { return UIView() }
       if let ziv = oview as? ZoomedImageView {
-        ziv.optionalImage = this.images[index]
+        ziv.optionalImage = strongSelf.images[index]
+        ziv.onTap(closure: strongSelf.onTapClosure)
         return ziv
       }
       else {
-        return ZoomedImageView(optionalImage: this.images[index])
+        let ziv = ZoomedImageView(optionalImage: strongSelf.images[index])
+        ziv.onTap(closure: strongSelf.onTapClosure)
+        return ziv
       }
     }
   }

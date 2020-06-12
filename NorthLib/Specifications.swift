@@ -57,8 +57,7 @@ public protocol ZoomedImageViewSpec where Self: UIView {
   /// Defines a closure to call when the user has tapped into the image.
   /// The coordinates passed to the closure are relative content size 
   /// coordinates: 0 <= x,y <= 1
-  //  Moved to: 'ZoomedImageView.swift' > 'protocol OptionalImage'
-  // func onTap(closure: (_ x: Double, _ y: Double)->())
+  func onTap(closure: ((Double, Double) -> ())?)
 }
 
 public extension ZoomedImageViewSpec {
@@ -138,6 +137,11 @@ public protocol ImageCollectionVCSpec where Self: PageCollectionVC {
   
   /// The color used for pageControl
   var pageControlColors: (current: UIColor?, other: UIColor?) { get set }
+  
+  /// Defines a closure to call when the user has tapped into the image.
+  /// The coordinates passed to the closure are relative content size
+  /// coordinates: 0 <= x,y <= 1
+  func onTap(closure: ((Double, Double) -> ())?)
   
 } // ImageCollectionVC
 
