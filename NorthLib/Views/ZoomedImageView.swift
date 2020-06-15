@@ -53,6 +53,7 @@ extension ZoomedPdfImageSpec{
   
   public func renderImageWithNextScale() -> UIImage? {
     let next = self.nextRenderingZoomScale
+//    print("renderImageWithNextScale: \(next) current is: \((image?.size.width ?? 1)/UIScreen.main.nativeBounds.width) max is: \(maxRenderingZoomScale)")
     if next > maxRenderingZoomScale { return nil }
     return self.renderImageWithScale(scale: next)
   }
@@ -183,6 +184,7 @@ extension ZoomedImageView{
   }
   
   func updateImage() {
+//     print("updateImage")
     if optionalImage.isAvailable, let detailImage = optionalImage.image {
       setImage(detailImage)
       zoomEnabled = true
@@ -214,6 +216,7 @@ extension ZoomedImageView{
   }
   
   func setupScrollView() {
+//    print("setupScrollView")
     imageView.contentMode = .scaleAspectFit
     scrollView.delegate = self
     scrollView.maximumZoomScale = 1.1
@@ -290,10 +293,13 @@ extension ZoomedImageView{
     }
       ///Otherwise Zoom Out in to tap loacation
     else {
+//      print("zoom in \nsv cs: \(scrollView.contentSize) \nsv zf: \(scrollView.zoomScale) \nsv f \(scrollView.frame) \niv f \(imageView.frame) \niv is: \(imageView.image?.size) \niv i s:\(imageView.image?.scale)")
       let maxZoom = scrollView.maximumZoomScale
       if maxZoom > 2 { scrollView.maximumZoomScale = 2  }
       let tapLocation = tapR.location(in: tapR.view)
+//      print("current Tap Location: ", tapLocation)
       let newCenter = imageView.convert(tapLocation, from: scrollView)
+//      print("ZoomTo: ", newCenter )
       let zoomRect
         = CGRect(origin: newCenter, size: CGSize(width: 1, height: 1))
       scrollView.zoom(to: zoomRect,
@@ -314,6 +320,7 @@ extension ZoomedImageView{
   }
   
   func updateImagewithHighResImage(_ image: UIImage) {
+//    print("updateImagewithHighResImage")
     guard let oldImg = imageView.image else {
       self.setImage(image)
       return
@@ -329,6 +336,7 @@ extension ZoomedImageView{
     let newSc = oldImg.size.width * oldZoomScale / image.size.width
     scrollView.zoomScale = newSc
     scrollView.setContentOffset(center, animated: false)
+//    print("updateImagewithHighResImage done \nsv cs: \(scrollView.contentSize) \nsv zf: \(scrollView.zoomScale) \nsv f \(scrollView.frame) \niv f \(imageView.frame) \niv is: \(image.size) \niv i s:\(image.scale)")
   }
   
   /** Centers the Image in the ScrollView
@@ -337,6 +345,7 @@ extension ZoomedImageView{
    * simplified for our requirements
    */
   func centerImageInScrollView() {
+//        print("centerImageInScrollView")
     //Set Center by setting Insets
     guard let img = imageView.image else {
       return;
@@ -430,6 +439,7 @@ extension ZoomedImageView: UIScrollViewDelegate{
     if scrollView.frame.size.width > scrollView.contentSize.width
       || scrollView.frame.size.height > scrollView.contentSize.height {
       centerImageInScrollView()
+//      print("scrollViewDidZoom > centerImageInScrollView")
     }
     
     if self.onHighResImgNeededZoomFactor <= scrollView.zoomScale,
@@ -441,6 +451,7 @@ extension ZoomedImageView: UIScrollViewDelegate{
         closure(_optionalImage, { success in
           if success, let img = _optionalImage.image {
             self.updateImagewithHighResImage(img)
+//            print("onHighResImgNeededZoomFactor > updateImagewithHighResImage")
           }
           self.highResImgRequested = false
         })
