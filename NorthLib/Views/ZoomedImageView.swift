@@ -233,7 +233,7 @@ extension ZoomedImageView{
                                  closure: ((OptionalImage,
                                             @escaping (Bool)-> ()) -> ())?) {
     self.onHighResImgNeededClosure = closure
-    self.scrollView.maximumZoomScale = closure == nil ? 1.0 : 10
+    self.scrollView.maximumZoomScale = closure == nil ? 1.0 : 3.0
     self.onHighResImgNeededZoomFactor = zoomFactor
   }
 }
