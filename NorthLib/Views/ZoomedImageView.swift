@@ -37,7 +37,7 @@ public protocol ZoomedPdfImageSpec : OptionalImage {
 extension ZoomedPdfImageSpec{
   public var canRequestHighResImg: Bool {
     get {
-      return nextRenderingZoomScale < maxRenderingZoomScale
+      return nextRenderingZoomScale <= maxRenderingZoomScale
     }
   }
   
@@ -47,7 +47,7 @@ extension ZoomedPdfImageSpec{
         ///if there is no image yet, generate the Image within minimum needed scale
         return 1.0
       }
-      return 2*img.size.width/UIScreen.main.bounds.width
+      return 2*img.size.width/UIScreen.main.nativeBounds.width
     }
   }
   
