@@ -20,7 +20,7 @@ open class ImageCollectionVC: PageCollectionVC, ImageCollectionVCSpec {
   private var scrollToIndexPathAfterLayoutSubviews : IndexPath?
   public private(set) var xButton = Button<CircledXView>()
   public private(set) var pageControl = UIPageControl()
-  public var pageControlMaxDotsCount: Int = 0 {
+  public var pageControlMaxDotsCount: Int = 3 {
     didSet{ updatePageControllDots() }
   }
   public var images: [OptionalImage] = []{
@@ -53,6 +53,19 @@ open class ImageCollectionVC: PageCollectionVC, ImageCollectionVCSpec {
         self.defaultOnXHandler()
       }
     }
+    onDisplay { (idx) in
+      if self.pageControlMaxDotsCount != 0 {
+        self.pageControl.currentPage
+          = Int(round(Float(idx) * Float(self.pageControlMaxDotsCount) / Float(self.count)))
+      }
+      else {
+        self.pageControl.currentPage = idx
+      }
+      guard let cell
+        = self.collectionView(self.collectionView, cellForItemAt: IndexPath(item: idx, section: 0))
+          as? PageCell, let ziv = cell.page as? ZoomedImageView else { return }
+      self.applyHandlerToZoomedImageView(ziv)
+    }
     //initially render CollectionView
     self.collectionView.reloadData()
   }
@@ -82,21 +95,21 @@ open class ImageCollectionVC: PageCollectionVC, ImageCollectionVCSpec {
     scrollToIndexPathAfterLayoutSubviews = collectionView?.indexPathsForVisibleItems.first
   }
   
-  // MARK: UIScrollViewDelegate
-  public override func scrollViewDidScroll(_ scrollView: UIScrollView) {
-    if pageControlMaxDotsCount != 0 {
-      let pageWidth = scrollView.frame.width
-      let currentPage = Int((scrollView.contentOffset.x + pageWidth / 2) / pageWidth)
-      self.pageControl.currentPage = Int(round(Float(currentPage) * Float(pageControlMaxDotsCount) / Float(self.count)))
-    }
-    else {
-      let witdh = scrollView.frame.width - (scrollView.contentInset.left*2)
-      let index = scrollView.contentOffset.x / witdh
-      let roundedIndex = round(index)
-      self.pageControl.currentPage = Int(roundedIndex)
-    }
-  }
-  
+//  // MARK: UIScrollViewDelegate
+//  public override func scrollViewDidScroll(_ scrollView: UIScrollView) {
+//    super.scrollViewDidScroll(scrollView)
+//    if pageControlMaxDotsCount != 0 {
+//      let pageWidth = scrollView.frame.width
+//      let currentPage = Int((scrollView.contentOffset.x + pageWidth / 2) / pageWidth)
+//      self.pageControl.currentPage = Int(round(Float(currentPage) * Float(pageControlMaxDotsCount) / Float(self.count)))
+//    }
+//    else {
+//      let witdh = scrollView.frame.width - (scrollView.contentInset.left*2)
+//      let index = scrollView.contentOffset.x / witdh
+//      let roundedIndex = round(index)
+//      self.pageControl.currentPage = Int(roundedIndex)
+//    }
+//  }
 } // PageCollectionVC
 
 // MARK: - OptionalImageItem: Closures
@@ -133,6 +146,7 @@ extension ImageCollectionVC {
   func applyHandlerToZoomedImageView(_ ziv: ZoomedImageViewSpec) {
     ziv.onHighResImgNeeded(zoomFactor: self.onHighResImgNeededZoomFactor,
                            closure: self.onHighResImgNeededClosure)
+    print("settet on tap: ", onTapClosure != nil)
     ziv.onTap(closure: onTapClosure)
     ///Test if AddMenu in ZoomedImageView works here
     ///ToDo: may add this also to  Specifications.swift => ImageCollectionVCSpec
