@@ -12,22 +12,20 @@ import UIKit
 // MARK: - ImageCollectionVC
 open class ImageCollectionVC: PageCollectionVC, ImageCollectionVCSpec {
   // MARK: Properties
-  public private(set) var xButton = Button<CircledXView>()
-  public private(set) var pageControl = UIPageControl()
-  
+  private var onHighResImgNeededClosure: ((OptionalImage, @escaping (Bool) -> ()) -> ())?
+  private var onHighResImgNeededZoomFactor: CGFloat = 1.1
   private var onXClosure: (()->())? = nil
-  private var onTapClosure : ((Double, Double) -> ())? = nil
+  private var onTapClosure : ((OptionalImage, Double, Double) -> ())? = nil
   private var fallbackOnXClosure: (()->())? = nil
   private var scrollToIndexPathAfterLayoutSubviews : IndexPath?
-  
+  public private(set) var xButton = Button<CircledXView>()
+  public private(set) var pageControl = UIPageControl()
   public var pageControlMaxDotsCount: Int = 0 {
     didSet{ updatePageControllDots() }
   }
-  
   public var images: [OptionalImage] = []{
     didSet{ updatePageControllDots() }
   }
-  
   /** the default way to initialize/render the PageCollectionVC is to set its count
    this triggers collectionView.reloadData()
    this will be done automatic in ImageCollectionViewController->viewDidLoad
@@ -101,30 +99,53 @@ open class ImageCollectionVC: PageCollectionVC, ImageCollectionVCSpec {
   
 } // PageCollectionVC
 
+// MARK: - OptionalImageItem: Closures
+extension ImageCollectionVC{
+  public func onHighResImgNeeded(zoomFactor: CGFloat = 1.1,
+                                 closure: ((OptionalImage, @escaping (Bool) -> ()) -> ())?){
+    self.onHighResImgNeededClosure = closure
+    self.onHighResImgNeededZoomFactor = zoomFactor
+  }
+}
+
 // MARK: - Helper: ViewProvider
 extension ImageCollectionVC {
   func setupViewProvider(){
     viewProvider { [weak self] (index, oview) in
+      print("view provider called for index: ", index)
       guard let strongSelf = self else { return UIView() }
       if let ziv = oview as? ZoomedImageView {
         ziv.optionalImage = strongSelf.images[index]
-        ziv.onTap(closure: strongSelf.onTapClosure)
-        ziv.addMenuItem(title: "Test", icon: "", closure: {_ in
-          print("Works on reuse")
-        })
+        strongSelf.applyHandlerToZoomedImageView(ziv)
         return ziv
       }
       else {
         let ziv = ZoomedImageView(optionalImage: strongSelf.images[index])
-        ziv.onTap(closure: strongSelf.onTapClosure)
-        ziv.addMenuItem(title: "Test", icon: "", closure: {_ in
-          print("Works on new")
-        })
+        strongSelf.applyHandlerToZoomedImageView(ziv)
         return ziv
       }
     }
   }
 }
+
+// MARK: - Demo/Test Helper
+extension ImageCollectionVC {
+  func applyHandlerToZoomedImageView(_ ziv: ZoomedImageViewSpec) {
+    ziv.onHighResImgNeeded(zoomFactor: self.onHighResImgNeededZoomFactor,
+                           closure: self.onHighResImgNeededClosure)
+    ziv.onTap(closure: onTapClosure)
+    ///Test if AddMenu in ZoomedImageView works here
+    ///ToDo: may add this also to  Specifications.swift => ImageCollectionVCSpec
+    ///to have a setter outside
+    /// This Demo Code would add Menu Items on Reuse, so the menu length increases on reuse
+    if let _ziv = ziv as? ZoomedImageView {
+      _ziv.addMenuItem(title: "Test", icon: "", closure: { _ in
+        print("Works on new TODO Put this to ICVC....")
+      })
+    }
+  }
+}
+
 
 // MARK: - Helper
 extension ImageCollectionVC {
@@ -150,7 +171,7 @@ extension ImageCollectionVC {
     self.onXClosure = closure
   }
   
-  public func onTap(closure: ((Double, Double) -> ())?) {
+  public func onTap(closure: ((OptionalImage, Double, Double) -> ())?) {
     onTapClosure = closure
     for case let cell as PageCell in self.collectionView.visibleCells {
       if let ziv = cell.page?.activeView as? ZoomedImageView {

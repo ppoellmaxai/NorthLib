@@ -18,26 +18,52 @@ public protocol OptionalImage {
   /// Returns true if 'image' is available
   var isAvailable: Bool { get }
   /// Defines a closure to call when the main image becomes available
-  func whenAvailable(closure: @escaping ()->())
-  /// Define closure to call when the user is zooming beyond the resolution
-  /// of the image. 'zoomFactor' defines the maximum zoom after which a higher
-  /// resolution image is requested.
-  func onHighResImgNeeded(zoomFactor: CGFloat,
-                          closure: @escaping (@escaping (UIImage?) -> ()) -> ())
+  func whenAvailable(closure: (()->())?)
 }
 
 extension OptionalImage {
   public var isAvailable: Bool { return image != nil }
 }
 
+// MARK: - ZoomedPdfImageSpec : OptionalImage (Protocol)
+public protocol ZoomedPdfImageSpec : OptionalImage {
+  var pdfFilename: String { get }
+  var canRequestHighResImg: Bool { get }
+  var maxRenderingZoomScale: CGFloat { get }
+  var nextRenderingZoomScale: CGFloat { get }
+  func renderImageWithScale(scale: CGFloat) -> UIImage?
+}
+
+extension ZoomedPdfImageSpec{
+  public var canRequestHighResImg: Bool {
+    get {
+      return nextRenderingZoomScale < maxRenderingZoomScale
+    }
+  }
+  
+  public var nextRenderingZoomScale: CGFloat {
+    get {
+      guard let img = image else {
+        ///if there is no image yet, generate the Image within minimum needed scale
+        return 1.0
+      }
+      return 2*img.size.width/UIScreen.main.bounds.width
+    }
+  }
+  
+  public func renderImageWithNextScale() -> UIImage? {
+    let next = self.nextRenderingZoomScale
+    if next > maxRenderingZoomScale { return nil }
+    return self.renderImageWithScale(scale: next)
+  }
+}
+
 // MARK: - OptionalImageItem : OptionalImage
 /// Reference Implementation
 open class OptionalImageItem: OptionalImage{
   private var availableClosure: (()->())?
-  fileprivate var needHighRes:((@escaping (UIImage?)->()) -> ())? = nil
   fileprivate var onUpdatingClosureClosure: (()->())? = nil
-  fileprivate var zoomFactorForRequestingHigherResImage : CGFloat = 1.0
-  public var waitingImage: UIImage?
+  fileprivate var zoomFactorForRequestingHigherResImage : CGFloat = 1.1
   fileprivate var _image: UIImage?
   public var image: UIImage?{
     get { return _image }
@@ -46,6 +72,7 @@ open class OptionalImageItem: OptionalImage{
       availableClosure?()
     }
   }
+  public var waitingImage: UIImage?
   public required init(waitingImage: UIImage? = nil) {
     self.waitingImage = waitingImage
   }
@@ -53,23 +80,20 @@ open class OptionalImageItem: OptionalImage{
 
 // MARK: - OptionalImageItem: Closures
 extension OptionalImageItem{
-  public func onHighResImgNeeded(zoomFactor: CGFloat,
-                                 closure: @escaping (@escaping (UIImage?) -> ()) -> ()) {
-    zoomFactorForRequestingHigherResImage = zoomFactor
-    needHighRes = closure
-    onUpdatingClosureClosure?()
-  }
-  public func whenAvailable(closure: @escaping ()->()) {
+  public func whenAvailable(closure: (()->())?) {
     availableClosure = closure
   }
 }
 // MARK: -
 // MARK: - ZoomedImageView
 open class ZoomedImageView: UIView, ZoomedImageViewSpec {
+  private var onHighResImgNeededClosure: ((OptionalImage,
+                                           @escaping (Bool) -> ()) -> ())?
+  private var onHighResImgNeededZoomFactor: CGFloat = 1.1
+  private var highResImgRequested = false
   private var initiallyCentered = false
   private var lastLayoutSubviewsOrientationWasPortrait = false
   private var needUpdateScaleLimitAfterLayoutSubviews = true
-  private var highResImageRequested: Bool = false
   private var orientationClosure = OrientationClosure()
   private var singleTapRecognizer : UITapGestureRecognizer?
   private let doubleTapRecognizer = UITapGestureRecognizer()
@@ -78,7 +102,9 @@ open class ZoomedImageView: UIView, ZoomedImageViewSpec {
       self.scrollView.pinchGestureRecognizer?.isEnabled = zoomEnabled
     }
   }
-  private var onTapClosure: ((_ x: Double, _ y: Double)->())? = nil {
+  private var onTapClosure: ((_ image: OptionalImage,
+                              _ x: Double,
+                              _ y: Double)->())? = nil {
     didSet{
       if let tap = singleTapRecognizer {
         tap.removeTarget(self, action: #selector(handleSingleTap))
@@ -96,29 +122,24 @@ open class ZoomedImageView: UIView, ZoomedImageViewSpec {
       }
     }
   }
-  private var higherImageResolutionNeededClosure: (zoomFactor: CGFloat, closure: ()->UIImage?)? = nil
+  
   public private(set) var scrollView: UIScrollView = UIScrollView()
   public private(set) var imageView: UIImageView = UIImageView()
   public private(set) var xButton: Button<CircledXView> = Button<CircledXView>()
   public private(set) var spinner: UIActivityIndicatorView = UIActivityIndicatorView()
   public private(set) lazy var menu = ContextMenu(view: imageView)
   public var optionalImage: OptionalImage{
-    willSet {
-      if let itm = optionalImage as? OptionalImageItem {
-        itm.onUpdatingClosureClosure = nil
-      }
-    }
-    didSet {
-      updateImage()
-      if let itm = optionalImage as? OptionalImageItem {
-        itm.onUpdatingClosureClosure = { self.updateClosures() }
-        self.highResImageRequested = false
-      }
-      updateClosures()
-      initiallyCentered = false
-      setScaleLimitsAndCenterIfNeeded()
-    }
-  }
+     willSet {
+       if let itm = optionalImage as? OptionalImageItem {
+         itm.onUpdatingClosureClosure = nil
+       }
+     }
+     didSet {
+       updateImage()
+       initiallyCentered = false
+       setScaleLimitsAndCenterIfNeeded()
+     }
+   }
   
   // MARK: Life Cycle
   public required init(optionalImage: OptionalImage) {
@@ -155,7 +176,6 @@ extension ZoomedImageView{
     setupXButton()
     setupSpinner()
     setupDoubleTapGestureRecognizer()
-    updateClosures()
     updateImage()
     orientationClosure.onOrientationChange(closure: {
       self.setScaleLimitsAndCenterIfNeeded()
@@ -187,23 +207,16 @@ extension ZoomedImageView{
           //exchanged image should be shown fully
           self.initiallyCentered = false
           self.setScaleLimitsAndCenterIfNeeded()
+          self.optionalImage.whenAvailable(closure: nil)
         }
       }
     }
   }
   
-  func updateClosures() {
-    guard let itm = optionalImage as? OptionalImageItem else { return }
-    //TBD!!
-    //    self.onImageTap(closure: itm.onImageTapClosure)
-    self.scrollView.maximumZoomScale
-      = itm.needHighRes == nil ? 1.0 : 10
-  }
-  
   func setupScrollView() {
     imageView.contentMode = .scaleAspectFit
     scrollView.delegate = self
-    scrollView.maximumZoomScale = 1.0
+    scrollView.maximumZoomScale = 1.1
     scrollView.zoomScale = 1.0
     ///prevent pinch/zoom smaller than min while pinch
     scrollView.bouncesZoom = false
@@ -212,19 +225,31 @@ extension ZoomedImageView{
     addSubview(scrollView)
     NorthLib.pin(scrollView, to: self)
   }
-  
+}
+
+// MARK: - Handler
+extension ZoomedImageView{
+  public func onHighResImgNeeded(zoomFactor: CGFloat = 1.1,
+                                 closure: ((OptionalImage,
+                                            @escaping (Bool)-> ()) -> ())?) {
+    self.onHighResImgNeededClosure = closure
+    self.scrollView.maximumZoomScale = closure == nil ? 1.0 : 10
+    self.onHighResImgNeededZoomFactor = zoomFactor
+  }
 }
 
 // MARK: - Menu Handler
 extension ZoomedImageView{
-  public func addMenuItem(title: String, icon: String, closure: @escaping (String) -> ()) {
+  public func addMenuItem(title: String,
+                          icon: String,
+                          closure: @escaping (String) -> ()) {
     menu.addMenuItem(title: title, icon: icon, closure: closure)
   }
 }
 
 // MARK: - Tap Recognizer
 extension ZoomedImageView{
-  public func onTap(closure: ((Double, Double) -> ())?) {
+  public func onTap(closure: ((OptionalImage, Double, Double) -> ())?) {
     self.onTapClosure = closure
   }
   
@@ -237,38 +262,40 @@ extension ZoomedImageView{
     scrollView.addGestureRecognizer(doubleTapRecognizer)
     doubleTapRecognizer.isEnabled = zoomEnabled
   }
+  
   // MARK: Single Tap
   @objc func handleSingleTap(sender: UITapGestureRecognizer){
     let loc = sender.location(in: imageView)
     let size = imageView.frame.size
     guard let closure = onTapClosure else { return }
-    closure(Double(loc.x / (size.width / scrollView.zoomScale )),
+    closure(self.optionalImage,
+            Double(loc.x / (size.width / scrollView.zoomScale )),
             Double(loc.y / (size.height / scrollView.zoomScale )))
   }
+  
   // MARK: Double Tap
   @objc func handleDoubleTap(sender : Any) {
     guard let tapR = sender as? UITapGestureRecognizer else {
       return
     }
-    
     if zoomEnabled == false {
       return
     }
-    
-    //Zoom Out if current zoom is maximum zoom
+    ///Zoom Out if current zoom is maximum zoom
     if scrollView.zoomScale == scrollView.maximumZoomScale
       || scrollView.zoomScale >= 2 {
       scrollView.setZoomScale(scrollView.minimumZoomScale,
                               animated: true)
       centerImageInScrollView()
     }
-      //Otherwise Zoom Out in to tap loacation
+      ///Otherwise Zoom Out in to tap loacation
     else {
       let maxZoom = scrollView.maximumZoomScale
       if maxZoom > 2 { scrollView.maximumZoomScale = 2  }
       let tapLocation = tapR.location(in: tapR.view)
       let newCenter = imageView.convert(tapLocation, from: scrollView)
-      let zoomRect = CGRect(origin: newCenter, size: CGSize(width: 1, height: 1))
+      let zoomRect
+        = CGRect(origin: newCenter, size: CGSize(width: 1, height: 1))
       scrollView.zoom(to: zoomRect,
                       animated: true)
       scrollView.isScrollEnabled = true
@@ -339,7 +366,8 @@ extension ZoomedImageView{
     
     let center = CGPoint(x: scrollViewSize.width/2, y: scrollViewSize.height/2)
     
-    //if image is smaller than the scrollView visible size - fix the image center accordingly
+    /// if image is smaller than the scrollView visible size
+    /// - fix the image center accordingly
     if scrollView.contentSize.width < scrollViewSize.width {
       imageCenter.x = center.x
     }
@@ -404,18 +432,18 @@ extension ZoomedImageView: UIScrollViewDelegate{
       centerImageInScrollView()
     }
     
-    if let oImage = optionalImage as? OptionalImageItem,
-      highResImageRequested == false,
-      oImage.zoomFactorForRequestingHigherResImage <= scrollView.zoomScale,
-      let requestHighResImage = oImage.needHighRes {
-      highResImageRequested = true
-      requestHighResImage({ image in
-        if let img = image {
-          self.updateImagewithHighResImage(img)
-          self.highResImageRequested = false
-          oImage._image = img
-        }
-      })
-    }
+    if self.onHighResImgNeededZoomFactor <= scrollView.zoomScale,
+      self.highResImgRequested == false,
+      (optionalImage as? ZoomedPdfImageSpec)?.canRequestHighResImg ?? true,
+      let closure = onHighResImgNeededClosure {
+        let _optionalImage = optionalImage
+        self.highResImgRequested = true
+        closure(_optionalImage, { success in
+          if success, let img = _optionalImage.image {
+            self.updateImagewithHighResImage(img)
+          }
+          self.highResImgRequested = false
+        })
+      }
   }
 }
