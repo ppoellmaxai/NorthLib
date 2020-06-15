@@ -99,13 +99,13 @@ public protocol ZoomedImageViewSpec where Self: UIView {
   /// Define closure to call when the user is zooming beyond the resolution
   /// of the image. 'zoomFactor' defines the maximum zoom after which a higher
   /// resolution image is requested.
-  //  Moved to: 'ZoomedImageView.swift' > 'protocol OptionalImage'
-  // func whenNeedHighRes(zoomFactor: CGFloat, closure: ()->UIImage?)
+  func onHighResImgNeeded(zoomFactor: CGFloat,
+                          closure: ((OptionalImage, @escaping(Bool)-> ()) -> ())?)
   
   /// Defines a closure to call when the user has tapped into the image.
   /// The coordinates passed to the closure are relative content size 
   /// coordinates: 0 <= x,y <= 1
-  func onTap(closure: ((Double, Double) -> ())?)
+  func onTap(closure: ((OptionalImage, Double, Double) -> ())?)
 }
 
 public extension ZoomedImageViewSpec {
@@ -186,10 +186,16 @@ public protocol ImageCollectionVCSpec where Self: PageCollectionVC {
   /// The color used for pageControl
   var pageControlColors: (current: UIColor?, other: UIColor?) { get set }
   
+  /// Define closure to call when the user is zooming beyond the resolution
+  /// of the image. 'zoomFactor' defines the maximum zoom after which a higher
+  /// resolution image is requested.b
+  func onHighResImgNeeded(zoomFactor: CGFloat,
+                          closure: ((OptionalImage, @escaping(Bool)-> Bool) -> ())?)
+  
   /// Defines a closure to call when the user has tapped into the image.
   /// The coordinates passed to the closure are relative content size
   /// coordinates: 0 <= x,y <= 1
-  func onTap(closure: ((Double, Double) -> ())?)
+  func onTap(closure: ((OptionalImage, Double, Double) -> ())?)
   
 } // ImageCollectionVC
 
