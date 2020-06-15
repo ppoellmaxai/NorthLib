@@ -8,6 +8,54 @@
 import UIKit
 
 /**
+ The Overlay class manages the two view controllers 'overlay' and 'active'.
+ 'active' is currently visible and 'overlay' will be presented on top of
+ 'active'. To accomplish this, two views are created, the first one, 'shadeView'
+ is positioned on top of 'active.view' with the same size and colored 'shadeColor'
+ with an alpha between 0...maxAlpha. This view is used to shade the active view
+ controller during the open/close animations. The second view, overlayView is
+ used to contain 'overlay' and is animated during opening and closing operations.
+ In addition two gesture recognizers (pinch and pan) are used on shadeView to
+ start the close animation. The pan gesture is used to move the overlay to the bottom of shadeView. The pinch gesture is used to shrink the overlay
+ in size while being centered in shadeView. When 'overlay' has been shrunk to
+ 'closeRatio' (see attribute) or moved 'closeRatio * overlayView.bounds.size.height'
+ points to the bottom then 'overlay' is animated automatically away from the
+ screen. While the gesture recognizers are working or during the animation the
+ alpha of shadeView is changed to reflect the animation's ratio (alpha = 0 =>
+ 'overlay' is no longer visible). The gesture recognizers coexist with gesture
+ recognizers being active in 'overlay'.
+ */
+public protocol OverlaySpec {
+  /// The view shading the active view controller
+  var shadeView: UIView { get }
+  /// The view being animated (in the center of shadeView)
+  var overlayView: UIView { get }
+  /// The size of overlayView and the overlay (nil => size of shadeView)
+  var overlaySize: CGSize? { get set }
+  /// Maximum alpha of shadeView
+  var maxAlpha: Double { get set }
+  /// Color used to shade the active view controller
+  var shadeColor: UIColor { get set }
+  /// When should the animation start? Eg. 0.5
+  var closeRatio: CGFloat { get set }
+  
+  /// initialize with overlay and active view controllers
+  init(overlay: UIViewController, into active: UIViewController)
+  
+  /// open the overlay view controller, ie. present it optionally with an
+  /// animation: from the center by default or fromBottom
+  func open(animated: Bool, fromBottom: Bool)
+  
+  /// close the overlay, optionally animated (same type as opening)
+  func close(animated: Bool)
+  /// closes the overlay to given rect in shadeView
+  func shrinkTo(rect:CGRect)
+  /// closes the overlay to given targetView Frame in shadeView
+  func shrinkTo(targetView:UIView)
+}
+
+
+/**
  A ZoomedImageView presents an Image in an ImageView that is scrollable
  and zoomable.
  
@@ -51,14 +99,13 @@ public protocol ZoomedImageViewSpec where Self: UIView {
   /// Define closure to call when the user is zooming beyond the resolution
   /// of the image. 'zoomFactor' defines the maximum zoom after which a higher
   /// resolution image is requested.
-  //  Moved to: 'ZoomedImageView.swift' > 'protocol OptionalImage'
-  // func whenNeedHighRes(zoomFactor: CGFloat, closure: ()->UIImage?)
+  func onHighResImgNeeded(zoomFactor: CGFloat,
+                          closure: ((OptionalImage, @escaping(Bool)-> ()) -> ())?)
   
   /// Defines a closure to call when the user has tapped into the image.
   /// The coordinates passed to the closure are relative content size 
   /// coordinates: 0 <= x,y <= 1
-  //  Moved to: 'ZoomedImageView.swift' > 'protocol OptionalImage'
-  // func onTap(closure: (_ x: Double, _ y: Double)->())
+  func onTap(closure: ((OptionalImage, Double, Double) -> ())?)
 }
 
 public extension ZoomedImageViewSpec {
@@ -138,6 +185,17 @@ public protocol ImageCollectionVCSpec where Self: PageCollectionVC {
   
   /// The color used for pageControl
   var pageControlColors: (current: UIColor?, other: UIColor?) { get set }
+  
+  /// Define closure to call when the user is zooming beyond the resolution
+  /// of the image. 'zoomFactor' defines the maximum zoom after which a higher
+  /// resolution image is requested.b
+  func onHighResImgNeeded(zoomFactor: CGFloat,
+                          closure: ((OptionalImage, @escaping(Bool)-> Bool) -> ())?)
+  
+  /// Defines a closure to call when the user has tapped into the image.
+  /// The coordinates passed to the closure are relative content size
+  /// coordinates: 0 <= x,y <= 1
+  func onTap(closure: ((OptionalImage, Double, Double) -> ())?)
   
 } // ImageCollectionVC
 
