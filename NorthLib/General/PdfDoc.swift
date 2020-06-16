@@ -26,30 +26,38 @@ open class PdfPage {
   ///   clipped to this rectangle"
   public var frame: CGRect { page.getBoxRect(.cropBox) }
   
-  public func image(scale: CGFloat = 1.0) -> UIImage {
+  public func image(scale: CGFloat = 1.0) -> UIImage? {
+    var img: UIImage?
     var frame = self.frame
     frame.size.width *= scale
     frame.size.height *= scale
-    let renderer = UIGraphicsImageRenderer(size: frame.size)
-    let img = renderer.image { ctx in
+    frame.origin.x = 0
+    frame.origin.y = 0
+    UIGraphicsBeginImageContext(frame.size)
+    if let ctx = UIGraphicsGetCurrentContext() {
+      ctx.saveGState()
       UIColor.white.set()
       ctx.fill(frame)
-      ctx.cgContext.translateBy(x: 0.0, y: frame.size.height)
-      ctx.cgContext.scaleBy(x: 1.0, y: -1.0)
-      ctx.cgContext.scaleBy(x: scale, y: scale)
-      ctx.cgContext.drawPDFPage(page)
+      ctx.translateBy(x: 0.0, y: frame.size.height)
+      ctx.scaleBy(x: 1.0, y: -1.0)
+      ctx.scaleBy(x: scale, y: scale)
+      ctx.drawPDFPage(page)
+      img = UIGraphicsGetImageFromCurrentImageContext()
     }
+    UIGraphicsEndImageContext()
     return img
   }
   
-  public func image(width: CGFloat) -> UIImage {
+  public func image(width: CGFloat) -> UIImage? {
     let frame = self.frame
-    return image(scale: width/frame.size.width)
+    return image(scale:  UIScreen.main.scale * width/frame.size.width)?
+            .screenScaled()
   }
 
-  public func image(height: CGFloat) -> UIImage {
+  public func image(height: CGFloat) -> UIImage? {
     let frame = self.frame
-    return image(scale: height/frame.size.height)
+    return image(scale:  UIScreen.main.scale * height/frame.size.height)?
+             .screenScaled()
   }
   
   fileprivate init(page: CGPDFPage) { self.page = page }
