@@ -24,6 +24,9 @@ open class ImageCollectionVC: PageCollectionVC, ImageCollectionVCSpec {
     didSet{ updatePageControllDots() }
   }
   
+  /// The menu to display on long press gesture
+  public var menu: [(title: String, icon: String, closure: (String)->())] = []
+  
   /** the default way to initialize/render the PageCollectionVC is to set its count
    this triggers collectionView.reloadData()
    this will be done automatic in ImageCollectionViewController->viewDidLoad
@@ -121,6 +124,12 @@ open class ImageCollectionVC: PageCollectionVC, ImageCollectionVCSpec {
     self.collectionView.delegate = self
   }
   
+  /// Add a menu item to the images menu
+  public func addMenuItem(title: String, icon: String, 
+                          closure: @escaping (String)->()) {
+    menu += (title: title, icon: icon, closure: closure)
+  }
+
   func setupViewProvider(){
     viewProvider { [weak self] (index, oview) in
       guard let this = self else { return UIView() }
@@ -129,7 +138,9 @@ open class ImageCollectionVC: PageCollectionVC, ImageCollectionVCSpec {
         return ziv
       }
       else {
-        return ZoomedImageView(optionalImage: this.images[index])
+        let ziv = ZoomedImageView(optionalImage: this.images[index])
+        ziv.menu.menu = this.menu
+        return ziv
       }
     }
   }
