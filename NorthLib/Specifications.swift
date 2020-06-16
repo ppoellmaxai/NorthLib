@@ -100,7 +100,7 @@ public protocol ZoomedImageViewSpec where Self: UIView {
   /// of the image. 'zoomFactor' defines the maximum zoom after which a higher
   /// resolution image is requested.
   func onHighResImgNeeded(zoomFactor: CGFloat,
-                          closure: ((OptionalImage, @escaping(Bool)-> ()) -> ())?)
+                          closure: ((OptionalImage, @escaping (Bool) -> ()) -> ())?)
   
   /// Defines a closure to call when the user has tapped into the image.
   /// The coordinates passed to the closure are relative content size 
@@ -190,7 +190,7 @@ public protocol ImageCollectionVCSpec where Self: PageCollectionVC {
   /// of the image. 'zoomFactor' defines the maximum zoom after which a higher
   /// resolution image is requested.b
   func onHighResImgNeeded(zoomFactor: CGFloat,
-                          closure: ((OptionalImage, @escaping(Bool)-> Bool) -> ())?)
+                          closure: ((OptionalImage, @escaping (Bool) -> ()) -> ())?)
   
   /// Defines a closure to call when the user has tapped into the image.
   /// The coordinates passed to the closure are relative content size
