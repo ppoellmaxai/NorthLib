@@ -178,7 +178,8 @@ public protocol ImageCollectionVCSpec where Self: PageCollectionVC {
   var xButton: Button<CircledXView> { get }
   
   /// The PageControl used to display an indicator of how many images are available
-  var pageControl: UIPageControl { get }
+  /// set nil to disable
+  var pageControl: UIPageControl? { get set }
   
   /// Max count of dots in pageControl, set to 0 show all dots
   var pageControlMaxDotsCount: Int { get set}
@@ -217,11 +218,12 @@ public extension ImageCollectionVCSpec {
   
   /// An example of setting up the PageControl
   func setupPageControl() {
-    self.pageControl.hidesForSinglePage = true
-    self.view.addSubview(self.pageControl)
-    pin(self.pageControl.centerX, to: self.view.centerX)
+    guard let pageControl = self.pageControl else { return }
+    pageControl.hidesForSinglePage = true
+    self.view.addSubview(pageControl)
+    pin(pageControl.centerX, to: self.view.centerX)
     // Example values for dist to bottom and height
-    pin(self.pageControl.bottom, to: self.view.bottomGuide(), dist: -15)
+    pin(pageControl.bottom, to: self.view.bottomGuide(), dist: -15)
     /// Height Pin has no Effect @Test PinHeight 1
     //self.pageControl.pinHeight(1)
     /// PageControl example color, set here would overwrite external set
@@ -232,12 +234,12 @@ public extension ImageCollectionVCSpec {
   /// Setting pageControl's colors:
   var pageControlColors: (current: UIColor?, other: UIColor?) {
     get {
-      (current: pageControl.currentPageIndicatorTintColor,
-       other: pageControl.pageIndicatorTintColor)
+      (current: pageControl?.currentPageIndicatorTintColor,
+       other: pageControl?.pageIndicatorTintColor)
     }
     set {
-      pageControl.currentPageIndicatorTintColor = newValue.current
-      pageControl.pageIndicatorTintColor = newValue.other
+      pageControl?.currentPageIndicatorTintColor = newValue.current
+      pageControl?.pageIndicatorTintColor = newValue.other
     }
   }
   

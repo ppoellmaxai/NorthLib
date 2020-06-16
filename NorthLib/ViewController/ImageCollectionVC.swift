@@ -19,7 +19,7 @@ open class ImageCollectionVC: PageCollectionVC, ImageCollectionVCSpec {
   private var fallbackOnXClosure: (()->())? = nil
   private var scrollToIndexPathAfterLayoutSubviews : IndexPath?
   public private(set) var xButton = Button<CircledXView>()
-  public private(set) var pageControl = UIPageControl()
+  public var pageControl:UIPageControl? = UIPageControl()
   public var pageControlMaxDotsCount: Int = 3 {
     didSet{ updatePageControllDots() }
   }
@@ -54,17 +54,18 @@ open class ImageCollectionVC: PageCollectionVC, ImageCollectionVCSpec {
       }
     }
     onDisplay { (idx) in
-      if self.pageControlMaxDotsCount != 0 {
-        self.pageControl.currentPage
-          = Int(round(Float(idx) * Float(self.pageControlMaxDotsCount) / Float(self.count)))
+      ///Apply PageControll Dots Update
+      guard let pageControl = self.pageControl else { return }
+      if self.pageControlMaxDotsCount > 0, self.count > 0,
+        self.count > self.pageControlMaxDotsCount {
+        pageControl.currentPage
+          = Int( round( Float(idx+1)
+                        * Float(self.pageControlMaxDotsCount)/Float(self.count)
+            ) ) - 1
       }
       else {
-        self.pageControl.currentPage = idx
+        pageControl.currentPage = idx
       }
-      guard let cell
-        = self.collectionView(self.collectionView, cellForItemAt: IndexPath(item: idx, section: 0))
-          as? PageCell, let ziv = cell.page as? ZoomedImageView else { return }
-      self.applyHandlerToZoomedImageView(ziv)
     }
     //initially render CollectionView
     self.collectionView.reloadData()
@@ -94,22 +95,6 @@ open class ImageCollectionVC: PageCollectionVC, ImageCollectionVCSpec {
     super.viewWillTransition(to: size, with: coordinator)
     scrollToIndexPathAfterLayoutSubviews = collectionView?.indexPathsForVisibleItems.first
   }
-  
-//  // MARK: UIScrollViewDelegate
-//  public override func scrollViewDidScroll(_ scrollView: UIScrollView) {
-//    super.scrollViewDidScroll(scrollView)
-//    if pageControlMaxDotsCount != 0 {
-//      let pageWidth = scrollView.frame.width
-//      let currentPage = Int((scrollView.contentOffset.x + pageWidth / 2) / pageWidth)
-//      self.pageControl.currentPage = Int(round(Float(currentPage) * Float(pageControlMaxDotsCount) / Float(self.count)))
-//    }
-//    else {
-//      let witdh = scrollView.frame.width - (scrollView.contentInset.left*2)
-//      let index = scrollView.contentOffset.x / witdh
-//      let roundedIndex = round(index)
-//      self.pageControl.currentPage = Int(roundedIndex)
-//    }
-//  }
 } // PageCollectionVC
 
 // MARK: - OptionalImageItem: Closures
@@ -171,10 +156,11 @@ extension ImageCollectionVC {
   }
   
   private func updatePageControllDots() {
+    guard let pageControl = self.pageControl else { return }
     if pageControlMaxDotsCount == 0 || self.count < pageControlMaxDotsCount {
-      self.pageControl.numberOfPages = self.count
+      pageControl.numberOfPages = self.count
     } else {
-      self.pageControl.numberOfPages = pageControlMaxDotsCount
+      pageControl.numberOfPages = pageControlMaxDotsCount
     }
   }
 }
