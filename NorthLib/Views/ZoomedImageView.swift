@@ -219,7 +219,7 @@ extension ZoomedImageView{
     scrollView.maximumZoomScale = 1.1
     scrollView.zoomScale = 1.0
     ///prevent pinch/zoom smaller than min while pinch
-    scrollView.bouncesZoom = false
+    scrollView.bouncesZoom = true
     scrollView.contentInsetAdjustmentBehavior = .never
     scrollView.addSubview(imageView)
     addSubview(scrollView)
@@ -427,10 +427,6 @@ extension ZoomedImageView: UIScrollViewDelegate{
   }
   
   public func scrollViewDidZoom(_ scrollView: UIScrollView) {
-    if scrollView.frame.size.width > scrollView.contentSize.width
-      || scrollView.frame.size.height > scrollView.contentSize.height {
-      centerImageInScrollView()
-    }
     
     if self.onHighResImgNeededZoomFactor <= scrollView.zoomScale,
       self.highResImgRequested == false,
