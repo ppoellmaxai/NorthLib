@@ -110,41 +110,30 @@ extension ImageCollectionVC{
 extension ImageCollectionVC {
   func setupViewProvider(){
     viewProvider { [weak self] (index, oview) in
-      print("view provider called for index: ", index)
       guard let strongSelf = self else { return UIView() }
       if let ziv = oview as? ZoomedImageView {
         ziv.optionalImage = strongSelf.images[index]
-        strongSelf.applyHandlerToZoomedImageView(ziv)
         return ziv
       }
       else {
         let ziv = ZoomedImageView(optionalImage: strongSelf.images[index])
-        strongSelf.applyHandlerToZoomedImageView(ziv)
+        ziv.onTap { (oimg, x, y) in
+          strongSelf.zoomedImageViewTapped(oimg, x, y)
+        }
         return ziv
       }
     }
   }
-}
-
-// MARK: - Demo/Test Helper
-extension ImageCollectionVC {
-  func applyHandlerToZoomedImageView(_ ziv: ZoomedImageViewSpec) {
-    ziv.onHighResImgNeeded(zoomFactor: self.onHighResImgNeededZoomFactor,
-                           closure: self.onHighResImgNeededClosure)
-    print("settet on tap: ", onTapClosure != nil)
-    ziv.onTap(closure: onTapClosure)
-    ///Test if AddMenu in ZoomedImageView works here
-    ///ToDo: may add this also to  Specifications.swift => ImageCollectionVCSpec
-    ///to have a setter outside
-    /// This Demo Code would add Menu Items on Reuse, so the menu length increases on reuse
-    if let _ziv = ziv as? ZoomedImageView {
-      _ziv.addMenuItem(title: "Test", icon: "", closure: { _ in
-        print("Works on new TODO Put this to ICVC....")
-      })
-    }
+  
+  /// Due onDisplay(idx) with cellforRowAt(idx) delivers another view than visible
+  /// the Tapped Closure is wrapped to work with that kind of implementation
+  /// of CollectionView, DataSource and ViewProvider
+  func zoomedImageViewTapped(_ image: OptionalImage,
+                             _ x: Double,
+                             _ y: Double) {
+    onTapClosure?(image,x,y)
   }
 }
-
 
 // MARK: - Helper
 extension ImageCollectionVC {
@@ -173,12 +162,6 @@ extension ImageCollectionVC {
   
   public func onTap(closure: ((OptionalImage, Double, Double) -> ())?) {
     onTapClosure = closure
-    for case let cell as PageCell in self.collectionView.visibleCells {
-      if let ziv = cell.page?.activeView as? ZoomedImageView {
-        /// add/remove onTap to currently visible Cell
-        ziv.onTap(closure: closure)
-      }
-    }
   }
   
   func defaultOnXHandler() {
