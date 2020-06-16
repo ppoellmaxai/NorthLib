@@ -208,7 +208,7 @@ open class HttpSession: NSObject, URLSessionDelegate, URLSessionTaskDelegate, UR
   /// Allow mobile network operations
   public var allowMobile = true { didSet { _config = nil } }
   /// Set waitForAvailability to true if a connection should wait for network availability
-  public var waitForAvailability = true { didSet { _config = nil } }
+  public var waitForAvailability = false { didSet { _config = nil } }
 
   fileprivate var _config: URLSessionConfiguration? { didSet { _session = nil } }
   /// Session configuration
