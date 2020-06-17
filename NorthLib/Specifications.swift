@@ -51,14 +51,13 @@ public protocol ZoomedImageViewSpec where Self: UIView {
   /// Define closure to call when the user is zooming beyond the resolution
   /// of the image. 'zoomFactor' defines the maximum zoom after which a higher
   /// resolution image is requested.
-  //  Moved to: 'ZoomedImageView.swift' > 'protocol OptionalImage'
-  // func whenNeedHighRes(zoomFactor: CGFloat, closure: ()->UIImage?)
+  func onHighResImgNeeded(zoomFactor: CGFloat,
+                          closure: ((OptionalImage, @escaping (Bool) -> ()) -> ())?)
   
   /// Defines a closure to call when the user has tapped into the image.
   /// The coordinates passed to the closure are relative content size 
   /// coordinates: 0 <= x,y <= 1
-  //  Moved to: 'ZoomedImageView.swift' > 'protocol OptionalImage'
-  // func onTap(closure: (_ x: Double, _ y: Double)->())
+  func onTap(closure: ((OptionalImage, Double, Double) -> ())?)
 }
 
 public extension ZoomedImageViewSpec {
@@ -131,13 +130,25 @@ public protocol ImageCollectionVCSpec where Self: PageCollectionVC {
   var xButton: Button<CircledXView> { get }
   
   /// The PageControl used to display an indicator of how many images are available
-  var pageControl: UIPageControl { get }
+  /// set nil to disable
+  var pageControl: UIPageControl? { get set }
   
   /// Max count of dots in pageControl, set to 0 show all dots
   var pageControlMaxDotsCount: Int { get set}
   
   /// The color used for pageControl
   var pageControlColors: (current: UIColor?, other: UIColor?) { get set }
+  
+  /// Define closure to call when the user is zooming beyond the resolution
+  /// of the image. 'zoomFactor' defines the maximum zoom after which a higher
+  /// resolution image is requested.b
+  func onHighResImgNeeded(zoomFactor: CGFloat,
+                          closure: ((OptionalImage, @escaping (Bool) -> ()) -> ())?)
+  
+  /// Defines a closure to call when the user has tapped into the image.
+  /// The coordinates passed to the closure are relative content size
+  /// coordinates: 0 <= x,y <= 1
+  func onTap(closure: ((OptionalImage, Double, Double) -> ())?)
   
 } // ImageCollectionVC
 
@@ -159,11 +170,12 @@ public extension ImageCollectionVCSpec {
   
   /// An example of setting up the PageControl
   func setupPageControl() {
-    self.pageControl.hidesForSinglePage = true
-    self.view.addSubview(self.pageControl)
-    pin(self.pageControl.centerX, to: self.view.centerX)
+    guard let pageControl = self.pageControl else { return }
+    pageControl.hidesForSinglePage = true
+    self.view.addSubview(pageControl)
+    pin(pageControl.centerX, to: self.view.centerX)
     // Example values for dist to bottom and height
-    pin(self.pageControl.bottom, to: self.view.bottomGuide(), dist: -15)
+    pin(pageControl.bottom, to: self.view.bottomGuide(), dist: -15)
     /// Height Pin has no Effect @Test PinHeight 1
     //self.pageControl.pinHeight(1)
     /// PageControl example color, set here would overwrite external set
@@ -174,12 +186,12 @@ public extension ImageCollectionVCSpec {
   /// Setting pageControl's colors:
   var pageControlColors: (current: UIColor?, other: UIColor?) {
     get {
-      (current: pageControl.currentPageIndicatorTintColor,
-       other: pageControl.pageIndicatorTintColor)
+      (current: pageControl?.currentPageIndicatorTintColor,
+       other: pageControl?.pageIndicatorTintColor)
     }
     set {
-      pageControl.currentPageIndicatorTintColor = newValue.current
-      pageControl.pageIndicatorTintColor = newValue.other
+      pageControl?.currentPageIndicatorTintColor = newValue.current
+      pageControl?.pageIndicatorTintColor = newValue.other
     }
   }
   

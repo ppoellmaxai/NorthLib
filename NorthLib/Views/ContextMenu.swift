@@ -16,10 +16,14 @@ open class ContextMenu: NSObject, UIContextMenuInteractionDelegate {
   
   /// The view on which to show the context menu
   public var view: UIView
+  ///by default the UITargetedPreview animates from real size to ScreenFitting Size
+  ///for a large image view in a scroll view, this can lead to an abnormal animation/behaviour
+  public var smoothPreviewForImage: Bool = false
   
-  /// Initialize with a view on which to define the context menu
-  public init(view: UIView) {
+  /// Initialize with a view on which to define the context menu  
+  public init(view: UIView, smoothPreviewForImage: Bool = false) {
     self.view = view
+    self.smoothPreviewForImage = smoothPreviewForImage
     super.init()
   }
   
@@ -75,4 +79,25 @@ open class ContextMenu: NSObject, UIContextMenuInteractionDelegate {
     }
   }
   
+    
+    @available(iOS 13.0, *)
+  public func contextMenuInteraction(_ interaction: UIContextMenuInteraction, previewForHighlightingMenuWithConfiguration configuration: UIContextMenuConfiguration) -> UITargetedPreview? {
+      guard self.smoothPreviewForImage == true,
+        let imgV = view as? UIImageView else {
+          //Use Default Menu Appeariance
+          return nil
+      }
+      /// prevent the white background wich is default and appear in some cases as white outline
+      let params = UIPreviewParameters()
+      params.backgroundColor = .black
+      
+      let preview = UIImageView(frame: CGRect(origin: CGPoint.zero,
+                                              size: view.frame.size))
+      preview.image = imgV.image
+      preview.contentMode = imgV.contentMode
+      return UITargetedPreview(view:preview,
+                               parameters: params,
+                               target: UIPreviewTarget(container: view.superview!,
+                                                       center: view.center))
+  }
 } // ContextMenu

@@ -9,24 +9,26 @@
 import Foundation
 import UIKit
 
+// MARK: - ImageCollectionVC
 open class ImageCollectionVC: PageCollectionVC, ImageCollectionVCSpec {
-  public private(set) var xButton = Button<CircledXView>()
-  public private(set) var pageControl = UIPageControl()
+  
+  public var menu: [(title: String, icon: String, closure: (String)->())] = []
+  // MARK: Properties
+  private var onHighResImgNeededClosure: ((OptionalImage, @escaping (Bool) -> ()) -> ())?
+  private var onHighResImgNeededZoomFactor: CGFloat = 1.1
   private var onXClosure: (()->())? = nil
+  private var onTapClosure : ((OptionalImage, Double, Double) -> ())? = nil
   private var fallbackOnXClosure: (()->())? = nil
   private var scrollToIndexPathAfterLayoutSubviews : IndexPath?
-  
-  public var pageControlMaxDotsCount: Int = 0 {
+  public private(set) var xButton = Button<CircledXView>()
+  public var pageControl:UIPageControl? = UIPageControl()
+  public var pageControlMaxDotsCount: Int = 3 {
     didSet{ updatePageControllDots() }
   }
-  
   public var images: [OptionalImage] = []{
     didSet{ updatePageControllDots() }
   }
-  
-  /// The menu to display on long press gesture
-  public var menu: [(title: String, icon: String, closure: (String)->())] = []
-  
+
   /** the default way to initialize/render the PageCollectionVC is to set its count
    this triggers collectionView.reloadData()
    this will be done automatic in ImageCollectionViewController->viewDidLoad
@@ -37,53 +39,7 @@ open class ImageCollectionVC: PageCollectionVC, ImageCollectionVCSpec {
     set { /**Not used, not allowed**/ }
   }
   
-  private func updatePageControllDots() {
-    if pageControlMaxDotsCount == 0 || self.count < pageControlMaxDotsCount {
-      self.pageControl.numberOfPages = self.count
-    } else {
-      self.pageControl.numberOfPages = pageControlMaxDotsCount
-    }
-  }
-  
-  public override func scrollViewDidScroll(_ scrollView: UIScrollView) {
-    if pageControlMaxDotsCount != 0 {
-      let pageWidth = scrollView.frame.width
-      let currentPage = Int((scrollView.contentOffset.x + pageWidth / 2) / pageWidth)
-      self.pageControl.currentPage = Int(round(Float(currentPage) * Float(pageControlMaxDotsCount) / Float(self.count)))
-    }
-    else {
-      let witdh = scrollView.frame.width - (scrollView.contentInset.left*2)
-      let index = scrollView.contentOffset.x / witdh
-      let roundedIndex = round(index)
-      self.pageControl.currentPage = Int(roundedIndex)
-    }
-  }
-  
-  open override func viewWillLayoutSubviews() {
-    super.viewWillLayoutSubviews()
-    /* FIX the Issue:
-     The behavior of the UICollectionViewFlowLayout is not defined because:
-     the item height must be less than the height of the UICollectionView
-     minus the section insets top and bottom values,
-     minus the content insets top and bottom values.
-     */
-    collectionView.collectionViewLayout.invalidateLayout()
-  }
-  
-  public func onX(closure: @escaping () -> ()) {
-    self.onXClosure = closure
-  }
-  
-  func defaultOnXHandler() {
-    if let nc = self.navigationController {
-      nc.popViewController(animated: true)
-    }
-    else if let pvc = self.presentingViewController {
-      pvc.dismiss(animated: true, completion: nil)
-    }
-  }
-  
-  // MARK: - Life Cycle
+  // MARK: Life Cycle
   open override func viewDidLoad() {
     super.viewDidLoad()
     self.inset = 0.0
@@ -100,10 +56,25 @@ open class ImageCollectionVC: PageCollectionVC, ImageCollectionVCSpec {
         self.defaultOnXHandler()
       }
     }
+    onDisplay { (idx) in
+      ///Apply PageControll Dots Update
+      guard let pageControl = self.pageControl else { return }
+      if self.pageControlMaxDotsCount > 0, self.count > 0,
+        self.count > self.pageControlMaxDotsCount {
+        pageControl.currentPage
+          = Int( round( Float(idx+1)
+                        * Float(self.pageControlMaxDotsCount)/Float(self.count)
+            ) ) - 1
+      }
+      else {
+        pageControl.currentPage = idx
+      }
+    }
     //initially render CollectionView
     self.collectionView.reloadData()
   }
   
+  // MARK: Layout
   open override func viewDidLayoutSubviews() {
     super.viewDidLayoutSubviews()
     if let iPath = scrollToIndexPathAfterLayoutSubviews {
@@ -111,12 +82,74 @@ open class ImageCollectionVC: PageCollectionVC, ImageCollectionVCSpec {
       scrollToIndexPathAfterLayoutSubviews = nil
     }
   }
+  
+  open override func viewWillLayoutSubviews() {
+    super.viewWillLayoutSubviews()
+    /* FIX the Issue:
+     The behavior of the UICollectionViewFlowLayout is not defined because:
+     the item height must be less than the height of the UICollectionView
+     minus the section insets top and bottom values,
+     minus the content insets top and bottom values.
+     */
+    collectionView.collectionViewLayout.invalidateLayout()
+  }
+  
   open override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
     super.viewWillTransition(to: size, with: coordinator)
     scrollToIndexPathAfterLayoutSubviews = collectionView?.indexPathsForVisibleItems.first
   }
   
-  // MARK: UI Helper Methods
+  public func addMenuItem(title: String,
+                          icon: String,
+                          closure: @escaping (String) -> ()) {
+    menu.append((title,icon,closure))
+  }
+} // PageCollectionVC
+
+// MARK: - OptionalImageItem: Closures
+extension ImageCollectionVC{
+  public func onHighResImgNeeded(zoomFactor: CGFloat = 1.1,
+                                 closure: ((OptionalImage, @escaping (Bool) -> ()) -> ())?){
+    self.onHighResImgNeededClosure = closure
+    self.onHighResImgNeededZoomFactor = zoomFactor
+  }
+}
+
+// MARK: - Helper: ViewProvider
+extension ImageCollectionVC {
+  func setupViewProvider(){
+    viewProvider { [weak self] (index, oview) in
+      guard let strongSelf = self else { return UIView() }
+      if let ziv = oview as? ZoomedImageView {
+        ziv.optionalImage = strongSelf.images[index]
+        return ziv
+      }
+      else {
+        let ziv = ZoomedImageView(optionalImage: strongSelf.images[index])
+        ziv.onTap { (oimg, x, y) in
+          strongSelf.zoomedImageViewTapped(oimg, x, y)
+        }
+        
+        for itm in strongSelf.menu {
+          ziv.addMenuItem(title: itm.title, icon: itm.icon, closure: itm.closure)
+        }
+        return ziv
+      }
+    }
+  }
+  
+  /// Due onDisplay(idx) with cellforRowAt(idx) delivers another view than visible
+  /// the Tapped Closure is wrapped to work with that kind of implementation
+  /// of CollectionView, DataSource and ViewProvider
+  func zoomedImageViewTapped(_ image: OptionalImage,
+                             _ x: Double,
+                             _ y: Double) {
+    onTapClosure?(image,x,y)
+  }
+}
+
+// MARK: - Helper
+extension ImageCollectionVC {
   func prepareCollectionView() {
     self.collectionView.backgroundColor = UIColor.black
     self.collectionView.showsHorizontalScrollIndicator = false
@@ -124,24 +157,32 @@ open class ImageCollectionVC: PageCollectionVC, ImageCollectionVCSpec {
     self.collectionView.delegate = self
   }
   
-  /// Add a menu item to the images menu
-  public func addMenuItem(title: String, icon: String, 
-                          closure: @escaping (String)->()) {
-    menu += (title: title, icon: icon, closure: closure)
-  }
-
-  func setupViewProvider(){
-    viewProvider { [weak self] (index, oview) in
-      guard let this = self else { return UIView() }
-      if let ziv = oview as? ZoomedImageView {
-        ziv.optionalImage = this.images[index]
-        return ziv
-      }
-      else {
-        let ziv = ZoomedImageView(optionalImage: this.images[index])
-        ziv.menu.menu = this.menu
-        return ziv
-      }
+  private func updatePageControllDots() {
+    guard let pageControl = self.pageControl else { return }
+    if pageControlMaxDotsCount == 0 || self.count < pageControlMaxDotsCount {
+      pageControl.numberOfPages = self.count
+    } else {
+      pageControl.numberOfPages = pageControlMaxDotsCount
     }
   }
-} // PageCollectionVC
+}
+
+// MARK: - Handler
+extension ImageCollectionVC {
+  public func onX(closure: @escaping () -> ()) {
+    self.onXClosure = closure
+  }
+  
+  public func onTap(closure: ((OptionalImage, Double, Double) -> ())?) {
+    onTapClosure = closure
+  }
+  
+  func defaultOnXHandler() {
+    if let nc = self.navigationController {
+      nc.popViewController(animated: true)
+    }
+    else if let pvc = self.presentingViewController {
+      pvc.dismiss(animated: true, completion: nil)
+    }
+  }
+}

@@ -50,18 +50,17 @@ open class PdfPage {
   
   public func image(width: CGFloat) -> UIImage? {
     let frame = self.frame
-    return image(scale:  UIScreen.main.scale * width/frame.size.width)?
-            .screenScaled()
+    return image(scale:  UIScreen.main.scale * width/frame.size.width)?.screenScaled()
   }
-
+  
   public func image(height: CGFloat) -> UIImage? {
     let frame = self.frame
-    return image(scale:  UIScreen.main.scale * height/frame.size.height)?
-             .screenScaled()
+    return image(scale:  UIScreen.main.scale * height/frame.size.height)?.screenScaled()
   }
   
   fileprivate init(page: CGPDFPage) { self.page = page }
 }
+
 
 /**
  PdfDoc is a simple Quartz based class to open PDF documents and to convert
