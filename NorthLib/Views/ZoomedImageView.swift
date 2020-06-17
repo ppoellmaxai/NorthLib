@@ -127,7 +127,7 @@ open class ZoomedImageView: UIView, ZoomedImageViewSpec {
   public private(set) var imageView: UIImageView = UIImageView()
   public private(set) var xButton: Button<CircledXView> = Button<CircledXView>()
   public private(set) var spinner: UIActivityIndicatorView = UIActivityIndicatorView()
-  public private(set) lazy var menu = ContextMenu(view: imageView)
+  public private(set) lazy var menu = ContextMenu(view: imageView, smoothPreviewForImage: true)
   public var optionalImage: OptionalImage{
      willSet {
        if let itm = optionalImage as? OptionalImageItem {
@@ -219,7 +219,7 @@ extension ZoomedImageView{
     scrollView.maximumZoomScale = 1.1
     scrollView.zoomScale = 1.0
     ///prevent pinch/zoom smaller than min while pinch
-    scrollView.bouncesZoom = false
+    scrollView.bouncesZoom = true
     scrollView.contentInsetAdjustmentBehavior = .never
     scrollView.addSubview(imageView)
     addSubview(scrollView)
@@ -427,10 +427,6 @@ extension ZoomedImageView: UIScrollViewDelegate{
   }
   
   public func scrollViewDidZoom(_ scrollView: UIScrollView) {
-    if scrollView.frame.size.width > scrollView.contentSize.width
-      || scrollView.frame.size.height > scrollView.contentSize.height {
-      centerImageInScrollView()
-    }
     
     if self.onHighResImgNeededZoomFactor <= scrollView.zoomScale,
       self.highResImgRequested == false,
