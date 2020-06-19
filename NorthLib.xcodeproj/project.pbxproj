@@ -9,7 +9,6 @@
 /* Begin PBXBuildFile section */
 		008F9A2024864F9400EF5EA5 /* ImageCollectionVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 008F9A1F24864F9400EF5EA5 /* ImageCollectionVC.swift */; };
 		00E4E36B247E694C00BEEC4A /* ZoomedImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00E4E36A247E694C00BEEC4A /* ZoomedImageView.swift */; };
-		00ECEE63249A49950027171D /* OverlayAnimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00ECEE62249A49950027171D /* OverlayAnimator.swift */; };
 		AE08C493240D476300D41E91 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE08C492240D476300D41E91 /* Theme.swift */; };
 		AE08C49724101CA900D41E91 /* FontExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE08C49624101CA900D41E91 /* FontExtensions.swift */; };
 		AE1D62732403FA270004D8AD /* Keychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE1D62722403FA270004D8AD /* Keychain.swift */; };
@@ -95,7 +94,6 @@
 /* Begin PBXFileReference section */
 		008F9A1F24864F9400EF5EA5 /* ImageCollectionVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageCollectionVC.swift; sourceTree = "<group>"; };
 		00E4E36A247E694C00BEEC4A /* ZoomedImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZoomedImageView.swift; sourceTree = "<group>"; };
-		00ECEE62249A49950027171D /* OverlayAnimator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = OverlayAnimator.swift; path = NorthLib/Views/OverlayAnimator.swift; sourceTree = SOURCE_ROOT; };
 		AE08C492240D476300D41E91 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		AE08C49624101CA900D41E91 /* FontExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FontExtensions.swift; sourceTree = "<group>"; };
 		AE1D62722403FA270004D8AD /* Keychain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Keychain.swift; sourceTree = "<group>"; };
@@ -281,7 +279,6 @@
 		AE7122D923197B4000B715A8 /* General */ = {
 			isa = PBXGroup;
 			children = (
-				00ECEE62249A49950027171D /* OverlayAnimator.swift */,
 				AE985152232547B000EAC9D8 /* Defaults.swift */,
 				AE98514923252F9500EAC9D8 /* Version.swift */,
 				AE98514723252F7A00EAC9D8 /* App.swift */,
@@ -507,7 +504,6 @@
 				AE7123362320E64300B715A8 /* DataExtensions.swift in Sources */,
 				AE08C49724101CA900D41E91 /* FontExtensions.swift in Sources */,
 				AE98514F2325450600EAC9D8 /* AudioPlayer.swift in Sources */,
-				00ECEE63249A49950027171D /* OverlayAnimator.swift in Sources */,
 				AE5D9EB823D5A5460002C3B8 /* HandleRotation.swift in Sources */,
 				AEE3D4DF247BF3A000BEDEA3 /* Specifications.swift in Sources */,
 				AED852AC23CDF0AE002F07E8 /* PushNotification.swift in Sources */,
