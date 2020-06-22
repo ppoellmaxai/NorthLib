@@ -158,9 +158,14 @@ open class PageCollectionVC: UIViewController, UICollectionViewDelegate,
     collectionView.backgroundColor = UIColor.white
     collectionView.contentInsetAdjustmentBehavior = .never
     self.view.addSubview(collectionView)
-    if self.pinTopToSafeArea { pin(collectionView.top, to: self.view.topGuide()) }
-    else { pin(collectionView.top, to: self.view.top) }
-    pin(collectionView.bottom, to: self.view.bottom)
+    if self.pinTopToSafeArea {
+      pin(collectionView.top, to: self.view.topGuide())
+      pin(collectionView.bottom, to: self.view.bottomGuide())
+    }
+    else {
+      pin(collectionView.top, to: self.view.top)
+      pin(collectionView.bottom, to: self.view.bottom)
+    }
     pin(collectionView.left, to: self.view.left)
     pin(collectionView.right, to: self.view.right)
     collectionView.register(PageCell.self, forCellWithReuseIdentifier: reuseIdent)
