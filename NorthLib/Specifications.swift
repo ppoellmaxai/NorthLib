@@ -218,9 +218,11 @@ public extension ImageCollectionVCSpec {
  */
 public protocol OverlaySpec {
   /// The view shading the active view controller
-  var shadeView: UIView { get }
+  /// will be put on active vc' view
+  /// no Need to be Public & in Spec
+  /// var shadeView: UIView? { get }
   /// The view being animated (in the center of shadeView)
-  var overlayView: UIView { get }
+  var overlayView: UIView? { get }
   /// The size of overlayView and the overlay (nil => size of shadeView)
   var overlaySize: CGSize? { get set }
   /// Maximum alpha of shadeView
