@@ -386,8 +386,8 @@ public class Overlay: NSObject, OverlaySpec, UIGestureRecognizerDelegate {
     close(fromRect: overlayVC.view.frame, toRect: rect)
   }
    // MARK: - shrinkTo targetView
-  public func shrinkTo(targetView: UIView) {
-    if !targetView.isDescendant(of: activeVC.view) {
+  public func shrinkTo(view: UIView) {
+    if !view.isDescendant(of: activeVC.view) {
       self.close(animated: true)
       return;
     }
@@ -396,7 +396,7 @@ public class Overlay: NSObject, OverlaySpec, UIGestureRecognizerDelegate {
     //          close(fromRect: fromRect, toRect: rect)
     //    }
     
-    close(fromRect: overlayVC.view.frame, toRect: activeVC.view.convert(targetView.frame, from: targetView))
+    close(fromRect: overlayVC.view.frame, toRect: activeVC.view.convert(view.frame, from: view))
   }
   
    // MARK: - close fromRect toRect
