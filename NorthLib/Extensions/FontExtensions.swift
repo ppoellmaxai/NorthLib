@@ -9,29 +9,28 @@ import UIKit
 
 public extension UIFont {
 
-  /// Get font from Data
-  static func new(data: Data, size: CGFloat) -> UIFont? {
-    var font: UIFont? = nil
+  /// Register font from Data and return name
+  static func register(data: Data) -> String? {
     if let dataProvider = CGDataProvider(data: data as NSData),
        let cgFont = CGFont(dataProvider) {
       var error: Unmanaged<CFError>?
       if CTFontManagerRegisterGraphicsFont(cgFont, &error) {
-        font = UIFont(name: cgFont.postScriptName! as String, size: size)
+        return cgFont.postScriptName! as String
       }
     }
-    return font
+    return nil
   }
   
-  /// Get font from file in local FS
-  static func new(path: String, size: CGFloat) -> UIFont? {
-    return new(data: File(path).data, size: size)
+  /// Register font from file in local FS and return name
+  static func register(path: String) -> String? {
+    return register(data: File(path).data)
   }
   
   /// Get font from file with extension ".ttf" in main Bundle
-  static func new(name: String, size: CGFloat) -> UIFont? {
+  static func register(name: String) -> String? {
     guard let path = Bundle.main.path(forResource: name, ofType: "ttf") 
       else { return nil }
-    return new(path: path, size: size)
+    return register(path: path)
   }
 
 }
