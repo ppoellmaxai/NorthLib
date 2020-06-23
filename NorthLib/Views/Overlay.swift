@@ -277,14 +277,18 @@ public class Overlay: NSObject, OverlaySpec, UIGestureRecognizerDelegate {
   
   // MARK: - didPinchWith
   var pinchStartTransform: CGAffineTransform?
+  var pinchStartCalculatedLimit : CGFloat = 0.0
   @IBAction func didPinchWith(gestureRecognizer: UIPinchGestureRecognizer) {
     if let sv = otherGestureRecognizersScrollView {
-      if gestureRecognizer.state == .ended, 2*sv.zoomScale/4 < sv.minimumZoomScale/3 {
+      if gestureRecognizer.state == .began {
+        //The inner scrollview can zoom out to half of its minimum zoom factor
+        //e.g. minimum zoom factor = 0.2 current zooFactor = 0.2
+        //its had to zoom smaller than 0.1 on Device
+        //if close ratio is 0.5, the limit would be reached at 0.15
+        pinchStartCalculatedLimit = closeRatio*0.5*sv.minimumZoomScale + 0.5*sv.minimumZoomScale
+      }
+      if gestureRecognizer.state == .ended, sv.zoomScale < pinchStartCalculatedLimit {
         self.close(animated: true, toBottom: true)
-//        print("sv1..:", 2*sv.zoomScale/3, "<", sv.minimumZoomScale/4)
-//        print("sv2..:", 2*sv.zoomScale/4, "<", sv.minimumZoomScale/3)
-//        print("sv3..:", 1*sv.zoomScale/4, "<", sv.minimumZoomScale/3)
-//        print("sv4..:", 1*sv.zoomScale/3, "<", sv.minimumZoomScale/4)
       }
       return
     }
