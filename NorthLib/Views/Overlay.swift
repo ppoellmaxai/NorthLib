@@ -59,10 +59,10 @@ recognizers being active in 'overlay'.
     X=> overlayview handles pan
     X=> overlayview handles pinch
  X pinch to Close
- O integrate with ImageCollectionView
-    O Base setup
-    O fix frames
-        O Concept Issue ImageCollectionView uses Fullscreen
+ X integrate with ImageCollectionView
+    X Base setup
+    X fix frames
+        X Concept Issue ImageCollectionView uses Fullscreen
                       => pan needs a fixed close x
                       => black ImageCollectionView background needs to stay or disabled due we have shadeView
                       =>
