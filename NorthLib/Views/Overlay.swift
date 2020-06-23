@@ -135,6 +135,7 @@ public class Overlay: NSObject, OverlaySpec, UIGestureRecognizerDelegate {
     activeVC.view.addSubview(shadeView!)
     ///configure the overlay vc (TBD::may also create a new one?!)
     let overlayView = UIView()
+    overlayView.isHidden = true
     self.overlayView = overlayView
     /// add the pan
     
@@ -196,6 +197,7 @@ public class Overlay: NSObject, OverlaySpec, UIGestureRecognizerDelegate {
     addToActiveVC()
     self.overlayVC.view.isHidden = false
     shadeView?.alpha = CGFloat(self.maxAlpha)
+    overlayView?.isHidden = false
   }
   
   // MARK: - open animated
@@ -218,6 +220,7 @@ public class Overlay: NSObject, OverlaySpec, UIGestureRecognizerDelegate {
     overlayVC.view.isHidden = true
     overlayView?.addSubview(targetSnapshot)
     shadeView?.alpha = 0.0
+    overlayView?.isHidden = false
     UIView.animate(withDuration: openDuration, animations: {
       if fromBottom {
         targetSnapshot.frame.origin.y = 0
@@ -228,9 +231,6 @@ public class Overlay: NSObject, OverlaySpec, UIGestureRecognizerDelegate {
       self.overlayVC.view.isHidden = false
       targetSnapshot.removeFromSuperview()
     }
-    
-
-  
   }
   
   var otherGestureRecognizersScrollView : UIScrollView?
@@ -242,8 +242,6 @@ public class Overlay: NSObject, OverlaySpec, UIGestureRecognizerDelegate {
     }
     return true
   }
-  
-  
   
   // MARK: - didPanWith
   var panStartY:CGFloat = 0.0
@@ -327,7 +325,7 @@ public class Overlay: NSObject, OverlaySpec, UIGestureRecognizerDelegate {
        return
      }
 
-
+    overlayView?.isHidden = false
     targetSnapshot.alpha = 0.0
 
     if debug {
