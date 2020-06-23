@@ -176,7 +176,7 @@ public class Overlay: NSObject, OverlaySpec, UIGestureRecognizerDelegate {
     overlayVC.didMove(toParent: activeVC)
     
     if let ct = overlayVC as? OverlayChildViewTransfer {
-      ct.addToContainer(overlayView)
+      ct.addToOverlayContainer(overlayView)
     }
   }
   
@@ -186,7 +186,7 @@ public class Overlay: NSObject, OverlaySpec, UIGestureRecognizerDelegate {
     shadeView = nil
     overlayVC.view.removeFromSuperview()
     if let ct = overlayVC as? OverlayChildViewTransfer {
-      ct.removeFromParent()
+      ct.removeFromOverlay()
     }
     overlayView?.removeFromSuperview()
     overlayView = nil
@@ -438,11 +438,47 @@ public class Overlay: NSObject, OverlaySpec, UIGestureRecognizerDelegate {
   }
 }
 
-
-
+// MARK: - OverlayChildViewTransfer
 public protocol OverlayChildViewTransfer {
    /// add and Layout to Child Views
-  func addToContainer(_ container:UIView?)
+  func addToOverlayContainer(_ container:UIView?)
   ///optional
-  func removeFromParent()
+  func removeFromOverlay()
+}
+
+extension ZoomedImageView : OverlayChildViewTransfer{
+  /// add and Layout to Child Views
+  public func addToOverlayContainer(_ container:UIView?){
+    guard let container = container else { return }
+    container.addSubview(self.xButton)
+    NorthLib.pin(self.xButton.right, to: container.rightGuide(), dist: -15)
+    NorthLib.pin(self.xButton.top, to: container.topGuide(), dist: 15)
+  }
+  ///optional
+  public func removeFromOverlay(){
+    self.xButton.removeFromSuperview()
+  }
+}
+
+extension ImageCollectionVC : OverlayChildViewTransfer{
+  /// add and Layout to Child Views
+  public func addToOverlayContainer(_ container:UIView?){
+    guard let container = container else { return }
+    self.collectionView.backgroundColor = .clear
+    container.addSubview(self.xButton)
+    pin(self.xButton.right, to: container.rightGuide(), dist: -15)
+    pin(self.xButton.top, to: container.topGuide(), dist: 15)
+    if let pc = self.pageControl {
+      container.addSubview(pc)
+      pin(pc.centerX, to: container.centerX)
+      // Example values for dist to bottom and height
+      pin(pc.bottom, to: container.bottomGuide(), dist: -15)
+    }
+  }
+  
+  ///optional
+  public func removeFromOverlay(){
+    self.xButton.removeFromSuperview()
+    self.pageControl?.removeFromSuperview()
+  }
 }
