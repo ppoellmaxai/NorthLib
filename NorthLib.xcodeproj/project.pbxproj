@@ -274,7 +274,6 @@
 				AE80A398244DE1920012DFFA /* CubeLabel.swift */,
 				AEE3D4E0247C234600BEDEA3 /* ContextMenu.swift */,
 				00E4E36A247E694C00BEEC4A /* ZoomedImageView.swift */,
-				08DDCFF524A20EA1000CB1DA /* Overlay.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -363,6 +362,7 @@
 				AE2A0EA0245B31B500E91595 /* NavigationController.swift */,
 				AEEB1A08245DB5EC0083CB55 /* ExportDialogue.swift */,
 				008F9A1F24864F9400EF5EA5 /* ImageCollectionVC.swift */,
+				08DDCFF524A20EA1000CB1DA /* Overlay.swift */,
 			);
 			path = ViewController;
 			sourceTree = "<group>";
