@@ -60,7 +60,11 @@ open class Keychain: DoesLog {
       kSecValueData as String          : data ] as [String : Any]
     let status = SecItemAdd(query as CFDictionary, nil)
     if status != errSecSuccess { 
-      if let str = SecCopyErrorMessageString(status, nil) { error("\(str)") }
+      if #available(iOS 11.3, *) {
+        if let str = SecCopyErrorMessageString(status, nil) { error("\(str)") }
+      } else {
+        error("Can't store value into keychain")
+      }
     }
   }
   
