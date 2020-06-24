@@ -277,3 +277,32 @@ open class Defaults: NSObject {
   }
   
 } // class Defaults
+
+/// A property wrapper for String Defaults
+@propertyWrapper public struct Default {
+  /// The String to use as Defaults key
+  public var key: String
+  /// The wrapped value is in essence Defaults.singleton[key]
+  public var wrappedValue: String? {
+    get { Defaults.singleton[key] }
+    set { Defaults.singleton[key] = newValue}
+  }
+  public init(key: String) { self.key = key }
+}
+
+/// A property wrapper for Bool Defaults (represented as String)
+/// If key is undefined, false is returned
+@propertyWrapper public struct DefaultBool {
+  /// The String to use as Defaults key
+  public var key: String
+  /// The wrapped value is in essence Defaults.singleton[key]
+  public var wrappedValue: Bool {
+    get { 
+      if let dfl = Defaults.singleton[key] { return dfl.bool }
+      else { return false }
+    }
+    set { Defaults.singleton[key] = newValue ? "true" : "false" }
+  }
+  public init(key: String) { self.key = key }
+}
+
