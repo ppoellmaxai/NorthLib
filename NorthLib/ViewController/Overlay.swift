@@ -107,12 +107,16 @@ public class Overlay: NSObject, OverlaySpec, UIGestureRecognizerDelegate {
   public func close(animated: Bool) {
     close(animated: animated, toBottom: false)
   }
+  
+  var closing = false
   // MARK: - close to bottom
   public func close(animated: Bool, toBottom: Bool = false) {
+    if closing { return }
     if animated == false {
       removeFromActiveVC()
       return;
     }
+    closing = true
     UIView.animate(withDuration: closeDuration, animations: {
       self.shadeView?.alpha = 0
       self.overlayView?.alpha = 0
@@ -121,6 +125,7 @@ public class Overlay: NSObject, OverlaySpec, UIGestureRecognizerDelegate {
     }, completion: { _ in
       self.removeFromActiveVC()
       self.overlayView?.alpha = 1
+      self.closing = true
     })
   }
   
