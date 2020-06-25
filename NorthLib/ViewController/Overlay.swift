@@ -122,9 +122,10 @@ public class Overlay: NSObject, OverlaySpec, UIGestureRecognizerDelegate {
     overlayVC.didMove(toParent: activeVC)
     
     if let ct = overlayVC as? OverlayChildViewTransfer {
-      ct.addToOverlayContainer(overlayView)
+      ct.delegate.addToOverlayContainer(overlayView)
     }
   }
+
   
   // MARK: showWithoutAnimation
   private func showWithoutAnimation(){
@@ -235,7 +236,7 @@ public class Overlay: NSObject, OverlaySpec, UIGestureRecognizerDelegate {
     shadeView = nil
     overlayVC.view.removeFromSuperview()
     if let ct = overlayVC as? OverlayChildViewTransfer {
-      ct.removeFromOverlay()
+      ct.delegate.removeFromOverlay()
     }
     overlayView?.removeFromSuperview()
     overlayView = nil
@@ -428,11 +429,19 @@ public class Overlay: NSObject, OverlaySpec, UIGestureRecognizerDelegate {
 
 // MARK: - OverlayChildViewTransfer
 public protocol OverlayChildViewTransfer {
+  var delegate : OverlayChildViewTransfer { get }
   /// add and Layout to Child Views
   func addToOverlayContainer(_ container:UIView?)
   ///optional
   func removeFromOverlay()
 }
+
+extension OverlayChildViewTransfer{
+  public var delegate : OverlayChildViewTransfer { get { return self }}
+  public func addToOverlayContainer(_ container:UIView?){}
+  public func removeFromOverlay(){}
+}
+
 
 // MARK: ext:ZoomedImageView
 extension ZoomedImageView : OverlayChildViewTransfer{
