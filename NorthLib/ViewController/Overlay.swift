@@ -282,23 +282,23 @@ public class Overlay: NSObject, OverlaySpec, UIGestureRecognizerDelegate {
   
   // MARK: - didPinchWith
   var pinchStartTransform: CGAffineTransform?
-  var pinchStartCalculatedLimit : CGFloat = 0.0
+  var canCloseOnEnd = false
   @IBAction func didPinchWith(gestureRecognizer: UIPinchGestureRecognizer) {
     if let sv = otherGestureRecognizersScrollView {
-      if gestureRecognizer.state == .began {
-        //The inner scrollview can zoom out to half of its minimum zoom factor
-        //e.g. minimum zoom factor = 0.2 current zooFactor = 0.2
-        //its had to zoom smaller than 0.1 on Device
-        //if close ratio is 0.5, the limit would be reached at 0.15
-        pinchStartCalculatedLimit = closeRatio*0.5*sv.minimumZoomScale + 0.5*sv.minimumZoomScale
-      }
-      if gestureRecognizer.state == .ended, sv.zoomScale < pinchStartCalculatedLimit {
+      //the .ended comes delayed, after the inner scrollview bounced back,
+      //so i remember the last value and close of pinch ended
+      //!Not closing due pinch this would be non natural behaviour
+      if canCloseOnEnd, gestureRecognizer.state == .ended {
         self.close(animated: true, toBottom: true)
       }
-      return
+      //The inner scrollview can zoom out to half of its minimum zoom factor
+      //e.g. minimum zoom factor = 0.2 current zooFactor = 0.2
+      //its had to zoom smaller than 0.1 on Device
+      //if close ratio is 0.5, the limit would be reached at 0.15
+      canCloseOnEnd = sv.zoomScale < closeRatio*0.5*sv.minimumZoomScale + 0.5*sv.minimumZoomScale
+      return;
     }
-    
-    
+    ///handle pinch for non inner ScrollView ...do the zoom out here!
     guard gestureRecognizer.view != nil else { return }
     if gestureRecognizer.state == .began {
       pinchStartTransform = gestureRecognizer.view?.transform
