@@ -80,7 +80,7 @@ open class ContextMenu: NSObject, UIContextMenuInteractionDelegate {
   }
   
     
-    @available(iOS 13.0, *)
+  @available(iOS 13.0, *)
   public func contextMenuInteraction(_ interaction: UIContextMenuInteraction, previewForHighlightingMenuWithConfiguration configuration: UIContextMenuConfiguration) -> UITargetedPreview? {
       guard self.smoothPreviewForImage == true,
         let imgV = view as? UIImageView else {
