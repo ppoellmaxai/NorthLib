@@ -12,7 +12,6 @@ import UIKit
 // MARK: - ImageCollectionVC
 open class ImageCollectionVC: PageCollectionVC, ImageCollectionVCSpec {
   
-  public var menu: [(title: String, icon: String, closure: (String)->())] = []
   // MARK: Properties
   private var onHighResImgNeededClosure: ((OptionalImage, @escaping (Bool) -> ()) -> ())?
   private var onHighResImgNeededZoomFactor: CGFloat = 1.1
@@ -99,11 +98,6 @@ open class ImageCollectionVC: PageCollectionVC, ImageCollectionVCSpec {
     scrollToIndexPathAfterLayoutSubviews = collectionView?.indexPathsForVisibleItems.first
   }
   
-  public func addMenuItem(title: String,
-                          icon: String,
-                          closure: @escaping (String) -> ()) {
-    menu.append((title,icon,closure))
-  }
 } // PageCollectionVC
 
 // MARK: - OptionalImageItem: Closures
@@ -128,10 +122,6 @@ extension ImageCollectionVC {
         let ziv = ZoomedImageView(optionalImage: strongSelf.images[index])
         ziv.onTap { (oimg, x, y) in
           strongSelf.zoomedImageViewTapped(oimg, x, y)
-        }
-        
-        for itm in strongSelf.menu {
-          ziv.addMenuItem(title: itm.title, icon: itm.icon, closure: itm.closure)
         }
         return ziv
       }
