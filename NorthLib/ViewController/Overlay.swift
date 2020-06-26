@@ -455,6 +455,7 @@ extension ZoomedImageView : OverlayChildViewTransfer{
   ///optional
   public func removeFromOverlay(){
     self.xButton.removeFromSuperview()
+    self.scrollView.zoomScale = self.scrollView.minimumZoomScale
   }
 }
 
