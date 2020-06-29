@@ -25,7 +25,6 @@ extension OptionalImage {
   public var isAvailable: Bool { return image != nil }
 }
 
-
 // MARK: - ZoomedPdfImageSpec : OptionalImage (Protocol)
 public protocol ZoomedPdfImageSpec : OptionalImage {
   var pdfFilename: String { get }
@@ -93,20 +92,16 @@ open class ZoomedImageView: UIView, ZoomedImageViewSpec {
   var imageViewTopConstraint: NSLayoutConstraint?
   var imageViewTrailingConstraint: NSLayoutConstraint?
   
-  
   private var onHighResImgNeededClosure: ((OptionalImage,
   @escaping (Bool) -> ()) -> ())?
   private var onHighResImgNeededZoomFactor: CGFloat = 1.1
   private var highResImgRequested = false
-  private var lastLayoutSubviewsOrientationWasPortrait = false
-  private var needUpdateScaleLimitAfterLayoutSubviews = true
   private var orientationClosure = OrientationClosure()
   private var singleTapRecognizer : UITapGestureRecognizer?
   private let doubleTapRecognizer = UITapGestureRecognizer()
   private var zoomEnabled :Bool = true {
     didSet{
       self.scrollView.pinchGestureRecognizer?.isEnabled = zoomEnabled
-      print("CAN ZOOM?", zoomEnabled, self.scrollView.pinchGestureRecognizer?.isEnabled, scrollView.hash)
     }
   }
   private var onTapClosure: ((_ image: OptionalImage,
@@ -160,6 +155,9 @@ open class ZoomedImageView: UIView, ZoomedImageViewSpec {
   public required init?(coder aDecoder: NSCoder) {
     fatalError("init(coder:) has not been implemented");
   }
+  
+  
+  var inited = false
 }
 
 // MARK: - Setup
@@ -187,6 +185,8 @@ extension ZoomedImageView{
       setImage(detailImage)
       zoomEnabled = true
       spinner.stopAnimating()
+      self.scrollView.zoomScale = self.scrollView.minimumZoomScale
+      self.updateConstraintsForSize(self.bounds.size)
     }
     else {
       //show waitingImage if detailImage is not available yet
@@ -202,13 +202,14 @@ extension ZoomedImageView{
       optionalImage.whenAvailable {
         if let img = self.optionalImage.image {
           self.setImage(img)
-          
           self.scrollView.zoomScale = self.scrollView.minimumZoomScale
           self.zoomEnabled = true
           self.spinner.stopAnimating()
           //due all previewImages are not allowed to zoom,
           //exchanged image should be shown fully
           self.optionalImage.whenAvailable(closure: nil)
+          //Center
+          self.updateConstraintsForSize(self.bounds.size)
         }
       }
     }
@@ -229,13 +230,15 @@ extension ZoomedImageView{
     (imageViewTopConstraint, imageViewBottomConstraint, imageViewLeadingConstraint, imageViewTrailingConstraint) =
       NorthLib.pin(imageView, to: scrollView)
   }
-  
-//  // MARK: didMoveToSuperview
-//  open override func didMoveToSuperview() {
-//    super.didMoveToSuperview()
-//    updateMinimumZoomScale()
-//    updateConstraintsForSize(self.bounds.size)
-//  }
+
+  open override func layoutSubviews() {
+    super.layoutSubviews()
+    if !inited, self.superview != nil, self.bounds.size != .zero{
+          self.updateConstraintsForSize(self.bounds.size)
+      inited = true
+    }
+      
+  }
 }
 
 // MARK: - Handler
@@ -244,7 +247,7 @@ extension ZoomedImageView{
                                  closure: ((OptionalImage,
     @escaping (Bool)-> ()) -> ())?) {
     self.onHighResImgNeededClosure = closure
-    self.scrollView.maximumZoomScale = closure == nil ? 1.0 : 3.0
+    self.scrollView.maximumZoomScale = closure == nil ? 1.0 : 2.0
     self.onHighResImgNeededZoomFactor = zoomFactor
   }
 }
@@ -318,8 +321,7 @@ extension ZoomedImageView{
 
 // MARK: - Helper
 extension ZoomedImageView{
-  
-  
+    
   // MARK: setImage
   fileprivate func setImage(_ image: UIImage) {
     imageView.image = image
@@ -332,13 +334,10 @@ extension ZoomedImageView{
   
   // MARK: updateMinimumZoomScale
   fileprivate func updateMinimumZoomScale(){
-        print("updateMinimumZoomScale sv:", scrollView.hash, "enabled:", scrollView.pinchGestureRecognizer?.isEnabled)
     let widthScale = self.bounds.size.width / (imageView.image?.size.width ?? 1)
     let heightScale = self.bounds.size.height / (imageView.image?.size.height ?? 1)
     let minScale = min(widthScale, heightScale, 1)
-    print("updateMinimumZoomScale old:", scrollView.minimumZoomScale, "new:", minScale, scrollView.pinchGestureRecognizer?.isEnabled)
     scrollView.minimumZoomScale = minScale
-    print("after update enabled?", scrollView.pinchGestureRecognizer?.isEnabled)
   }
   // MARK: updateConstraintsForSize
   fileprivate func updateConstraintsForSize(_ size: CGSize) {
@@ -362,13 +361,12 @@ extension ZoomedImageView{
       self.setImage(image)
       return
     }
-//TODO
-    print("updateImagewithHighResImage before... ", scrollView.zoomScale, scrollView, imageView, image )
+    let contentOffset = scrollView.contentOffset
     self.setImage(image)
-    print("updateImagewithHighResImage after... ", scrollView.zoomScale, scrollView, imageView, image)
-//    let newSc = oldImg.size.width * oldZoomScale / image.size.width
-//    scrollView.zoomScale = newSc
-//    scrollView.setContentOffset(center, animated: false)
+    let newSc = oldImg.size.width * scrollView.zoomScale / image.size.width
+    scrollView.zoomScale = newSc
+    scrollView.setContentOffset(contentOffset, animated: false)
+    self.updateConstraintsForSize(self.bounds.size)
   }
 }
 
@@ -380,7 +378,6 @@ extension ZoomedImageView: UIScrollViewDelegate{
   
   public func scrollViewDidZoom(_ scrollView: UIScrollView) {
     //Center if needed
-    print("zooming enabled?", scrollView.pinchGestureRecognizer?.isEnabled)
     updateConstraintsForSize(self.bounds.size)
     //request high res Image if possible
     if zoomEnabled,
@@ -390,9 +387,7 @@ extension ZoomedImageView: UIScrollViewDelegate{
       let closure = onHighResImgNeededClosure {
       let _optionalImage = optionalImage
       self.highResImgRequested = true
-          print("request high res image")
       closure(_optionalImage, { success in
-        print("request high res image callbach with image")
         if success, let img = _optionalImage.image {
           self.updateImagewithHighResImage(img)
         }
