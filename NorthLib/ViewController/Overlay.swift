@@ -34,8 +34,8 @@ import UIKit
  ======
  O Low Prio: Fix From Rect to Rect open/close
  O OverlaySpec
-  O=> var overlaySize: CGSize?
-  O pinch & zoom & pan only in overlayView or may also in a wrapper over activeVC.view
+ O=> var overlaySize: CGSize?
+ O pinch & zoom & pan only in overlayView or may also in a wrapper over activeVC.view
  */
 
 // MARK: - OverlayAnimator
@@ -43,7 +43,7 @@ public class Overlay: NSObject, OverlaySpec, UIGestureRecognizerDelegate {
   //usually 0.4-0.5
   private var openDuration: Double { get { return debug ? 3.0 : 0.4 } }
   private var closeDuration: Double { get { return debug ? 3.0 : 0.25 } }
-  private var debug = false
+  private var debug = true
   private var closeAction : (() -> ())?
   
   var shadeView: UIView?
@@ -51,6 +51,7 @@ public class Overlay: NSObject, OverlaySpec, UIGestureRecognizerDelegate {
   var activeVC: UIViewController
   
   public var overlayView: UIView?
+  public var contentView: UIView?//either overlayVC.view or its wrapper
   public var overlaySize: CGSize?
   public var maxAlpha: Double = 0.8
   public var shadeColor: UIColor = .black
@@ -78,6 +79,7 @@ public class Overlay: NSObject, OverlaySpec, UIGestureRecognizerDelegate {
     shadeView?.backgroundColor = shadeColor
     shadeView!.alpha = 0.0
     activeVC.view.addSubview(shadeView!)
+    contentView = overlayVC.view
     ///configure the overlay vc (TBD::may also create a new one?!)
     let overlayView = UIView()
     overlayView.isHidden = true
@@ -103,22 +105,32 @@ public class Overlay: NSObject, OverlaySpec, UIGestureRecognizerDelegate {
     //
     //    }
     overlayView.clipsToBounds = true
-    overlayView.addSubview(overlayVC.view)
-    
     ///configure the overlay vc and add as child vc to active vc
-    overlayVC.view.frame = activeVC.view.frame
+    if let overlaySize = overlaySize {
+      contentView = UIView()
+      contentView!.addSubview(self.overlayVC.view)
+      self.overlayVC.view.pinSize(overlaySize)
+      
+    }
+    overlayView.addSubview(contentView!)
+    NorthLib.pin(contentView!, to: overlayView)
+    if overlaySize == nil {
+      overlayVC.view.frame = activeVC.view.frame
+    }
     overlayVC.willMove(toParent: activeVC)
     activeVC.view.addSubview(overlayView)
     //ToDo to/toSafe/frame.....
     //the ChildOverlayVC likes frame no autolayout
     //for each child type the animation may needs to be fixed
     //Do make it niche for ImageCollection VC for now!
-    NorthLib.pin(overlayView, toSafe: activeVC.view)
     //set overlay view's origin if size given: center
-    //    if overlaySize != nil {
-    //      NorthLib.pin(overlayView.centerX, to: activeVC.view.centerX)
-    //      NorthLib.pin(overlayView.centerY, to: activeVC.view.centerY)
-    //    }
+    if overlaySize != nil {
+      NorthLib.pin(overlayVC.view.centerX, to: contentView!.centerX)
+      NorthLib.pin(overlayVC.view.centerY, to: contentView!.centerY)
+      contentView?.setNeedsLayout()
+      contentView?.layoutIfNeeded()
+    }
+    NorthLib.pin(overlayView, toSafe: activeVC.view)
     overlayVC.didMove(toParent: activeVC)
     
     if let ct = overlayVC as? OverlayChildViewTransfer {
@@ -141,8 +153,9 @@ public class Overlay: NSObject, OverlaySpec, UIGestureRecognizerDelegate {
     addToActiveVC()
     closeAction = { self.close(animated: animated, toBottom: fromBottom) }
     guard animated,
+      let contentView = contentView,
       let targetSnapshot
-      = overlayVC.view.snapshotView(afterScreenUpdates: true) else {
+      = contentView.snapshotView(afterScreenUpdates: true)  else {
         showWithoutAnimation()
         return
     }
