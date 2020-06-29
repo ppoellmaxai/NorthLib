@@ -15,7 +15,7 @@ open class File: DoesLog {
 
   fileprivate var hasStat: Bool { return getStat() != nil }
   fileprivate var _status: stat_t?
-  fileprivate var fp: file_t? = nil
+  fileprivate var fp: fileptr_t? = nil
   fileprivate var cpath: [CChar] { return self.path.cString(using: .utf8)! }
 
   /// File status
