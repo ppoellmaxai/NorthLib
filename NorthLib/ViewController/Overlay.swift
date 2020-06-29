@@ -43,7 +43,7 @@ public class Overlay: NSObject, OverlaySpec, UIGestureRecognizerDelegate {
   //usually 0.4-0.5
   private var openDuration: Double { get { return debug ? 3.0 : 0.4 } }
   private var closeDuration: Double { get { return debug ? 3.0 : 0.25 } }
-  private var debug = true
+  private var debug = false
   private var closeAction : (() -> ())?
   
   var shadeView: UIView?
@@ -208,8 +208,8 @@ public class Overlay: NSObject, OverlaySpec, UIGestureRecognizerDelegate {
       targetSnapshot.layer.borderColor = UIColor.blue.cgColor
       targetSnapshot.layer.borderWidth = 2.0
       
-      self.overlayVC.view.layer.borderColor = UIColor.orange.cgColor
-      self.overlayVC.view.layer.borderWidth = 2.0
+      contentView?.layer.borderColor = UIColor.orange.cgColor
+      contentView?.layer.borderWidth = 2.0
       
       print("fromSnapshot.frame:", fromSnapshot.frame)
       print("targetSnapshot.frame:", toFrame)
@@ -237,7 +237,7 @@ public class Overlay: NSObject, OverlaySpec, UIGestureRecognizerDelegate {
       }
       
     }) { (success) in
-      self.overlayVC.view.isHidden = false
+      self.contentView?.isHidden = false
       targetSnapshot.removeFromSuperview()
       targetSnapshot.removeFromSuperview()
     }
@@ -285,7 +285,7 @@ public class Overlay: NSObject, OverlaySpec, UIGestureRecognizerDelegate {
       self.shadeView?.alpha = 0
       self.overlayView?.alpha = 0
       if toBottom {
-        self.overlayVC.view.frame.origin.y
+        self.contentView?.frame.origin.y
         = CGFloat(self.shadeView?.frame.size.height ?? 0.0)
       }
     }, completion: { _ in
@@ -313,7 +313,7 @@ public class Overlay: NSObject, OverlaySpec, UIGestureRecognizerDelegate {
     closing = true
     UIView.animateKeyframes(withDuration: closeDuration, delay: 0, animations: {
       UIView.addKeyframe(withRelativeStartTime: 0.0, relativeDuration: 0.4) {
-        self.overlayVC.view.alpha = 0.0
+        self.contentView?.alpha = 0.0
       }
       UIView.addKeyframe(withRelativeStartTime: 0.0, relativeDuration: 0.7) {
         overlaySnapshot.frame = toRect
@@ -328,7 +328,7 @@ public class Overlay: NSObject, OverlaySpec, UIGestureRecognizerDelegate {
     }) { (success) in
       self.removeFromActiveVC()
       self.overlayView?.alpha = 1.0
-      self.overlayVC.view.alpha = 1.0
+      self.contentView?.alpha = 1.0
     }
   }
   
@@ -376,8 +376,8 @@ public class Overlay: NSObject, OverlaySpec, UIGestureRecognizerDelegate {
         + translatedPoint.y
     }
     
-    self.overlayVC.view.frame.origin.y = translatedPoint.y > 0 ? translatedPoint.y : translatedPoint.y*0.4
-    self.overlayVC.view.frame.origin.x = translatedPoint.x*0.4
+    contentView?.frame.origin.y = translatedPoint.y > 0 ? translatedPoint.y : translatedPoint.y*0.4
+    contentView?.frame.origin.x = translatedPoint.x*0.4
     let p = translatedPoint.y/(overlayView?.frame.size.height ?? 0-panStartY)
     if translatedPoint.y > 0 {
       debug ? print("panDown... ",self.shadeView?.alpha as Any, (1 - p), p, self.maxAlpha) : ()
@@ -392,7 +392,7 @@ public class Overlay: NSObject, OverlaySpec, UIGestureRecognizerDelegate {
       }
       else {
         UIView.animate(seconds: closeDuration) {
-          self.overlayVC.view.frame.origin = .zero
+          self.contentView?.frame.origin = .zero
           self.shadeView?.alpha = CGFloat(self.maxAlpha)
         }
       }
