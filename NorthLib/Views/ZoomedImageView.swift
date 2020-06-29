@@ -91,6 +91,7 @@ open class ZoomedImageView: UIView, ZoomedImageViewSpec {
   var imageViewLeadingConstraint: NSLayoutConstraint?
   var imageViewTopConstraint: NSLayoutConstraint?
   var imageViewTrailingConstraint: NSLayoutConstraint?
+  var layoutInitialized = false
   
   private var onHighResImgNeededClosure: ((OptionalImage,
   @escaping (Bool) -> ()) -> ())?
@@ -156,8 +157,16 @@ open class ZoomedImageView: UIView, ZoomedImageViewSpec {
     fatalError("init(coder:) has not been implemented");
   }
   
-  
-  var inited = false
+  // MARK: layoutSubviews
+  open override func layoutSubviews() {
+    super.layoutSubviews()
+    if !layoutInitialized, self.bounds.size != .zero{
+      layoutInitialized = true
+      self.updateMinimumZoomScale()
+      self.scrollView.zoomScale = self.scrollView.minimumZoomScale
+      self.updateConstraintsForSize(self.bounds.size)
+    }
+  }
 }
 
 // MARK: - Setup
@@ -229,23 +238,6 @@ extension ZoomedImageView{
     NorthLib.pin(scrollView, to: self)
     (imageViewTopConstraint, imageViewBottomConstraint, imageViewLeadingConstraint, imageViewTrailingConstraint) =
       NorthLib.pin(imageView, to: scrollView)
-    print("imageView Pinned to sv")
-  }
-
-  open override func layoutSubviews() {
-    super.layoutSubviews()
-    if !inited, self.superview != nil, self.bounds.size != .zero{
-          self.updateConstraintsForSize(self.bounds.size)
-      inited = true
-    }
-        print("layoutSubviews bounds:", self.bounds, "sf:",scrollView.frame, "if:", imageView.frame)
-      
-      print("layoutSubviews bounds:", self.bounds, "sf:",scrollView.frame, "if:", imageView.frame, self.scrollView.contentSize)
-  }
-  
-  open override func didMoveToSuperview() {
-    super.didMoveToSuperview()
-    print("didMoveToSuperview bounds:", self.bounds, "sf:",scrollView.frame, "if:", imageView.frame)
   }
 }
 
@@ -337,7 +329,6 @@ extension ZoomedImageView{
                              y: imageView.frame.origin.y,
                              width: image.size.width,
                              height: image.size.height)
-    print("set image iv.frame: ", imageView.frame)
     updateMinimumZoomScale()
   }
   
@@ -347,7 +338,6 @@ extension ZoomedImageView{
     let heightScale = self.bounds.size.height / (imageView.image?.size.height ?? 1)
     let minScale = min(widthScale, heightScale, 1)
     scrollView.minimumZoomScale = minScale
-        print("updateMinimumZoomScale: ", minScale)
   }
   // MARK: updateConstraintsForSize
   fileprivate func updateConstraintsForSize(_ size: CGSize) {
@@ -362,7 +352,6 @@ extension ZoomedImageView{
     let contentHeight = yOffset * 2 + self.imageView.frame.height
     self.layoutIfNeeded()
     self.scrollView.contentSize = CGSize(width: self.scrollView.contentSize.width, height: contentHeight)
-    print("updateConstraintsForSize: ", size, "sv contentSize: ", self.scrollView.contentSize)
   }
   
   
