@@ -75,10 +75,11 @@ public class Overlay: NSObject, OverlaySpec, UIGestureRecognizerDelegate {
     ///ensure not presented anymore
     if overlayVC.view.superview != nil { removeFromActiveVC()}
     /// config the shade layer
-    shadeView = UIView(frame: activeVC.view.frame)
+    shadeView = UIView()
     shadeView?.backgroundColor = shadeColor
     shadeView!.alpha = 0.0
     activeVC.view.addSubview(shadeView!)
+    NorthLib.pin(shadeView!, to: activeVC.view)
     contentView = overlayVC.view
     ///configure the overlay vc (TBD::may also create a new one?!)
     let overlayView = UIView()
