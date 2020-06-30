@@ -222,6 +222,7 @@ extension ZoomedImageView{
       optionalImage.whenAvailable {
         if let img = self.optionalImage.image {
           self.setImage(img)
+          self.layoutIfNeeded()
           self.zoomEnabled = true
           self.spinner.stopAnimating()
           //due all previewImages are not allowed to zoom,
