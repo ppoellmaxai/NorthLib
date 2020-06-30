@@ -157,14 +157,27 @@ open class ZoomedImageView: UIView, ZoomedImageViewSpec {
     fatalError("init(coder:) has not been implemented");
   }
   
+  fileprivate func zoomOutAndCenter() {
+    layoutInitialized = false
+    self.setNeedsLayout()
+    self.layoutIfNeeded()
+  }
+  
   // MARK: layoutSubviews
   open override func layoutSubviews() {
     super.layoutSubviews()
     if !layoutInitialized, self.bounds.size != .zero{
       layoutInitialized = true
       self.updateMinimumZoomScale()
-      self.scrollView.zoomScale = self.scrollView.minimumZoomScale
-      self.updateConstraintsForSize(self.bounds.size)
+      if self.scrollView.zoomScale != self.scrollView.minimumZoomScale {
+        //zoom out if needed
+        //triggers scrollViewDidZoom => updateConstraintsForSize
+        self.scrollView.zoomScale = self.scrollView.minimumZoomScale
+      }
+      else {
+        //center!
+        self.updateConstraintsForSize(self.bounds.size)
+      }
     }
   }
 }
@@ -184,7 +197,6 @@ extension ZoomedImageView{
       if wasMinZoom || sv.zoomScale < sv.minimumZoomScale {
         sv.zoomScale = sv.minimumZoomScale
       }
-      self.updateConstraintsForSize(self.bounds.size)
     })
   }
   
@@ -194,8 +206,7 @@ extension ZoomedImageView{
       setImage(detailImage)
       zoomEnabled = true
       spinner.stopAnimating()
-      self.scrollView.zoomScale = self.scrollView.minimumZoomScale
-      self.updateConstraintsForSize(self.bounds.size)
+      self.zoomOutAndCenter()
     }
     else {
       //show waitingImage if detailImage is not available yet
@@ -211,18 +222,19 @@ extension ZoomedImageView{
       optionalImage.whenAvailable {
         if let img = self.optionalImage.image {
           self.setImage(img)
-          self.scrollView.zoomScale = self.scrollView.minimumZoomScale
           self.zoomEnabled = true
           self.spinner.stopAnimating()
           //due all previewImages are not allowed to zoom,
           //exchanged image should be shown fully
           self.optionalImage.whenAvailable(closure: nil)
           //Center
-          self.updateConstraintsForSize(self.bounds.size)
+          self.zoomOutAndCenter()
         }
       }
     }
   }
+  
+
   
   // MARK: setupScrollView
   func setupScrollView() {
@@ -321,7 +333,7 @@ extension ZoomedImageView{
 
 // MARK: - Helper
 extension ZoomedImageView{
-    
+  
   // MARK: setImage
   fileprivate func setImage(_ image: UIImage) {
     imageView.image = image
