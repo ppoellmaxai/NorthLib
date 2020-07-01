@@ -232,6 +232,8 @@ public protocol OverlaySpec {
   /// When should the animation start? Eg. 0.5
   var closeRatio: CGFloat { get set }
   
+  func onClose(closure: (() -> ())?)
+    
   /// initialize with overlay and active view controllers
   init(overlay: UIViewController, into active: UIViewController)
   

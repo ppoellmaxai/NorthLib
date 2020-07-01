@@ -436,6 +436,8 @@ open class NotifiedDelegate: UIResponder, UIApplicationDelegate,
       return topViewController(in: navigationController.visibleViewController)
     } else if let presentedViewController = rootViewController.presentedViewController {
       return topViewController(in: presentedViewController)
+    } else if let firstChild = rootViewController.children.first {
+      return firstChild
     }
     return rootViewController
   }
