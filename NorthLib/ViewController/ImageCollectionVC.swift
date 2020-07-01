@@ -21,7 +21,7 @@ open class ImageCollectionVC: PageCollectionVC, ImageCollectionVCSpec {
   private var scrollToIndexPathAfterLayoutSubviews : IndexPath?
   public private(set) var xButton = Button<CircledXView>()
   public var pageControl:UIPageControl? = UIPageControl()
-  public var pageControlMaxDotsCount: Int = 3 {
+  public var pageControlMaxDotsCount: Int = 0 {
     didSet{ updatePageControllDots() }
   }
   public var images: [OptionalImage] = []{
