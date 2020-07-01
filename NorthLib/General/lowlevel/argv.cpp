@@ -15,8 +15,9 @@
  *  The last string in 'argv' must be a 0 pointer.
  *  Each string must have been allocated separately. 
  *  
- *  - arguments: 
- *    - argv: pointer to array of allocated strings
+ *  @param argv pointer to array of allocated strings
+ *  @return 0: OK - array and strings released
+ *  @return -1: Error detected
  */
 int av_release(char **argv) {
   if ( argv ) {

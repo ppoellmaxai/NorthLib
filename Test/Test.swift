@@ -29,6 +29,57 @@ class EtcTests: XCTestCase {
     XCTAssertEqual(a1.rotated(-2), [9,10,1,2,3,4,5,6,7,8])
   }
   
+  func testCodableEnum() {
+    enum TestEnum: String, CodableEnum {
+      case one = "one(ONE)"
+      case two = "two(TWO)"
+      case three = "three"
+      case unknown = "unknown"
+    }
+    var te = TestEnum.one
+    print("MemoryLayout<TestEnum>.size = \(MemoryLayout<TestEnum>.size)")
+    print("MemoryLayout<TestEnum>.stride = \(MemoryLayout<TestEnum>.stride)")
+    print("MemoryLayout<TestEnum>.alignment = \(MemoryLayout<TestEnum>.alignment)")
+    XCTAssertEqual(te.external, "ONE")
+    XCTAssertEqual(te.representation, "one")
+    XCTAssertEqual(te.description, "one(ONE)")
+    XCTAssertEqual(te.index, 0)
+    let jsEncoder = JSONEncoder()
+    if let data = try? jsEncoder.encode(te), 
+       let s = String(data: data, encoding: .utf8) {
+      XCTAssertEqual(s, "[\"ONE\"]")
+      let jsDecoder = JSONDecoder()
+      if let ret = try? jsDecoder.decode([TestEnum].self, from: data) {
+        XCTAssertEqual(ret[0].representation, "one")
+      }
+    }
+    te = TestEnum.two
+    XCTAssertEqual(te.external, "TWO")
+    XCTAssertEqual(te.representation, "two")
+    XCTAssertEqual(te.description, "two(TWO)")
+    XCTAssertEqual(te.index, 1)
+    te = TestEnum.three
+    XCTAssertEqual(te.external, "three")
+    XCTAssertEqual(te.representation, "three")
+    XCTAssertEqual(te.description, "three")
+    XCTAssertEqual(te.index, 2)
+    te = TestEnum("one")!
+    XCTAssertEqual(te.external, "ONE")
+    XCTAssertEqual(te.representation, "one")
+    XCTAssertEqual(te.description, "one(ONE)")
+    XCTAssertEqual(te.index, 0)    
+    te = TestEnum("two")!
+    XCTAssertEqual(te.external, "TWO")
+    XCTAssertEqual(te.representation, "two")
+    XCTAssertEqual(te.description, "two(TWO)")
+    XCTAssertEqual(te.index, 1)
+    let jsDecoder = JSONDecoder()
+    let data = "\"test\"".data(using: .utf8)!
+    if let ret = try? jsDecoder.decode(TestEnum.self, from: data) {
+      XCTAssertEqual(ret, TestEnum.unknown)
+    }
+  }
+  
 } // class EtcTests
 
 class MathTests: XCTestCase {  
@@ -70,6 +121,15 @@ class StringTests: XCTestCase {
   
   override func tearDown() {
     super.tearDown()
+  }
+  
+  func testSubscripts() {
+    let s = "123456789"
+    XCTAssertEqual(s.length, 9)
+    XCTAssertEqual(s[0], "1")
+    XCTAssertEqual(s[8], "9")
+    XCTAssertEqual(s[1...2], "23")
+    XCTAssertEqual(s[3..<9], "456789")
   }
   
   func testQuote() {

@@ -878,28 +878,28 @@ int file_link(const char *from, const char *to) {
 }
 
 /// Open a file pointer and write it to *fp
-int file_open(file_t *rfp, const char *path, const char *mode) {
-  file_t tmp = fopen(path, mode);
+int file_open(fileptr_t *rfp, const char *path, const char *mode) {
+  fileptr_t tmp = fopen(path, mode);
   if (tmp) { *rfp = tmp; return 0; }
   return -1;
 }
 
 /// Close the file pointer
-int file_close(file_t *fp) {
+int file_close(fileptr_t *fp) {
   int ret = fclose(*fp);
   *fp = 0;
   return ret;
 }
 
 /// Reads one line of data and returns the allocated result
-char *file_readline(file_t fp) {
+char *file_readline(fileptr_t fp) {
   char buff[2001];
   if (fgets(buff, 2000, fp)) return str_heap(buff, 0);
   else return 0;
 }
 
 /// Writes one line to the file pointer (a missing \n is appended)
-int file_writeline(file_t fp, const char *str) {
+int file_writeline(fileptr_t fp, const char *str) {
   if ( fputs(str, fp) >= 0 ) {
     int l = str_len(str);
     if (str[l-1] != '\n') { fputc('\n', fp); l++; }
@@ -909,4 +909,4 @@ int file_writeline(file_t fp, const char *str) {
 }
 
 /// Flushes input/output buffers
-int file_flush(file_t fp) { return fflush(fp); }
+int file_flush(fileptr_t fp) { return fflush(fp); }

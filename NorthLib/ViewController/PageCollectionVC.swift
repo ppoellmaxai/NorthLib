@@ -79,10 +79,22 @@ open class PageCollectionVC: UIViewController, UICollectionViewDelegate,
     return CGSize(width: s.width - 2*margin, height: s.height - 2*margin)
   }
   
+  /// Returns the optional view at a given index (if that view is visible)
+  open func optionalView(at idx: Int) -> OptionalView? {
+    var cell = collectionView.cellForItem(at: IndexPath(item: idx, section: 0))
+               as? PageCell
+    if cell == nil { cell = _lastCellRequested }
+    return cell?.page
+  }
+
   // View which is currently displayed
-  public var currentView: OptionalView?
+  public var currentView: OptionalView? { 
+    if let i = index { return optionalView(at: i) }
+    else { return nil }
+  }
   
   private var _index: Int?
+  private var _nextIndex: Int?
   
   /// Index of current view, change it to scroll to a certain cell
   open var index: Int? {
@@ -90,8 +102,8 @@ open class PageCollectionVC: UIViewController, UICollectionViewDelegate,
     set(idx) { 
       if let idx = idx { 
         _index = idx
+        _nextIndex = idx
         scrollto(idx)
-        if let closure = onDisplayClosure { closure(idx) }
       } 
     }
   }
@@ -113,19 +125,23 @@ open class PageCollectionVC: UIViewController, UICollectionViewDelegate,
   
   public required init?(coder: NSCoder) { super.init(coder: coder) }
 
-  fileprivate var onDisplayClosure: ((Int)->())?
+  fileprivate var onDisplayClosures: [(Int)->()] = []
   
   /// Define closure to call when a cell is newly displayed  
-  public func onDisplay(closure: ((Int)->())?) {
-    onDisplayClosure = closure
+  public func onDisplay(closure: @escaping (Int)->()) {
+    onDisplayClosures += closure
   }
+  
+  /// Call all onDisplay closures
+  fileprivate func callOnDisplay(idx: Int) 
+    { for cl in onDisplayClosures { cl(idx) } }
  
   // updateDisplaying is called when the scrollview has been scrolled which
   // might have changed the view currently visible
   private func updateDisplaying(_ idx: Int) { 
     if _index != idx {
       _index = idx
-      if let closure = onDisplayClosure { closure(idx) }
+      callOnDisplay(idx: idx)
     }
   }
   
@@ -139,8 +155,7 @@ open class PageCollectionVC: UIViewController, UICollectionViewDelegate,
   fileprivate var isInitializing = true
   fileprivate var initialIndex: Int? = nil
   fileprivate func scrollto(_ index: Int, animated: Bool = false) {
-    if isInitializing { initialIndex = index }
-    else {
+    if !isInitializing { 
       let ipath = IndexPath(item: index, section: 0)
       collectionView.scrollToItem(at: ipath, at: .centeredHorizontally, animated: animated)
     }
@@ -198,15 +213,25 @@ open class PageCollectionVC: UIViewController, UICollectionViewDelegate,
     return self.count
   }
   
+  fileprivate var _lastCellRequested: PageCell?
+  
   open func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
     if let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdent,
                   for: indexPath) as? PageCell {
       let idx = indexPath.item
-      cell.update(pcvc: self, idx: idx)
-      if isInitializing && initialIndex != nil {
+      if isInitializing {
         isInitializing = false
-        if initialIndex! != idx { scrollto(initialIndex!) }
+        if let next = _nextIndex, next != idx { 
+          scrollto(next) 
+          return cell
+        }
       } 
+      cell.update(pcvc: self, idx: idx)
+      _lastCellRequested = cell
+      if let next = _nextIndex {
+        _nextIndex = nil
+        callOnDisplay(idx: next)
+      }
       return cell
     }
     return PageCell()

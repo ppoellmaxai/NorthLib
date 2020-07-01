@@ -14,10 +14,10 @@ import Foundation
  In addition a var 'description' is provided to conform to  CustomStringConvertible.
  **/
 public protocol ToString: CustomStringConvertible {
-  var description: String { get }
   func toString() -> String
 }
 
 public extension ToString {
   var description: String { return toString() }
+  var localizedDescription: String { return toString() }
 }
