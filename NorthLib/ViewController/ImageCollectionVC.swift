@@ -9,37 +9,76 @@
 import Foundation
 import UIKit
 
+// MARK: - ImageCollectionVC
 open class ImageCollectionVC: PageCollectionVC, ImageCollectionVCSpec {
-  public private(set) var xButton = Button<CircledXView>()
-  public private(set) var pageControl = UIPageControl()
   
+  // MARK: Properties
+  private var onHighResImgNeededClosure: ((OptionalImage, @escaping (Bool) -> ()) -> ())?
+  private var onHighResImgNeededZoomFactor: CGFloat = 1.1
+  private var onXClosure: (()->())? = nil
+  private var onTapClosure : ((OptionalImage, Double, Double) -> ())? = nil
+  private var fallbackOnXClosure: (()->())? = nil
+  private var scrollToIndexPathAfterLayoutSubviews : IndexPath?
+  public private(set) var xButton = Button<CircledXView>()
+  public var pageControl:UIPageControl? = UIPageControl()
   public var pageControlMaxDotsCount: Int = 0 {
     didSet{ updatePageControllDots() }
   }
-  
   public var images: [OptionalImage] = []{
     didSet{ updatePageControllDots() }
   }
-  
-  private func updatePageControllDots() {
-    if pageControlMaxDotsCount == 0 || self.count < pageControlMaxDotsCount {
-      self.pageControl.numberOfPages = self.count
-    } else {
-      self.pageControl.numberOfPages = pageControlMaxDotsCount
-    }
+
+  /** the default way to initialize/render the PageCollectionVC is to set its count
+   this triggers collectionView.reloadData()
+   this will be done automatic in ImageCollectionViewController->viewDidLoad
+   To get rid of this default behaviour, we overwrite the Count Setter
+   */
+  override open var count: Int {
+    get { return self.images.count }
+    set { /**Not used, not allowed**/ }
   }
-    
-  public override func scrollViewDidScroll(_ scrollView: UIScrollView) {
-    if pageControlMaxDotsCount != 0 {
-      let pageWidth = scrollView.frame.width
-      let currentPage = Int((scrollView.contentOffset.x + pageWidth / 2) / pageWidth)
-      self.pageControl.currentPage = Int(round(Float(currentPage) * Float(pageControlMaxDotsCount) / Float(self.count)))
+  
+  // MARK: Life Cycle
+  open override func viewDidLoad() {
+    super.viewDidLoad()
+    self.inset = 0.0
+    prepareCollectionView()
+    setupXButton()
+    setupPageControl()
+    setupViewProvider()
+    xButton.isHidden = false
+    xButton.onPress {_ in
+      if let closure = self.onXClosure {
+        closure()
+      }
+      else {
+        self.defaultOnXHandler()
+      }
     }
-    else {
-      let witdh = scrollView.frame.width - (scrollView.contentInset.left*2)
-      let index = scrollView.contentOffset.x / witdh
-      let roundedIndex = round(index)
-      self.pageControl.currentPage = Int(roundedIndex)
+    onDisplay { (idx) in
+      ///Apply PageControll Dots Update
+      guard let pageControl = self.pageControl else { return }
+      if self.pageControlMaxDotsCount > 0, self.count > 0,
+        self.count > self.pageControlMaxDotsCount {
+        pageControl.currentPage
+          = Int( round( Float(idx+1)
+                        * Float(self.pageControlMaxDotsCount)/Float(self.count)
+            ) ) - 1
+      }
+      else {
+        pageControl.currentPage = idx
+      }
+    }
+    //initially render CollectionView
+    self.collectionView.reloadData()
+  }
+  
+  // MARK: Layout
+  open override func viewDidLayoutSubviews() {
+    super.viewDidLayoutSubviews()
+    if let iPath = scrollToIndexPathAfterLayoutSubviews {
+      collectionView?.scrollToItem(at: iPath, at: .centeredHorizontally, animated: false)
+      scrollToIndexPathAfterLayoutSubviews = nil
     }
   }
   
@@ -53,34 +92,82 @@ open class ImageCollectionVC: PageCollectionVC, ImageCollectionVCSpec {
      */
     collectionView.collectionViewLayout.invalidateLayout()
   }
+  
+  open override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+    super.viewWillTransition(to: size, with: coordinator)
+    scrollToIndexPathAfterLayoutSubviews = collectionView?.indexPathsForVisibleItems.first
+  }
+  
+} // PageCollectionVC
 
-  
-//  /// Defines the closure which delivers the views to display
-//  open override func viewProvider(provider: @escaping (Int, OptionalView?)->OptionalView) {
-//    self.provider = provider
-//  }
-  
-  /** the default way to initialize/render the PageCollectionVC is to set its count
-      this triggers collectionView.reloadData()
-      this will be done automatic in ImageCollectionViewController->viewDidLoad
-      To get rid of this default behaviour, we overwrite the Count Setter
-  */
-  override open var count: Int {
-    get { return self.images.count }
-    set {
-      //Not used, not allowed
+// MARK: - OptionalImageItem: Closures
+extension ImageCollectionVC{
+  public func onHighResImgNeeded(zoomFactor: CGFloat = 1.1,
+                                 closure: ((OptionalImage, @escaping (Bool) -> ()) -> ())?){
+    self.onHighResImgNeededClosure = closure
+    self.onHighResImgNeededZoomFactor = zoomFactor
+  }
+}
+
+// MARK: - Helper: ViewProvider
+extension ImageCollectionVC {
+  func setupViewProvider(){
+    viewProvider { [weak self] (index, oview) in
+      guard let strongSelf = self else { return UIView() }
+      if let ziv = oview as? ZoomedImageView {
+        ziv.optionalImage = strongSelf.images[index]
+        return ziv
+      }
+      else {
+        let ziv = ZoomedImageView(optionalImage: strongSelf.images[index])
+        ziv.onTap { (oimg, x, y) in
+          strongSelf.zoomedImageViewTapped(oimg, x, y)
+        }
+        return ziv
+      }
     }
   }
   
-  private var onXClosure: (()->())? = nil
-  private var fallbackOnXClosure: (()->())? = nil
+  /// Due onDisplay(idx) with cellforRowAt(idx) delivers another view than visible
+  /// the Tapped Closure is wrapped to work with that kind of implementation
+  /// of CollectionView, DataSource and ViewProvider
+  func zoomedImageViewTapped(_ image: OptionalImage,
+                             _ x: Double,
+                             _ y: Double) {
+    onTapClosure?(image,x,y)
+  }
+}
+
+// MARK: - Helper
+extension ImageCollectionVC {
+  func prepareCollectionView() {
+    self.collectionView.backgroundColor = UIColor.black
+    self.collectionView.showsHorizontalScrollIndicator = false
+    self.collectionView.showsVerticalScrollIndicator = false
+    self.collectionView.delegate = self
+  }
   
+  private func updatePageControllDots() {
+    guard let pageControl = self.pageControl else { return }
+    if pageControlMaxDotsCount == 0 || self.count < pageControlMaxDotsCount {
+      pageControl.numberOfPages = self.count
+    } else {
+      pageControl.numberOfPages = pageControlMaxDotsCount
+    }
+  }
+}
+
+// MARK: - Handler
+extension ImageCollectionVC {
   public func onX(closure: @escaping () -> ()) {
     self.onXClosure = closure
   }
   
+  public func onTap(closure: ((OptionalImage, Double, Double) -> ())?) {
+    onTapClosure = closure
+  }
+  
   func defaultOnXHandler() {
-    Log.log("Close from Child!")
     if let nc = self.navigationController {
       nc.popViewController(animated: true)
     }
@@ -88,68 +175,4 @@ open class ImageCollectionVC: PageCollectionVC, ImageCollectionVCSpec {
       pvc.dismiss(animated: true, completion: nil)
     }
   }
-  
-  
-  // MARK: - Life Cycle
-  open override func viewDidLoad() {
-    super.viewDidLoad()
-    self.inset = 0.0
-    prepareCollectionView()
-    setupXButton()
-    setupPageControl()
-    setupViewProvider()
-    
-    xButton.isHidden = false
-    xButton.onPress {_ in
-      if let closure = self.onXClosure {
-        closure()
-      }
-      else {
-        self.defaultOnXHandler()
-      }
-    }
-    
-    //initially render CollectionView
-    self.collectionView.reloadData()
-  }
-  
-  var scrollToIndexPathAfterLayoutSubviews : IndexPath?
-  
-  open override func viewDidLayoutSubviews() {
-    super.viewDidLayoutSubviews()
-    if let iPath = scrollToIndexPathAfterLayoutSubviews {
-      collectionView?.scrollToItem(at: iPath, at: .centeredHorizontally, animated: false)
-      scrollToIndexPathAfterLayoutSubviews = nil
-    }
-  }
-  open override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
-    super.viewWillTransition(to: size, with: coordinator)
-    scrollToIndexPathAfterLayoutSubviews = collectionView?.indexPathsForVisibleItems.first
-  }
-  
-  // MARK: UI Helper Methods
-  func prepareCollectionView() {
-    self.collectionView.backgroundColor = UIColor.black
-    //
-    self.collectionView.showsHorizontalScrollIndicator = false
-    self.collectionView.showsVerticalScrollIndicator = false
-    self.collectionView.delegate = self
-  }
-
-  
-  func setupViewProvider(){
-    viewProvider { [weak self] (index, oview) in
-      guard let this = self else { return UIView() }
-      if let ziv = oview as? ZoomedImageView {
-        ziv.optionalImage = this.images[index]
-        print("reuse ziv")
-        return ziv
-      }
-      else {
-        print("init new ziv")
-        return ZoomedImageView(optionalImage: this.images[index])
-      }
-    }
-  }
-  
-} // PageCollectionVC
+}

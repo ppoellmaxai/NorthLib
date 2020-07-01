@@ -9,6 +9,56 @@
 
 import UIKit
 
+/// String extension supporting subscripts with Int and Int-Ranges
+public extension String {
+  
+  /**
+   Returns the length of a String as number of characters.
+      
+   This property is simply an alias for 'count'.
+   */
+  var length: Int { return count }
+  
+  /**
+   This subscript returns a String made from those characters addressed
+   by the given half open Int-Range.
+   
+   - returns: A new String made of characters from self.
+   */
+  subscript (r: Range<Int>) -> String {
+    let range = Range(uncheckedBounds: (lower: max(0, min(length, r.lowerBound)),
+                                        upper: min(length, max(0, r.upperBound))))
+    let start = index(startIndex, offsetBy: range.lowerBound)
+    let end = index(start, offsetBy: range.upperBound - range.lowerBound)
+    return String(self[start..<end])
+  }
+  
+  /**
+   This subscript returns a String made from those characters addressed
+   by the given Int-ClosedRange.
+   
+   - returns: A new String made of characters from self.
+   */
+  subscript (r: ClosedRange<Int>) -> String {
+    let range = Range(uncheckedBounds: (lower: max(0, min(length, r.lowerBound)),
+                                        upper: min(length, max(0, r.upperBound))))
+    let start = index(startIndex, offsetBy: range.lowerBound)
+    let end = index(start, offsetBy: range.upperBound - range.lowerBound)
+    return String(self[start...end])
+  }
+  
+  /**
+   This subscript returns the i'th character as a String.
+   
+   - returns: A new String made of self's i'th character.
+   */
+  subscript(i: Int) -> String {
+    return self[i..<i+1]
+  }
+  
+} // String
+
+/// Various other String extensions
 public extension String {
   
   /// The String as a C const char *

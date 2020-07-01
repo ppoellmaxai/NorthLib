@@ -114,6 +114,16 @@ public extension UIView {
   @discardableResult
   func pinWidth(_ width: Int) -> NSLayoutConstraint { return pinWidth(CGFloat(width)) }
   
+  @discardableResult
+  func pinWidth(to: LayoutDimension, dist: CGFloat = 0, factor: CGFloat = 0) 
+    -> NSLayoutConstraint { 
+      translatesAutoresizingMaskIntoConstraints = false
+      let constraint = widthAnchor.constraint(equalTo: to.anchor, 
+        multiplier: factor, constant: dist)
+      constraint.isActive = true
+      return constraint
+  }
+  
   /// Pin height of view
   @discardableResult
   func pinHeight(_ height: CGFloat) -> NSLayoutConstraint {
@@ -124,6 +134,16 @@ public extension UIView {
   }
   @discardableResult
   func pinHeight(_ height: Int) -> NSLayoutConstraint { return pinHeight(CGFloat(height)) }
+  
+  @discardableResult
+  func pinHeight(to: LayoutDimension, dist: CGFloat = 0, factor: CGFloat = 0) 
+    -> NSLayoutConstraint { 
+      translatesAutoresizingMaskIntoConstraints = false
+      let constraint = heightAnchor.constraint(equalTo: to.anchor,
+        multiplier: factor, constant: dist)
+      constraint.isActive = true
+      return constraint
+  }
   
   /// Pin size (width + height)
   @discardableResult
@@ -225,4 +245,9 @@ extension Touchable {
   public func onTap(closure: @escaping (UITapGestureRecognizer)->()) {
     self.tapRecognizer.onTap(view: self, closure: closure)
   }
+}
+
+/// A touchable UILabel
+public class Label: UILabel, Touchable {
+  public var tapRecognizer = TapRecognizer()
 }

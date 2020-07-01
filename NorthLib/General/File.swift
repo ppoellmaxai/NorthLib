@@ -15,7 +15,7 @@ open class File: DoesLog {
 
   fileprivate var hasStat: Bool { return getStat() != nil }
   fileprivate var _status: stat_t?
-  fileprivate var fp: file_t? = nil
+  fileprivate var fp: fileptr_t? = nil
   fileprivate var cpath: [CChar] { return self.path.cString(using: .utf8)! }
 
   /// File status
@@ -94,6 +94,15 @@ open class File: DoesLog {
   /// A File has to be initialized with a filename
   public init(_ path: String) {
     self.path = path
+  }
+  
+  /// A File searched for in the main bundle
+  public convenience init?(inMain fn: String) {
+    let pref = File.progname(fn)
+    let ext = File.extname(fn)
+    guard let path = Bundle.main.path(forResource: pref, ofType: ext)
+      else { return nil }
+    self.init(path)
   }
   
   /// Initialisation with directory and file name

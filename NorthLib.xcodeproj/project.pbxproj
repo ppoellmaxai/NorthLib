@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		008F9A2024864F9400EF5EA5 /* ImageCollectionVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 008F9A1F24864F9400EF5EA5 /* ImageCollectionVC.swift */; };
 		00E4E36B247E694C00BEEC4A /* ZoomedImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00E4E36A247E694C00BEEC4A /* ZoomedImageView.swift */; };
+		08DDCFF624A20EA1000CB1DA /* Overlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08DDCFF524A20EA1000CB1DA /* Overlay.swift */; };
 		AE08C493240D476300D41E91 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE08C492240D476300D41E91 /* Theme.swift */; };
 		AE08C49724101CA900D41E91 /* FontExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE08C49624101CA900D41E91 /* FontExtensions.swift */; };
 		AE1D62732403FA270004D8AD /* Keychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE1D62722403FA270004D8AD /* Keychain.swift */; };
@@ -17,6 +18,7 @@
 		AE1DA65B23BE08F0003DFE92 /* strext.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AE1DA65A23BE08F0003DFE92 /* strext.cpp */; };
 		AE1DA66023BE66CB003DFE92 /* TestLowlevel.mm in Sources */ = {isa = PBXBuildFile; fileRef = AE1DA65F23BE66CB003DFE92 /* TestLowlevel.mm */; };
 		AE1DA66223C09B06003DFE92 /* argv.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AE1DA66123C09B06003DFE92 /* argv.cpp */; };
+		AE25228824A90735003E72D4 /* CodableEnum.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE25228724A90735003E72D4 /* CodableEnum.swift */; };
 		AE2A0EA1245B31B500E91595 /* NavigationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE2A0EA0245B31B500E91595 /* NavigationController.swift */; };
 		AE480F57240943E20014F9D9 /* WindowExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE480F56240943E20014F9D9 /* WindowExtensions.swift */; };
 		AE480F592409465B0014F9D9 /* ImageExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE480F582409465B0014F9D9 /* ImageExtensions.swift */; };
@@ -56,6 +58,7 @@
 		AE7123342320E0B800B715A8 /* hashes.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AE7123322320E0B800B715A8 /* hashes.cpp */; };
 		AE7123362320E64300B715A8 /* DataExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE7123352320E64300B715A8 /* DataExtensions.swift */; };
 		AE80A399244DE1920012DFFA /* CubeLabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE80A398244DE1920012DFFA /* CubeLabel.swift */; };
+		AE86486E248E0EC0007096B4 /* PdfDoc.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE86486D248E0EC0007096B4 /* PdfDoc.swift */; };
 		AE9851352320FC7500EAC9D8 /* WebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE9851332320FC7500EAC9D8 /* WebView.swift */; };
 		AE98513A2320FCA700EAC9D8 /* WebViewCollectionVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE9851392320FCA700EAC9D8 /* WebViewCollectionVC.swift */; };
 		AE98513C2320FCB400EAC9D8 /* PageCollectionVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE98513B2320FCB400EAC9D8 /* PageCollectionVC.swift */; };
@@ -93,6 +96,7 @@
 /* Begin PBXFileReference section */
 		008F9A1F24864F9400EF5EA5 /* ImageCollectionVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageCollectionVC.swift; sourceTree = "<group>"; };
 		00E4E36A247E694C00BEEC4A /* ZoomedImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZoomedImageView.swift; sourceTree = "<group>"; };
+		08DDCFF524A20EA1000CB1DA /* Overlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Overlay.swift; sourceTree = "<group>"; };
 		AE08C492240D476300D41E91 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		AE08C49624101CA900D41E91 /* FontExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FontExtensions.swift; sourceTree = "<group>"; };
 		AE1D62722403FA270004D8AD /* Keychain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Keychain.swift; sourceTree = "<group>"; };
@@ -101,6 +105,7 @@
 		AE1DA65A23BE08F0003DFE92 /* strext.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = strext.cpp; sourceTree = "<group>"; };
 		AE1DA65F23BE66CB003DFE92 /* TestLowlevel.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = TestLowlevel.mm; sourceTree = "<group>"; };
 		AE1DA66123C09B06003DFE92 /* argv.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = argv.cpp; sourceTree = "<group>"; };
+		AE25228724A90735003E72D4 /* CodableEnum.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CodableEnum.swift; sourceTree = "<group>"; };
 		AE2A0EA0245B31B500E91595 /* NavigationController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationController.swift; sourceTree = "<group>"; };
 		AE480F56240943E20014F9D9 /* WindowExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowExtensions.swift; sourceTree = "<group>"; };
 		AE480F582409465B0014F9D9 /* ImageExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageExtensions.swift; sourceTree = "<group>"; };
@@ -145,6 +150,7 @@
 		AE7123322320E0B800B715A8 /* hashes.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = hashes.cpp; sourceTree = "<group>"; };
 		AE7123352320E64300B715A8 /* DataExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataExtensions.swift; sourceTree = "<group>"; };
 		AE80A398244DE1920012DFFA /* CubeLabel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CubeLabel.swift; sourceTree = "<group>"; };
+		AE86486D248E0EC0007096B4 /* PdfDoc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PdfDoc.swift; sourceTree = "<group>"; };
 		AE9851332320FC7500EAC9D8 /* WebView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WebView.swift; sourceTree = "<group>"; };
 		AE9851392320FCA700EAC9D8 /* WebViewCollectionVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WebViewCollectionVC.swift; sourceTree = "<group>"; };
 		AE98513B2320FCB400EAC9D8 /* PageCollectionVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PageCollectionVC.swift; sourceTree = "<group>"; };
@@ -292,6 +298,7 @@
 				AED2B5D723B0C61A00D9A087 /* File.swift */,
 				AE1D62722403FA270004D8AD /* Keychain.swift */,
 				AE08C492240D476300D41E91 /* Theme.swift */,
+				AE86486D248E0EC0007096B4 /* PdfDoc.swift */,
 			);
 			path = General;
 			sourceTree = "<group>";
@@ -357,6 +364,7 @@
 				AE2A0EA0245B31B500E91595 /* NavigationController.swift */,
 				AEEB1A08245DB5EC0083CB55 /* ExportDialogue.swift */,
 				008F9A1F24864F9400EF5EA5 /* ImageCollectionVC.swift */,
+				08DDCFF524A20EA1000CB1DA /* Overlay.swift */,
 			);
 			path = ViewController;
 			sourceTree = "<group>";
@@ -374,6 +382,7 @@
 			children = (
 				AEA2EB14233CD841007AB59D /* ToString.swift */,
 				AE5D9EB723D5A5460002C3B8 /* HandleRotation.swift */,
+				AE25228724A90735003E72D4 /* CodableEnum.swift */,
 			);
 			path = Protocols;
 			sourceTree = "<group>";
@@ -497,6 +506,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				AE7123342320E0B800B715A8 /* hashes.cpp in Sources */,
+				AE86486E248E0EC0007096B4 /* PdfDoc.swift in Sources */,
 				AE7123362320E64300B715A8 /* DataExtensions.swift in Sources */,
 				AE08C49724101CA900D41E91 /* FontExtensions.swift in Sources */,
 				AE98514F2325450600EAC9D8 /* AudioPlayer.swift in Sources */,
@@ -525,6 +535,7 @@
 				AE9851402320FDAF00EAC9D8 /* ArrayExtensions.swift in Sources */,
 				AE4E50F9243B45870024609A /* CarouselView.swift in Sources */,
 				008F9A2024864F9400EF5EA5 /* ImageCollectionVC.swift in Sources */,
+				08DDCFF624A20EA1000CB1DA /* Overlay.swift in Sources */,
 				AED852A723C22241002F07E8 /* fileop.cpp in Sources */,
 				AE7122F023197B4000B715A8 /* Globals.swift in Sources */,
 				AE7122E823197B4000B715A8 /* Buttons.swift in Sources */,
@@ -544,6 +555,7 @@
 				AE480F592409465B0014F9D9 /* ImageExtensions.swift in Sources */,
 				AE71231F231FFDFD00B715A8 /* ZipStream.mm in Sources */,
 				AE9851422320FDCE00EAC9D8 /* Database.swift in Sources */,
+				AE25228824A90735003E72D4 /* CodableEnum.swift in Sources */,
 				AE98514A23252F9500EAC9D8 /* Version.swift in Sources */,
 				AE08C493240D476300D41E91 /* Theme.swift in Sources */,
 				AE7122F423197B4000B715A8 /* ColorExtensions.swift in Sources */,
@@ -627,7 +639,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 12.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -685,7 +697,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 12.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
@@ -711,7 +723,7 @@
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				INFOPLIST_FILE = NorthLib/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
-				IPHONEOS_DEPLOYMENT_TARGET = 11.3;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -742,7 +754,7 @@
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				INFOPLIST_FILE = NorthLib/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
-				IPHONEOS_DEPLOYMENT_TARGET = 11.3;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

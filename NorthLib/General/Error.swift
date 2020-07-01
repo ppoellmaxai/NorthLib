@@ -7,15 +7,18 @@
 
 import Foundation
 
+public protocol SimpleError: Swift.Error {
+  var description: String { get }
+}
+
 extension Swift.Error {
-  public var errorDescription: String? {
-    if let le = self as? LocalizedError { return le.errorDescription }
-    else { return localizedDescription }
+  public func errorText() -> String {
+    if let e = self as? SimpleError { return e.description }
+    else if let e = self as? LocalizedError,
+      let txt = e.errorDescription { return txt }
+    return self.localizedDescription
   }
-  public var description: String {
-    if let str = errorDescription { return str }
-    else { return "[undefined error]" }
-  }
+  public var description: String { errorText() }
 }
 
 extension Result {
@@ -124,10 +127,10 @@ extension Log {
       super.init(level:level, className:className, fileName:fileName, funcName:funcName,
                  line:line, message:message, previous: previous)
       if let msg = self.message {
-        self.message = msg + "\n  " + "Enclosed Error: \(enclosed.description)"
+        self.message = msg + "\n  " + "Enclosed Error: \(enclosed.errorText())"
       }
       else {
-        self.message = "Enclosed Error: \(enclosed.description)"
+        self.message = "Enclosed Error: \(enclosed.errorText())"
       }
     }
 

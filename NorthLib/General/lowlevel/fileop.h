@@ -17,7 +17,7 @@
 typedef struct stat stat_t;
 
 /// File pointer
-typedef FILE *file_t;
+typedef FILE *fileptr_t;
 
 BeginCLinkage
 
@@ -72,11 +72,11 @@ int fn_resolvelink(char *from, int flen, char *to, int tlen,
                    const char *fn, const char *link);
 
 int file_link(const char *from, const char *to);
-int file_open(file_t *rfp, const char *path, const char *mode);
-int file_close(file_t *rfp);
-char *file_readline(file_t fp);
-int file_writeline(file_t fp, const char *str);
-int file_flush(file_t fp);
+int file_open(fileptr_t *rfp, const char *path, const char *mode);
+int file_close(fileptr_t *rfp);
+char *file_readline(fileptr_t fp);
+int file_writeline(fileptr_t fp, const char *str);
+int file_flush(fileptr_t fp);
 
 EndCLinkage
 

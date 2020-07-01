@@ -65,5 +65,13 @@ public extension UIImage {
     }
     return UIImage.animatedImage(with: frames, duration: duration)
   }
-
+  
+  /// Change Image Scale without expensive Rendering
+  func screenScaled() -> UIImage {
+    guard let cgi = self.cgImage else { return self }
+    return UIImage(cgImage: cgi,
+                   scale: UIScreen.main.scale,
+                   orientation: self.imageOrientation)
+  }
+  
 } // UIImage

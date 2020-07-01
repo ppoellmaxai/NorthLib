@@ -39,7 +39,7 @@ public enum HttpError: LocalizedError {
   /// Unexpected Mime Type received
   case unexpectedMimeType(String)
   /// Unexpected file size encountered
-  case unexpectedFileSize(Int64)
+  case unexpectedFileSize(Int64, Int64)
   /// Invalid SHA256
   case invalidSHA256(String)
   
@@ -48,7 +48,8 @@ public enum HttpError: LocalizedError {
       case .invalidURL(let url): return "Invalid URL: \(url)"
       case .serverError(let statusCode): return "HTTP Server Error: \(statusCode)"
       case .unexpectedMimeType(let mtype): return "Unexpected Mime Type: \(mtype)"
-      case .unexpectedFileSize(let size): return "Unexpected File Size: \(size)"
+      case .unexpectedFileSize(let toSize, let expected): 
+        return "Unexpected File Size: \(toSize), expected: \(expected)"
       case .invalidSHA256(let sha256): return "Invalid SHA256: \(sha256)"
     }
   }    
@@ -207,7 +208,7 @@ open class HttpSession: NSObject, URLSessionDelegate, URLSessionTaskDelegate, UR
   /// Allow mobile network operations
   public var allowMobile = true { didSet { _config = nil } }
   /// Set waitForAvailability to true if a connection should wait for network availability
-  public var waitForAvailability = true { didSet { _config = nil } }
+  public var waitForAvailability = false { didSet { _config = nil } }
 
   fileprivate var _config: URLSessionConfiguration? { didSet { _session = nil } }
   /// Session configuration
@@ -397,13 +398,17 @@ open class HttpSession: NSObject, URLSessionDelegate, URLSessionTaskDelegate, UR
           var err: Error? = nil
           toFile.mTime = file.moTime
           if toFile.size != file.size 
-            { err = HttpError.unexpectedFileSize(toFile.size) }
+            { err = HttpError.unexpectedFileSize(toFile.size, file.size) }
           else if toFile.sha256 != file.sha256
             { err = HttpError.invalidSHA256(toFile.sha256) }
           else { closure(.success(job)) }
           if let err = err { 
             self?.error(err)
-            closure(.failure(err)) 
+            self?.log("* Warning: File \(file.name) successfully downloaded " +
+                      "but size and/or checksum is incorrect" )
+            // TODO: Report error when the higher layers have been fixed
+            closure(.success(job))
+            // closure(.failure(err)) 
           }
         }
       }

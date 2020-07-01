@@ -24,7 +24,7 @@ public extension Dictionary where Key==String, Value==Any {
   var json: String {
     var ret = "{}"
     if let jsonData = try? JSONSerialization.data(withJSONObject: self,
-                                                  options:.sortedKeys) {
+                                                  options:.prettyPrinted) {
       if let s = String(bytes: jsonData, encoding: String.Encoding.utf8) {
         ret = s
       }
@@ -45,7 +45,7 @@ public extension Array where Element==Any {
   var json: String {
     var ret = "[]"
     if let jsonData = try? JSONSerialization.data(withJSONObject: self,
-                                                  options:.sortedKeys) {
+                                                  options:.prettyPrinted) {
       if let s = String(bytes: jsonData, encoding: String.Encoding.utf8) {
         ret = s
       }
