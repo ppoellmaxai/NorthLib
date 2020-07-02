@@ -45,6 +45,7 @@ public class Overlay: NSObject, OverlaySpec, UIGestureRecognizerDelegate {
   private var closeDuration: Double { get { return debug ? 3.0 : 0.25 } }
   private var debug = false
   private var closeAction : (() -> ())?
+  private var onCloseHandler: (() -> ())?
   
   var shadeView: UIView?
   var overlayVC: UIViewController
@@ -68,6 +69,11 @@ public class Overlay: NSObject, OverlaySpec, UIGestureRecognizerDelegate {
     overlayVC = overlay
     activeVC = active
     super.init()
+  }
+  
+  // MARK: - onClose/onCloseHandler
+  public func onClose(closure: (() -> ())?) {
+    self.onCloseHandler = closure
   }
   
   // MARK: - addToActiveVC
@@ -132,6 +138,7 @@ public class Overlay: NSObject, OverlaySpec, UIGestureRecognizerDelegate {
       contentView?.layoutIfNeeded()
     }
     NorthLib.pin(overlayView, toSafe: activeVC.view)
+    activeVC.addChild(overlayVC)
     overlayVC.didMove(toParent: activeVC)
     
     if let ct = overlayVC as? OverlayChildViewTransfer {
@@ -254,7 +261,9 @@ public class Overlay: NSObject, OverlaySpec, UIGestureRecognizerDelegate {
     }
     overlayView?.removeFromSuperview()
     overlayView = nil
+    overlayVC.removeFromParent()
     closing = false
+    self.onCloseHandler?()
   }
   
   // MARK: close
@@ -275,7 +284,6 @@ public class Overlay: NSObject, OverlaySpec, UIGestureRecognizerDelegate {
   var closing = false
   // MARK: close to bottom
   public func close(animated: Bool, toBottom: Bool = false) {
-    print("close: animted/toBottom ", animated, toBottom)
     if animated == false {
       removeFromActiveVC()
       return;
