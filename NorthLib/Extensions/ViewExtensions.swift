@@ -40,6 +40,18 @@ public extension UIView {
   }
 }
 
+/// A UIView extension to check visibility of a view
+public extension UIView {
+  /// Return whether view is visible somewhere on the screen
+  var isVisible: Bool {
+    if self.window != nil && !self.isHidden {
+      let rect = self.convert(self.frame, from: nil)
+      return rect.intersects(UIScreen.main.bounds)
+    } 
+    return false
+  }
+}
+
 // Layout anchors and corresponding views:
 public struct LayoutAnchorX {
   public var anchor: NSLayoutXAxisAnchor
