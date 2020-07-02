@@ -206,21 +206,23 @@ public extension ImageCollectionVCSpec {
  controller during the open/close animations. The second view, overlayView is
  used to contain 'overlay' and is animated during opening and closing operations.
  In addition two gesture recognizers (pinch and pan) are used on shadeView to
- start the close animation. The pan gesture is used to move the overlay to the 
- bottom of shadeView. The pinch gesture is used to shrink the overlay 
- in size while being centered in shadeView. When 'overlay' has been shrunk to 
+ start the close animation. The pan gesture is used to move the overlay to the
+ bottom of shadeView. The pinch gesture is used to shrink the overlay
+ in size while being centered in shadeView. When 'overlay' has been shrunk to
  'closeRatio' (see attribute) or moved 'closeRatio * overlayView.bounds.size.height'
- points to the bottom then 'overlay' is animated automatically away from the 
- screen. While the gesture recognizers are working or during the animation the 
- alpha of shadeView is changed to reflect the animation's ratio (alpha = 0 => 
+ points to the bottom then 'overlay' is animated automatically away from the
+ screen. While the gesture recognizers are working or during the animation the
+ alpha of shadeView is changed to reflect the animation's ratio (alpha = 0 =>
  'overlay' is no longer visible). The gesture recognizers coexist with gesture
  recognizers being active in 'overlay'.
  */
 public protocol OverlaySpec {
   /// The view shading the active view controller
-  var shadeView: UIView { get }
+  /// will be put on active vc' view
+  /// no Need to be Public & in Spec
+  /// var shadeView: UIView? { get }
   /// The view being animated (in the center of shadeView)
-  var overlayView: UIView { get }
+  var overlayView: UIView? { get }
   /// The size of overlayView and the overlay (nil => size of shadeView)
   var overlaySize: CGSize? { get set }
   /// Maximum alpha of shadeView
@@ -240,7 +242,7 @@ public protocol OverlaySpec {
   /// close the overlay, optionally animated (same type as opening)
   func close(animated: Bool)
   
-  /// shrink the overlay to a CGRect, ie. animate it's shrinking to a rect on the 
+  /// shrink the overlay to a CGRect, ie. animate it's shrinking to a rect on the
   /// screen and then close it.
   func shrinkTo(rect: CGRect)
   

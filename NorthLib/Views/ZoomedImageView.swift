@@ -1,3 +1,4 @@
+//
 //    
 //  NorthLib
 //
@@ -86,13 +87,16 @@ extension OptionalImageItem{
 // MARK: -
 // MARK: - ZoomedImageView
 open class ZoomedImageView: UIView, ZoomedImageViewSpec {
+  var imageViewBottomConstraint: NSLayoutConstraint?
+  var imageViewLeadingConstraint: NSLayoutConstraint?
+  var imageViewTopConstraint: NSLayoutConstraint?
+  var imageViewTrailingConstraint: NSLayoutConstraint?
+  var layoutInitialized = false
+  
   private var onHighResImgNeededClosure: ((OptionalImage,
-                                           @escaping (Bool) -> ()) -> ())?
+  @escaping (Bool) -> ()) -> ())?
   private var onHighResImgNeededZoomFactor: CGFloat = 1.1
   private var highResImgRequested = false
-  private var initiallyCentered = false
-  private var lastLayoutSubviewsOrientationWasPortrait = false
-  private var needUpdateScaleLimitAfterLayoutSubviews = true
   private var orientationClosure = OrientationClosure()
   private var singleTapRecognizer : UITapGestureRecognizer?
   private let doubleTapRecognizer = UITapGestureRecognizer()
@@ -102,8 +106,8 @@ open class ZoomedImageView: UIView, ZoomedImageViewSpec {
     }
   }
   private var onTapClosure: ((_ image: OptionalImage,
-                              _ x: Double,
-                              _ y: Double)->())? = nil {
+    _ x: Double,
+    _ y: Double)->())? = nil {
     didSet{
       if let tap = singleTapRecognizer {
         tap.removeTarget(self, action: #selector(handleSingleTap))
@@ -128,17 +132,15 @@ open class ZoomedImageView: UIView, ZoomedImageViewSpec {
   public private(set) var spinner: UIActivityIndicatorView = UIActivityIndicatorView()
   public private(set) lazy var menu = ContextMenu(view: imageView, smoothPreviewForImage: true)
   public var optionalImage: OptionalImage{
-     willSet {
-       if let itm = optionalImage as? OptionalImageItem {
-         itm.onUpdatingClosureClosure = nil
-       }
-     }
-     didSet {
-       updateImage()
-       initiallyCentered = false
-       setScaleLimitsAndCenterIfNeeded()
-     }
-   }
+    willSet {
+      if let itm = optionalImage as? OptionalImageItem {
+        itm.onUpdatingClosureClosure = nil
+      }
+    }
+    didSet {
+      updateImage()
+    }
+  }
   
   // MARK: Life Cycle
   public required init(optionalImage: OptionalImage) {
@@ -155,15 +157,27 @@ open class ZoomedImageView: UIView, ZoomedImageViewSpec {
     fatalError("init(coder:) has not been implemented");
   }
   
-  // MARK: Layout
-  override public func layoutSubviews() {
+  fileprivate func zoomOutAndCenter() {
+    layoutInitialized = false
+    self.setNeedsLayout()
+    self.layoutIfNeeded()
+  }
+  
+  // MARK: layoutSubviews
+  open override func layoutSubviews() {
     super.layoutSubviews()
-    lastLayoutSubviewsOrientationWasPortrait
-      = UIDevice.current.orientation.isPortrait
-    if needUpdateScaleLimitAfterLayoutSubviews {
-      needUpdateScaleLimitAfterLayoutSubviews = false
-      scrollView.pinchGestureRecognizer?.isEnabled = zoomEnabled
-      setScaleLimitsAndCenterIfNeeded()
+    if !layoutInitialized, self.bounds.size != .zero{
+      layoutInitialized = true
+      self.updateMinimumZoomScale()
+      if self.scrollView.zoomScale != self.scrollView.minimumZoomScale {
+        //zoom out if needed
+        //triggers scrollViewDidZoom => updateConstraintsForSize
+        self.scrollView.zoomScale = self.scrollView.minimumZoomScale
+      }
+      else {
+        //center!
+        self.updateConstraintsForSize(self.bounds.size)
+      }
     }
   }
 }
@@ -177,20 +191,28 @@ extension ZoomedImageView{
     setupDoubleTapGestureRecognizer()
     updateImage()
     orientationClosure.onOrientationChange(closure: {
-      self.setScaleLimitsAndCenterIfNeeded()
+      let sv = self.scrollView //local name for shorten usage
+      let wasMinZoom = sv.zoomScale == sv.minimumZoomScale
+      self.updateMinimumZoomScale()
+      if wasMinZoom || sv.zoomScale < sv.minimumZoomScale {
+        sv.zoomScale = sv.minimumZoomScale
+      }
     })
   }
   
+  // MARK: updateImage
   func updateImage() {
     if optionalImage.isAvailable, let detailImage = optionalImage.image {
       setImage(detailImage)
       zoomEnabled = true
       spinner.stopAnimating()
+      self.zoomOutAndCenter()
     }
     else {
       //show waitingImage if detailImage is not available yet
       if let img = optionalImage.waitingImage {
         setImage(img)
+        self.scrollView.zoomScale = 1
         zoomEnabled = false
       } else {
         //Due re-use its needed to unset probably existing old image
@@ -200,18 +222,22 @@ extension ZoomedImageView{
       optionalImage.whenAvailable {
         if let img = self.optionalImage.image {
           self.setImage(img)
+          self.layoutIfNeeded()
           self.zoomEnabled = true
           self.spinner.stopAnimating()
           //due all previewImages are not allowed to zoom,
           //exchanged image should be shown fully
-          self.initiallyCentered = false
-          self.setScaleLimitsAndCenterIfNeeded()
           self.optionalImage.whenAvailable(closure: nil)
+          //Center
+          self.zoomOutAndCenter()
         }
       }
     }
   }
   
+
+  
+  // MARK: setupScrollView
   func setupScrollView() {
     imageView.contentMode = .scaleAspectFit
     scrollView.delegate = self
@@ -223,6 +249,8 @@ extension ZoomedImageView{
     scrollView.addSubview(imageView)
     addSubview(scrollView)
     NorthLib.pin(scrollView, to: self)
+    (imageViewTopConstraint, imageViewBottomConstraint, imageViewLeadingConstraint, imageViewTrailingConstraint) =
+      NorthLib.pin(imageView, to: scrollView)
   }
 }
 
@@ -230,9 +258,9 @@ extension ZoomedImageView{
 extension ZoomedImageView{
   public func onHighResImgNeeded(zoomFactor: CGFloat = 1.1,
                                  closure: ((OptionalImage,
-                                            @escaping (Bool)-> ()) -> ())?) {
+    @escaping (Bool)-> ()) -> ())?) {
     self.onHighResImgNeededClosure = closure
-    self.scrollView.maximumZoomScale = closure == nil ? 1.0 : 3.0
+    self.scrollView.maximumZoomScale = closure == nil ? 1.0 : 2.0
     self.onHighResImgNeededZoomFactor = zoomFactor
   }
 }
@@ -278,6 +306,8 @@ extension ZoomedImageView{
       return
     }
     if zoomEnabled == false {
+      self.setNeedsLayout()
+      self.layoutIfNeeded()
       return
     }
     ///Zoom Out if current zoom is maximum zoom
@@ -285,7 +315,6 @@ extension ZoomedImageView{
       || scrollView.zoomScale >= 2 {
       scrollView.setZoomScale(scrollView.minimumZoomScale,
                               animated: true)
-      centerImageInScrollView()
     }
       ///Otherwise Zoom Out in to tap loacation
     else {
@@ -305,117 +334,52 @@ extension ZoomedImageView{
 
 // MARK: - Helper
 extension ZoomedImageView{
-  func setImage(_ image: UIImage) {
-    scrollView.zoomScale = 1.0//ensure contentsize is correct!
+  
+  // MARK: setImage
+  fileprivate func setImage(_ image: UIImage) {
     imageView.image = image
-    imageView.frame = CGRect(origin: CGPoint.zero, size: image.size)
-    scrollView.contentSize = image.size
+    imageView.frame = CGRect(x: imageView.frame.origin.x,
+                             y: imageView.frame.origin.y,
+                             width: image.size.width,
+                             height: image.size.height)
+    updateMinimumZoomScale()
   }
   
+  // MARK: updateMinimumZoomScale
+  fileprivate func updateMinimumZoomScale(){
+    let widthScale = self.bounds.size.width / (imageView.image?.size.width ?? 1)
+    let heightScale = self.bounds.size.height / (imageView.image?.size.height ?? 1)
+    let minScale = min(widthScale, heightScale, 1)
+    scrollView.minimumZoomScale = minScale
+  }
+  // MARK: updateConstraintsForSize
+  fileprivate func updateConstraintsForSize(_ size: CGSize) {
+    let yOffset = max(0, (size.height - imageView.frame.height) / 2)
+    imageViewTopConstraint?.constant = yOffset
+    imageViewBottomConstraint?.constant = yOffset
+    
+    let xOffset = max(0, (size.width - imageView.frame.width) / 2)
+    imageViewLeadingConstraint?.constant = xOffset
+    imageViewTrailingConstraint?.constant = xOffset
+    
+    let contentHeight = yOffset * 2 + self.imageView.frame.height
+    self.layoutIfNeeded()
+    self.scrollView.contentSize = CGSize(width: self.scrollView.contentSize.width, height: contentHeight)
+  }
+  
+  
+  // MARK: updateImagewithHighResImage
   func updateImagewithHighResImage(_ image: UIImage) {
     guard let oldImg = imageView.image else {
       self.setImage(image)
       return
     }
-    
-    let oldZoomScale : CGFloat = scrollView.zoomScale
-    let center = scrollView.contentOffset
+    let contentOffset = scrollView.contentOffset
     self.setImage(image)
-    
-    scrollView.minimumZoomScale
-      = self.minimalZoomFactorFor (scrollView.frame.size, image.size)
-    
-    let newSc = oldImg.size.width * oldZoomScale / image.size.width
+    let newSc = oldImg.size.width * scrollView.zoomScale / image.size.width
     scrollView.zoomScale = newSc
-    scrollView.setContentOffset(center, animated: false)
-  }
-  
-  /** Centers the Image in the ScrollView
-   * using ScrollView's ContentOffset did not work if scrolling is enabled, image jumped to top/left
-   * Solution using ScrollViews ContentInsets from: https://stackoverflow.com/a/35680604
-   * simplified for our requirements
-   */
-  func centerImageInScrollView() {
-    //Set Center by setting Insets
-    guard let img = imageView.image else {
-      return;
-    }
-    let contentSize = CGSize(width: img.size.width * scrollView.zoomScale,
-                             height: img.size.height * scrollView.zoomScale)
-    let screenSize  = scrollView.frame.size
-    let offx = screenSize.width > contentSize.width ? (screenSize.width - contentSize.width) / 2 : 0
-    let offy = screenSize.height > contentSize.height ? (screenSize.height - contentSize.height) / 2 : 0
-    scrollView.contentInset = UIEdgeInsets(top: offy,
-                                           left: offx,
-                                           bottom: offy,
-                                           right: offx)
-    
-    // The scroll view has zoomed, so you need to re-center the contents
-    var scrollViewSize: CGSize{
-      var size = scrollView.frame.size
-      size.width -= 2*offx
-      size.height -= 2*offy
-      return size
-    }
-    
-    // First assume that image center coincides with the contents box center.
-    // This is correct when the image is bigger than scrollView due to zoom
-    var imageCenter = CGPoint(x: scrollView.contentSize.width / 2.0,
-                              y: scrollView.contentSize.height / 2.0)
-    
-    let center = CGPoint(x: scrollViewSize.width/2, y: scrollViewSize.height/2)
-    
-    /// if image is smaller than the scrollView visible size
-    /// - fix the image center accordingly
-    if scrollView.contentSize.width < scrollViewSize.width {
-      imageCenter.x = center.x
-    }
-    
-    if scrollView.contentSize.height < scrollViewSize.height {
-      imageCenter.y = center.y
-    }
-    imageView.center = imageCenter
-  }
-  
-  func minimalZoomFactorFor(_ parent: CGSize, _ child: CGSize) -> CGFloat{
-    let xZf = parent.width / (child.width > 0 ? child.width : 1)
-    let yZf = parent.height / (child.height > 0 ? child.height : 1)
-    return min(xZf, yZf, 1.0)
-  }
-  
-  func setScaleLimitsAndCenterIfNeeded() {
-    if lastLayoutSubviewsOrientationWasPortrait
-      != UIDevice.current.orientation.isPortrait {
-      //handle device rotation happen but layout not updated yet
-      setNeedsLayout()
-      layoutIfNeeded()
-      needUpdateScaleLimitAfterLayoutSubviews = true
-      return;
-    }
-    let isMinimumZoomScale = scrollView.zoomScale == scrollView.minimumZoomScale
-    
-    guard let img = imageView.image else {
-      return
-    }
-    
-    //after rotation there is a new minimumZoomScale
-    scrollView.minimumZoomScale
-      = minimalZoomFactorFor (scrollView.frame.size, img.size)
-    //this new minimum needs to be set if current is smaller
-    if scrollView.zoomScale < scrollView.minimumZoomScale {
-      scrollView.setZoomScale(scrollView.minimumZoomScale, animated: true)
-    }
-    
-    if isMinimumZoomScale || initiallyCentered == false {
-      scrollView.zoomScale = scrollView.minimumZoomScale
-      self.centerImageInScrollView()
-      initiallyCentered = true
-    }
-    //if Letterbox  minimum zoom scale is 1 ensure centeren Image
-    if scrollView.frame.size.width > img.size.width * scrollView.zoomScale
-      || scrollView.frame.size.height > img.size.height * scrollView.zoomScale {
-      self.centerImageInScrollView()
-    }
+    scrollView.setContentOffset(contentOffset, animated: false)
+    self.updateConstraintsForSize(self.bounds.size)
   }
 }
 
@@ -426,19 +390,22 @@ extension ZoomedImageView: UIScrollViewDelegate{
   }
   
   public func scrollViewDidZoom(_ scrollView: UIScrollView) {
-    
-    if self.onHighResImgNeededZoomFactor <= scrollView.zoomScale,
+    //Center if needed
+    updateConstraintsForSize(self.bounds.size)
+    //request high res Image if possible
+    if zoomEnabled,
+      self.onHighResImgNeededZoomFactor <= scrollView.zoomScale,
       self.highResImgRequested == false,
       (optionalImage as? ZoomedPdfImageSpec)?.canRequestHighResImg ?? true,
       let closure = onHighResImgNeededClosure {
-        let _optionalImage = optionalImage
-        self.highResImgRequested = true
-        closure(_optionalImage, { success in
-          if success, let img = _optionalImage.image {
-            self.updateImagewithHighResImage(img)
-          }
-          self.highResImgRequested = false
-        })
-      }
+      let _optionalImage = optionalImage
+      self.highResImgRequested = true
+      closure(_optionalImage, { success in
+        if success, let img = _optionalImage.image {
+          self.updateImagewithHighResImage(img)
+        }
+        self.highResImgRequested = false
+      })
+    }
   }
 }
