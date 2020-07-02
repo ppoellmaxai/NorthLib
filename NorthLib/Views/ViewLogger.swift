@@ -45,7 +45,7 @@ open class SimpleLogView: UITextView, LogView, Touchable {
        NSAttributedString.Key.font: SimpleLogView.font as Any])
     astr.append(msg)
     self.attributedText = astr
-    scrollToBottom()
+    if isVisible { scrollToBottom() }
   }
   
   /// Scroll textView to the bottom
