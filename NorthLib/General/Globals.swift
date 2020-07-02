@@ -23,7 +23,9 @@ public func every(seconds: Double, closure: @escaping (Timer)->()) -> Timer {
 
 /// perform closure on main thread
 public func onMain(closure: @escaping ()->()) {
-  DispatchQueue.main.async(execute: closure)
+  if !Thread.isMainThread {
+    DispatchQueue.main.async(execute: closure)
+  }
 }
 
 /// returns the type name of an object as String
