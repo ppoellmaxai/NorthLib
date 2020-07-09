@@ -12,6 +12,7 @@
 		08DDCFF624A20EA1000CB1DA /* Overlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08DDCFF524A20EA1000CB1DA /* Overlay.swift */; };
 		AE08C493240D476300D41E91 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE08C492240D476300D41E91 /* Theme.swift */; };
 		AE08C49724101CA900D41E91 /* FontExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE08C49624101CA900D41E91 /* FontExtensions.swift */; };
+		AE11F79424B715140080CF51 /* PageCollectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE11F79324B715140080CF51 /* PageCollectionView.swift */; };
 		AE1D62732403FA270004D8AD /* Keychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE1D62722403FA270004D8AD /* Keychain.swift */; };
 		AE1DA65723BE0054003DFE92 /* sysdef.h in Headers */ = {isa = PBXBuildFile; fileRef = AE1DA65623BE0054003DFE92 /* sysdef.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AE1DA65923BE04F7003DFE92 /* strext.h in Headers */ = {isa = PBXBuildFile; fileRef = AE1DA65823BE04F7003DFE92 /* strext.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -99,6 +100,7 @@
 		08DDCFF524A20EA1000CB1DA /* Overlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Overlay.swift; sourceTree = "<group>"; };
 		AE08C492240D476300D41E91 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		AE08C49624101CA900D41E91 /* FontExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FontExtensions.swift; sourceTree = "<group>"; };
+		AE11F79324B715140080CF51 /* PageCollectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageCollectionView.swift; sourceTree = "<group>"; };
 		AE1D62722403FA270004D8AD /* Keychain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Keychain.swift; sourceTree = "<group>"; };
 		AE1DA65623BE0054003DFE92 /* sysdef.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = sysdef.h; sourceTree = "<group>"; };
 		AE1DA65823BE04F7003DFE92 /* strext.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = strext.h; sourceTree = "<group>"; };
@@ -273,6 +275,7 @@
 				AEE31ED3242B733400683D1D /* Picker.swift */,
 				AE4E50F6243B44150024609A /* VariousViews.swift */,
 				AE4E50F8243B45870024609A /* CarouselView.swift */,
+				AE11F79324B715140080CF51 /* PageCollectionView.swift */,
 				AE80A398244DE1920012DFFA /* CubeLabel.swift */,
 				AEE3D4E0247C234600BEDEA3 /* ContextMenu.swift */,
 				00E4E36A247E694C00BEEC4A /* ZoomedImageView.swift */,
@@ -564,6 +567,7 @@
 				AE9851462320FE4C00EAC9D8 /* VCExtensions.swift in Sources */,
 				AE1DA65B23BE08F0003DFE92 /* strext.cpp in Sources */,
 				AE9851352320FC7500EAC9D8 /* WebView.swift in Sources */,
+				AE11F79424B715140080CF51 /* PageCollectionView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
