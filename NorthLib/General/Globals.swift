@@ -26,6 +26,7 @@ public func onMain(closure: @escaping ()->()) {
   if !Thread.isMainThread {
     DispatchQueue.main.async(execute: closure)
   }
+  else { closure() }
 }
 
 /// returns the type name of an object as String
