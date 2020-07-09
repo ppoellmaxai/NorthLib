@@ -25,17 +25,10 @@ open class ImageCollectionVC: PageCollectionVC, ImageCollectionVCSpec {
     didSet{ updatePageControllDots() }
   }
   public var images: [OptionalImage] = []{
-    didSet{ updatePageControllDots() }
-  }
-
-  /** the default way to initialize/render the PageCollectionVC is to set its count
-   this triggers collectionView.reloadData()
-   this will be done automatic in ImageCollectionViewController->viewDidLoad
-   To get rid of this default behaviour, we overwrite the Count Setter
-   */
-  override open var count: Int {
-    get { return self.images.count }
-    set { /**Not used, not allowed**/ }
+    didSet{ 
+      super.count = images.count
+      updatePageControllDots() 
+    }
   }
   
   // MARK: Life Cycle
@@ -55,7 +48,7 @@ open class ImageCollectionVC: PageCollectionVC, ImageCollectionVCSpec {
         self.defaultOnXHandler()
       }
     }
-    onDisplay { (idx) in
+    onDisplay { (idx, oview) in
       ///Apply PageControll Dots Update
       guard let pageControl = self.pageControl else { return }
       if self.pageControlMaxDotsCount > 0, self.count > 0,
@@ -77,7 +70,7 @@ open class ImageCollectionVC: PageCollectionVC, ImageCollectionVCSpec {
   open override func viewDidLayoutSubviews() {
     super.viewDidLayoutSubviews()
     if let iPath = scrollToIndexPathAfterLayoutSubviews {
-      collectionView?.scrollToItem(at: iPath, at: .centeredHorizontally, animated: false)
+      collectionView.scrollToItem(at: iPath, at: .centeredHorizontally, animated: false)
       scrollToIndexPathAfterLayoutSubviews = nil
     }
   }
@@ -95,7 +88,7 @@ open class ImageCollectionVC: PageCollectionVC, ImageCollectionVCSpec {
   
   open override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
     super.viewWillTransition(to: size, with: coordinator)
-    scrollToIndexPathAfterLayoutSubviews = collectionView?.indexPathsForVisibleItems.first
+    scrollToIndexPathAfterLayoutSubviews = collectionView.indexPathsForVisibleItems.first
   }
   
 } // PageCollectionVC
@@ -144,7 +137,8 @@ extension ImageCollectionVC {
     self.collectionView.backgroundColor = UIColor.black
     self.collectionView.showsHorizontalScrollIndicator = false
     self.collectionView.showsVerticalScrollIndicator = false
-    self.collectionView.delegate = self
+    self.pinTopToSafeArea = false
+    self.pinBottomToSafeArea = false
   }
   
   private func updatePageControllDots() {

@@ -60,31 +60,11 @@ public class CarouselFlowLayout: UICollectionViewFlowLayout, DoesLog {
 } // CarouselFlowLayout
 
 /**
- A CarouselView is a UICollectionView subclass presenting a number of views in a
+ A CarouselView is a PageCollectionView subclass presenting a number of views in a
  carousel like fashion.
- 
- The Carousel presents a list of views (called pages) that are scrollable horizontally. 
- Its width determines the width of the pages which all have the same width:
-   - let cwidth be the width of the Carousel
-   - let relativeInset (adjustable) be a factor to cwidth which defines the 
-     spacing between pages
-   - then the spacing swidth = relativeInset * cwidth
-   - let relativePageWidth (adjustable) be a factor to cwidth which defines the 
-     width of a page
-   - then the page width pwidth = relativePageWidth * cwidth
-   - the page is pinned to the horizontal dimensions specified with these relative
-     mesasures and centered vertically in the height of the collection view.
-   - The page itself should either have been pinned to a height or to an aspect ratio
-   - The first and last pages are inset as follows:
-       inset = (cwidth - pwidth) / 2
- */
-open class CarouselView: UICollectionView, UICollectionViewDelegate, 
-  UICollectionViewDataSource, UIScrollViewDelegate, UICollectionViewDelegateFlowLayout {
+  */
+open class CarouselView: PageCollectionView {
   
-  /// relative spacing between pages (in relation to the Carousel's width)
-  open var relativeSpacing: CGFloat = 0.12
-  /// relative width of one page (in relation to the Carousel's width)
-  open var relativePageWidth: CGFloat = 0.6
   /// maximum scale of center page
   open var maxScale: CGFloat = 1.3 { 
     didSet { 
@@ -92,94 +72,17 @@ open class CarouselView: UICollectionView, UICollectionViewDelegate,
       self.setNeedsLayout() 
     } 
   }
-  /// scroll from left to right or vice versa
-  open var scrollFromLeftToRight: Bool = false {
-    didSet { 
-      if scrollFromLeftToRight {
-        transform = CGAffineTransform(rotationAngle: CGFloat.pi)
-      }
-      else { transform = .identity }
-      reloadData()
-    }
-  }
-  /// width of collection view
-  open var cwidth: CGFloat { return bounds.size.width }
-  /// width of page
-  open var pwidth: CGFloat { return cwidth * relativePageWidth }
-  /// width of spacing
-  open var swidth: CGFloat { return cwidth * relativeSpacing }
-  /// width of cell incl. spacing
-  open var cellWidth: CGFloat { return pwidth + swidth }
-  /// inset of first/last page
-  open var inset: CGFloat { return (cwidth - pwidth) / 2 }
   
-  fileprivate static var countView = 0  // #CarouselViews instantiated
-  fileprivate static var reuseIdent: String = { countView += 1; return "CarouselCell\(countView)" }()
-  
-  /// The collection view cell getting presented in a page like fashion
-  class PageCell: UICollectionViewCell {
-    /// The page to display
-    var page: OptionalView?
-    /// The view to display
-    var pageView: UIView? { return page?.activeView }
-    
-    /// Request view from provider and put it into a PageCell
-    func update(carousel: CarouselView, idx: Int) {
-      if let provider = carousel.provider {
-        if let pv = pageView { pv.removeFromSuperview() }
-        let page = provider(idx, self.page)
-        let isAvailable = page.isAvailable
-        if carousel.scrollFromLeftToRight {
-          page.activeView.transform = CGAffineTransform(rotationAngle: -CGFloat.pi)
-        }
-        else {
-          page.activeView.transform = .identity   
-        }
-        contentView.addSubview(page.activeView)
-        pin(page.activeView, to: contentView)
-        self.page = page
-        if isAvailable { page.loadView() }
-        else {
-          let iPath = IndexPath(item: idx, section: 0)
-          page.whenAvailable { carousel.reloadItems(at: [iPath]) }
-        }
-      }
-    }
-    
-    override init(frame: CGRect) {
-      super.init(frame: frame)
-    }
-    required init?(coder: NSCoder) {
-      super.init(coder: coder)
-    }
-  } // PageCell
-  
-  // A closure providing the optional views to display
-  public var provider: ((Int, OptionalView?)->OptionalView)? = nil
-  
-  /// Defines the closure which delivers the views to display
-  open func viewProvider(provider: @escaping (Int, OptionalView?)->OptionalView) {
-    self.provider = provider
-  }
-    
   // Setup the CarouselView
   private func setup() {
     guard let layout = self.collectionViewLayout as? CarouselFlowLayout else { return }
-    backgroundColor = UIColor.clear
-    contentInsetAdjustmentBehavior = .never
-    register(PageCell.self, forCellWithReuseIdentifier: CarouselView.reuseIdent)
-    layout.scrollDirection = .horizontal
+    relativeSpacing = 0.12
+    relativePageWidth = 0.6
     layout.maxScale = maxScale
-    delegate = self
-    dataSource = self
-    if scrollFromLeftToRight {
-      debug("fromLeft")
-      transform = CGAffineTransform(rotationAngle: CGFloat.pi)
-    }
   }
   
   public init(frame: CGRect) {
-    super.init(frame: frame, collectionViewLayout: CarouselFlowLayout())
+    super.init(frame: frame, layout: CarouselFlowLayout())
     setup()
   }
   
@@ -187,160 +90,7 @@ open class CarouselView: UICollectionView, UICollectionViewDelegate,
     super.init(coder: coder)
     setup()
   }
-  
+
   public convenience init() { self.init(frame: CGRect()) }
   
-  fileprivate var _index: Int?
-  fileprivate var isInitialized = false
-  fileprivate var initialIndex: Int? = nil
-  fileprivate var collectionViewInitialized = false
-  
-  // initialize with initialIndex when scroll view is ready
-  fileprivate func initialize(_ itemIndex: Int? = nil) {
-    guard let layout = self.collectionViewLayout as? CarouselFlowLayout 
-      else { return }
-    if !isInitialized {
-      isInitialized = true
-      layout.minimumLineSpacing = swidth
-      layout.sectionInset = UIEdgeInsets(top: 0, left: inset, bottom: 0, 
-                                         right: inset)
-      if let idx = initialIndex { self.index = idx }
-    }
-  }
-  
-  /// Returns the optional view at a given index (if that view is visible)
-  open func optionalView(at idx: Int) -> OptionalView? {
-    if let cell = cellForItem(at: IndexPath(item: idx, section: 0)) as? PageCell {
-      return cell.page
-    }
-    else { return nil }
-  }
-  
-  /// Index of current page, change it to scroll to a certain cell
-  open var index: Int? {
-    get { return _index }
-    set(idx) { 
-      if let idx = idx, idx != _index { 
-        if isInitialized {
-          scrollto(idx)
-          onDisplayClosure?(idx, optionalView(at: idx))
-        }
-        else { initialIndex = idx }
-      } 
-    }
-  }
-  
-  fileprivate var _count: Int = 0
-  
-  /// Define and change the number of views to display, will reload data
-  open var count: Int {
-    get { return _count }
-    set { 
-      _count = newValue
-      reloadData()
-    }
-  }
-  
-  /// Insert a new page at (in front of) a given index
-  open func insert(at idx: Int) {
-    _count += 1
-    if collectionViewInitialized {
-      let ipath = IndexPath(item: idx, section: 0)
-      insertItems(at: [ipath])
-    }
-  }
-  
-  /// Reload a single view
-  open func reload(index: Int) { reloadItems(at: [IndexPath(item: index, section: 0)]) }
-  
-  fileprivate var onDisplayClosure: ((Int, OptionalView?)->())?
-  
-  /// Define closure to call when a cell is displayed in the center
-  public func onDisplay(closure: ((Int, OptionalView?)->())?) {
-    onDisplayClosure = closure
-  }
-  
-  // updateDisplaying is called when the scrollview has been scrolled which
-  // might have changed the view currently visible
-  private func updateDisplaying(_ idx: Int) { 
-    if _index != idx {
-      _index = idx
-      onDisplayClosure?(idx, optionalView(at: idx))
-    }
-  }
-  
-  // Scroll to the cell at position index
-  open func scrollto(_ idx: Int, animated: Bool = false) {
-    if idx != _index {
-      debug("scrolling to: \(idx)")
-      _index = idx
-      let ipath = IndexPath(item: idx, section: 0)
-      scrollToItem(at: ipath, at: .centeredHorizontally, animated: animated)
-    }
-  }
-
-  // MARK: - UICollectionViewDataSource
-  
-  open func numberOfSections(in collectionView: UICollectionView) -> Int {
-    return 1
-  }
-  
-  open func collectionView(_ collectionView: UICollectionView, 
-    numberOfItemsInSection section: Int) -> Int {
-    collectionViewInitialized = true
-    return self.count
-  }
-  
-  open func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-    if let cell = collectionView.dequeueReusableCell(withReuseIdentifier: 
-      CarouselView.reuseIdent, for: indexPath) as? PageCell {
-      let itemIndex = indexPath.item
-      cell.update(carousel: self, idx: itemIndex)
-      initialize(itemIndex)
-      return cell
-    }
-    return PageCell()
-  }
-  
-  // MARK: - UICollectionViewDelegateFlowLayout
-  
-  public func collectionView(_ collectionView: UICollectionView, 
-    layout collectionViewLayout: UICollectionViewLayout,
-    sizeForItemAt indexPath: IndexPath) -> CGSize {
-    let size = CGSize(width: pwidth, height: bounds.size.height)
-    return size
-  }
-  
-  // MARK: - UIScrollViewDelegate
-  
-  // Return index at a given scroll offset
-  private func offset2index(_ offset: CGFloat) -> Int {
-    let centerX = offset + cwidth/2
-    let i = (centerX - inset) / cellWidth
-    var idx = Int(round(i))
-    if i - CGFloat(idx) > 0 { idx += 1 }
-    return max(idx - 1, 0)
-  }
-  
-  // Return scroll offset of given index
-  private func index2offset(_ idx: Int) -> CGFloat {
-    let offset = cellWidth * CGFloat(idx)
-    return offset
-  }
-  
-  // While scrolling update page index
-  public func scrollViewDidScroll(_ scrollView: UIScrollView) {
-    let pageIndex = offset2index(contentOffset.x)
-    if pageIndex != _index { updateDisplaying(pageIndex) }  
-  }
-  
-  // When dragging stops, position collection view to a complete page  
-  public func scrollViewWillEndDragging(_ scrollView: UIScrollView, 
-    withVelocity velocity: CGPoint, 
-    targetContentOffset: UnsafeMutablePointer<CGPoint>) {
-    let pointee = targetContentOffset.pointee.x
-    let idx = offset2index(pointee)
-    targetContentOffset.pointee.x = index2offset(idx)
-  }
-
 } // CarouselView
