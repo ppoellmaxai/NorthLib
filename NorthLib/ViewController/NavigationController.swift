@@ -19,7 +19,7 @@ open class NavigationController: UINavigationController, UIGestureRecognizerDele
   // left edge pan gesture recognizer
   private lazy var edgePanLeft = UIScreenEdgePanGestureRecognizer(target: self,
                                  action: #selector(swipeFromEdge))
-  // left edge pan gesture recognizer
+  // right edge pan gesture recognizer
   private lazy var edgePanRight = UIScreenEdgePanGestureRecognizer(target: self,
                                   action: #selector(swipeFromEdge))  
   open var isEdgeDetection: Bool = false {
@@ -44,7 +44,7 @@ open class NavigationController: UINavigationController, UIGestureRecognizerDele
   private var popViewControllerClosure: ((UIViewController)->(Bool))?
   open var isPopViewController: Bool { popViewControllerClosure != nil }
   
-  /// Defines a closure to call if an edge left swipe should possiby remove
+  /// Defines a closure to call if an edge left swipe should possibly remove
   /// the top view controller
   open func onPopViewController(closure: ((UIViewController)->(Bool))? = nil) {
     if closure != nil { 
