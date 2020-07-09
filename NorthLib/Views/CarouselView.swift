@@ -122,8 +122,6 @@ open class CarouselView: UICollectionView, UICollectionViewDelegate,
     var page: OptionalView?
     /// The view to display
     var pageView: UIView? { return page?.activeView }
-    /// Index of view in list of collection view cells
-    var index: Int?
     
     /// Request view from provider and put it into a PageCell
     func update(carousel: CarouselView, idx: Int) {
@@ -139,7 +137,6 @@ open class CarouselView: UICollectionView, UICollectionViewDelegate,
         }
         contentView.addSubview(page.activeView)
         pin(page.activeView, to: contentView)
-        self.index = idx
         self.page = page
         if isAvailable { page.loadView() }
         else {
