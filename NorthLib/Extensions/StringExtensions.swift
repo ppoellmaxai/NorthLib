@@ -266,3 +266,69 @@ public extension String {
   
 } // extension String
 
+
+extension UIColor {
+  /// Generate Html/CSS conform Hex String from UIColor
+  /// return black #000000 in case of error
+  public var hexString: String {
+    get {
+      var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+      self.getRed(&r, green: &g, blue: &b, alpha: &a)
+      guard (0...1).contains(r)
+        && (0...1).contains(g)
+        && (0...1).contains(b)
+        && (0...1).contains(a) else {
+        return "#ff0000"
+      }
+      return String(format: "#%02X%02X%02X%02X",
+                    Int(round(r * 255)),
+                    Int(round(g * 255)),
+                    Int(round(b * 255)),
+                    Int(round(a * 255)))
+    }
+  }
+}
+
+extension String {
+  
+  /**
+   
+   additionalStyles e.g. "a{ color:#ff0000}"
+   
+   */
+  public static func cssStyles(_ font: UIFont? = nil ,
+                        _ color: UIColor? = nil,
+                        _ additionalStyles:String = "") -> String {
+    return "<style>" +
+      "html * {" +
+      (font != nil ? "  font-family: \(font!.familyName);" : "") +
+      (font != nil ? "  font-size: \(font!.pointSize)px;" : "") +
+      (color != nil ? "  color: \(color!.hexString);" : "") +
+      "}" +
+      additionalStyles +
+    "</style>"
+  }
+  
+  public var defaultCssStyles:String {
+    get {return Self.cssStyles()}
+  }
+  
+  public func htmlAttributed(_ css: String? = nil) -> NSAttributedString? {
+    do {
+      let css = css ?? self.defaultCssStyles
+      
+      guard let data = "\(css) \(self)".data(using: String.Encoding.utf8) else {
+        return nil
+      }
+      
+      return try NSAttributedString(data: data,
+                                    options: [.documentType: NSAttributedString.DocumentType.html,
+                                              .characterEncoding: String.Encoding.utf8.rawValue],
+                                    documentAttributes: nil)
+    } catch {
+      print("htmlAttributed parse error: ", error)
+      return nil
+    }
+  }
+}
+
