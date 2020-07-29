@@ -285,5 +285,23 @@ extension String {
       }
     }
   }
+  
+  public var mutableAttributedStringFromHtml : NSMutableAttributedString?{
+    get{
+      do {
+        guard let data = "\(self)".data(using: String.Encoding.utf8) else {
+          return nil
+        }
+        
+        return try NSMutableAttributedString(data: data,
+                                      options: [.documentType: NSAttributedString.DocumentType.html,
+                                                .characterEncoding: String.Encoding.utf8.rawValue],
+                                      documentAttributes: nil)
+      } catch {
+        print("htmlAttributed parse error: ", error)
+        return nil
+      }
+    }
+  }
 }
 
