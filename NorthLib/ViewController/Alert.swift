@@ -12,15 +12,11 @@ open class Alert {
   
   /// Popup message to user
   /// **ToDo Discussion:** may prefer this version it presents also over topmost presented vc and
-  /// has the abillity to change the buttons color
-  public static func message(title: String? = nil, message: String, buttonColor:UIColor? = nil, closure: (()->())? = nil) {
+  public static func message2(title: String? = nil, message: String, closure: (()->())? = nil) {
     onMain {
       let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
-      //Prefer cancel style due it makes a bold button
-      let okButton = UIAlertAction(title: "OK", style: .cancel) { _ in closure?() }
-      if let buttonColor = buttonColor {
-          okButton.setValue(buttonColor, forKey: "titleTextColor")
-      }
+      //Prefer destructive style due it makes a red button
+      let okButton = UIAlertAction(title: "OK", style: .destructive) { _ in closure?() }
       alert.addAction(okButton)
       //present even if there is still a modal View presented
       UIViewController.top()?.present(alert, animated: true, completion: nil)
