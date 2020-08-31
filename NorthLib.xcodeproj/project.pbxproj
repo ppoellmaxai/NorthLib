@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		00442ADB24CAF771009933FF /* Toast.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00442ADA24CAF771009933FF /* Toast.swift */; };
 		008F9A2024864F9400EF5EA5 /* ImageCollectionVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 008F9A1F24864F9400EF5EA5 /* ImageCollectionVC.swift */; };
 		00E4E36B247E694C00BEEC4A /* ZoomedImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00E4E36A247E694C00BEEC4A /* ZoomedImageView.swift */; };
 		08DDCFF624A20EA1000CB1DA /* Overlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08DDCFF524A20EA1000CB1DA /* Overlay.swift */; };
@@ -95,6 +96,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		00442ADA24CAF771009933FF /* Toast.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Toast.swift; sourceTree = "<group>"; };
 		008F9A1F24864F9400EF5EA5 /* ImageCollectionVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageCollectionVC.swift; sourceTree = "<group>"; };
 		00E4E36A247E694C00BEEC4A /* ZoomedImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZoomedImageView.swift; sourceTree = "<group>"; };
 		08DDCFF524A20EA1000CB1DA /* Overlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Overlay.swift; sourceTree = "<group>"; };
@@ -279,6 +281,7 @@
 				AE80A398244DE1920012DFFA /* CubeLabel.swift */,
 				AEE3D4E0247C234600BEDEA3 /* ContextMenu.swift */,
 				00E4E36A247E694C00BEEC4A /* ZoomedImageView.swift */,
+				00442ADA24CAF771009933FF /* Toast.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -509,6 +512,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				AE7123342320E0B800B715A8 /* hashes.cpp in Sources */,
+				00442ADB24CAF771009933FF /* Toast.swift in Sources */,
 				AE86486E248E0EC0007096B4 /* PdfDoc.swift in Sources */,
 				AE7123362320E64300B715A8 /* DataExtensions.swift in Sources */,
 				AE08C49724101CA900D41E91 /* FontExtensions.swift in Sources */,

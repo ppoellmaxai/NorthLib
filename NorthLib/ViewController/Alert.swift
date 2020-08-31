@@ -13,10 +13,12 @@ open class Alert {
   /// Popup message to user
   public static func message(title: String? = nil, message: String, closure: (()->())? = nil) {
     onMain {
-      let alert = UIAlertController(title: title, message: "\n\(message)", preferredStyle: .alert)
-      let okButton = UIAlertAction(title: "OK", style: .default) { _ in closure?() }
+      let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+      //Prefer destructive style due it makes a red button
+      let okButton = UIAlertAction(title: "OK", style: .cancel) { _ in closure?() }
       alert.addAction(okButton)
-      UIWindow.rootVC?.present(alert, animated: false, completion: nil)
+      //present even if there is still a modal View presented
+      UIViewController.top()?.present(alert, animated: true, completion: nil)
     }
   }
   
