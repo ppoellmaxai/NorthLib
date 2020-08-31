@@ -8,7 +8,7 @@
 import Foundation
 import CoreData
 
-open class Database: DoesLog {
+open class Database: DoesLog, ToString {
   
   /// name of database
   public var name: String
@@ -119,6 +119,10 @@ open class Database: DoesLog {
     self.name = name
   }
   
+  public func toString() -> String {
+    "\(name), model(\(modelName)):\n  \(dbPath)"
+  }
+
   public func save(_ context: NSManagedObjectContext? = nil) {
     let ctx = (context != nil) ? context : self.context
     if ctx!.hasChanges { try! ctx!.save() }
