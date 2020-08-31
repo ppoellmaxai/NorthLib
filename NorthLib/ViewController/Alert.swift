@@ -11,16 +11,11 @@ import UIKit
 open class Alert {
   
   /// Popup message to user
-  public static func message(title: String? = nil, message: String, buttonColor:UIColor? = nil, closure: (()->())? = nil) {
+  public static func message(title: String? = nil, message: String, closure: (()->())? = nil) {
     onMain {
       let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
       //Prefer destructive style due it makes a red button
       let okButton = UIAlertAction(title: "OK", style: .cancel) { _ in closure?() }
-      
-      if let buttonColor = buttonColor {
-        okButton.setValue(buttonColor, forKey: "titleTextColor")
-      }
-      
       alert.addAction(okButton)
       //present even if there is still a modal View presented
       UIViewController.top()?.present(alert, animated: true, completion: nil)
