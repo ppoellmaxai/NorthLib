@@ -263,8 +263,7 @@ open class File: DoesLog {
   /// Removes the file (and all subdirs if self is a directory)
   public func remove() {
     guard exists else { return }
-    do { try FileManager.default.removeItem(atPath: path) }
-    catch (let err) { error(err) }
+    file_unlink(cpath)
   }
 
   /// Returns the basename of a given pathname
