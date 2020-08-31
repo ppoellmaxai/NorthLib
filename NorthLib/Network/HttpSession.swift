@@ -624,6 +624,8 @@ open class HttpLoader: ToString, DoesLog {
   public var downloaded = 0
   /// nb. bytes downloaded
   public var downloadSize: Int64 = 0
+  /// total nb. bytes to download
+  public var totalSize: Int64 = 0
   /// nb. of files already available
   public var available = 0
   /// nb. of errors
@@ -632,7 +634,9 @@ open class HttpLoader: ToString, DoesLog {
   public var lastError: Error?
   /// Closure to call when finished
   public var closure: ((HttpLoader)->())?
-  /// Semaphore used to wait for a single download finish
+  /// Closure to call when before/after single file download
+  public var progressClosure: ((HttpLoader, Int64, Int64)->())?
+  /// Semaphore used to wait for a single download to finish
   private var semaphore = DispatchSemaphore(value: 0)
   
   public func toString() -> String {
@@ -670,15 +674,32 @@ open class HttpLoader: ToString, DoesLog {
   func downloadNext(file: DlFile) {
     session.downloadDlFile(baseUrl: baseUrl, file: file, toDir: toDir) 
     { [weak self] res in
-      self?.count(res, size: file.size)
+      guard let self = self else { return }
+      self.count(res, size: file.size)
+      if let progressClosure = self.progressClosure, file.size > 0 {
+        onMain { progressClosure(self, self.downloadSize, self.totalSize) }
+      }
     }
   }
 
   // Download array of DlFiles
-  public func download(_ files: [DlFile], closure: @escaping (HttpLoader)->()) {
-    self.closure = closure
-    DispatchQueue.global(qos: .background).async {
+  public func download(_ files: [DlFile], 
+                       onProgress: ((HttpLoader, Int64, Int64)->())? = nil,
+                       atEnd: @escaping (HttpLoader)->()) {
+    self.closure = atEnd
+    self.progressClosure = onProgress
+    DispatchQueue.global(qos: .background).async { [weak self] in
+      guard let self = self else { return }
+      var toDownload: [DlFile] = []
+      self.downloadSize = 0
       for file in files {
+        if !file.exists(inDir: self.toDir) {
+          toDownload += file
+          self.totalSize += file.size
+        }
+      }
+      self.progressClosure?(self, 0, self.totalSize)
+      for file in toDownload {
         self.downloadNext(file: file)
         self.semaphore.wait()
       }
