@@ -231,6 +231,34 @@ public func pin(_ view: UIView, toSafe: UIView, dist: CGFloat = 0) -> (top: NSLa
   return (top, bottom, left, right)
 }
 
+public typealias tblrConstrains = (
+  top: NSLayoutConstraint?,
+  bottom: NSLayoutConstraint?,
+  left: NSLayoutConstraint?,
+  right: NSLayoutConstraint?)
+
+// MARK: - pinnAll Helper
+///borders Helper
+/// Pin all edges, except one of one view to the edges of another view's safe layout guide
+@discardableResult
+public func pin(_ view: UIView, to: UIView, dist: CGFloat = 0, exclude: UIRectEdge? = nil) -> tblrConstrains {
+  var top:NSLayoutConstraint?, left:NSLayoutConstraint?, bottom:NSLayoutConstraint?, right:NSLayoutConstraint?
+  exclude != UIRectEdge.top ? top = NorthLib.pin(view.top, to: to.top, dist: dist) : nil
+  exclude != UIRectEdge.left ? left = NorthLib.pin(view.left, to: to.left, dist: dist) : nil
+  exclude != UIRectEdge.right ? right = NorthLib.pin(view.right, to: to.right, dist: -dist) : nil
+  exclude != UIRectEdge.bottom ? bottom = NorthLib.pin(view.bottom, to: to.bottom, dist: -dist) : nil
+  return (top, bottom, left, right)
+}
+
+public func pin(_ view: UIView, toSafe: UIView, dist: CGFloat = 0, exclude: UIRectEdge? = nil) -> tblrConstrains {
+  var top:NSLayoutConstraint?, left:NSLayoutConstraint?, bottom:NSLayoutConstraint?, right:NSLayoutConstraint?
+  exclude != UIRectEdge.top ? top = NorthLib.pin(view.top, to: toSafe.topGuide(), dist: dist) : nil
+  exclude != UIRectEdge.left ? left = NorthLib.pin(view.left, to: toSafe.leftGuide(), dist: dist) : nil
+  exclude != UIRectEdge.right ? right = NorthLib.pin(view.right, to: toSafe.rightGuide(), dist: -dist) : nil
+  exclude != UIRectEdge.bottom ? bottom = NorthLib.pin(view.bottom, to: toSafe.bottomGuide(), dist: -dist) : nil
+  return (top, bottom, left, right)
+}
+
 /// A simple UITapGestureRecognizer wrapper
 open class TapRecognizer: UITapGestureRecognizer {  
   public var onTapClosure: ((UITapGestureRecognizer)->())?  
