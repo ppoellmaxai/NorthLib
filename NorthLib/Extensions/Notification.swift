@@ -11,23 +11,77 @@ public extension Notification {
   
   typealias Observer = NSObjectProtocol?
   
+  /// The sender of a Notification
+  var sender: Any? { return object }
+
+  /// info returns value from userInfo
+  func info(_ key: String) -> Any? {
+    guard let dict = userInfo, let cont = dict[key] else { return nil }
+    return cont
+  } 
+  
+  /// The content having been sent
+  var content: Any? { info("content") }
+  
+  /// Has an Error been sent?
+  var error: Error? { info("error") as? Error }
+  
+  /**
+   If the Notification has been received via 'receive', this method removes the
+   Observer defined by 'receive' and thereby withdraws from further Notifications
+   */
+  func withdraw() {
+    guard let dict = userInfo, let observer = dict["observer"] as? NSObjectProtocol 
+      else { return }
+    Notification.remove(observer: observer)
+  }
+  
   /// Send Notification
-  static func send(_ message: String, object: Any? = nil) {
+  static func send(_ message: String, content: Any? = nil, error: Error? = nil, 
+                   sender: Any? = nil) {
     let nn = NSNotification.Name(message)
-    let notification = Notification(name: nn, object: object)
+    var dict: [AnyHashable:Any] = [:]
+    dict["content"] = content
+    dict["error"] = error
+    let notification = Notification(name: nn, object: sender, userInfo: dict)
     NotificationCenter.default.post(notification)
   }
   
-  /// Receive Notification on main thread and return observer object
+  /// Send Result<Type,Error> as Notification
+  static func send<Type>(_ message: String, result: Result<Type,Error>, 
+                         sender: Any? = nil) {
+    if let err = result.error() {
+      send(message, error: err, sender: sender)
+    }
+    else { send(message, content: result.value()!, sender: sender) }
+  }
+  
+  /// Receive Notification and return observer object
   @discardableResult
-  static func receive(_ message: String, closure: @escaping (Any?)->()) 
+  static func receive(_ message: String, from: Any? = nil,
+                      closure: @escaping (Notification)->()) 
     -> Observer {
     let nn = NSNotification.Name(message)
-    let observer = NotificationCenter.default.addObserver(forName: nn, 
-                     object: nil, queue: nil) { notification in
-      closure(notification.object)
+    var observer: Observer = nil
+    observer = NotificationCenter.default.addObserver(forName: nn, 
+                     object: from, queue: nil) { notification in
+      var notif = notification
+      var dict: [AnyHashable:Any] = [:]
+      if let passedDict = notification.userInfo { dict = passedDict }
+      dict["observer"] = observer
+      notif.userInfo = dict
+      closure(notif)
     }
     return observer
+  }
+  
+  /// Receive Notification and remove observer imediately after receival
+  static func receiveOnce(_ message: String, from: Any? = nil,
+                          closure: @escaping (Notification)->()) {
+    receive(message) { notif in
+      notif.withdraw()
+      closure(notif)
+    }
   }
   
   /// Remove observer
