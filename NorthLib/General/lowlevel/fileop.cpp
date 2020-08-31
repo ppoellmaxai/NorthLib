@@ -877,6 +877,14 @@ int file_link(const char *from, const char *to) {
   return -1;
 }
 
+/**
+ * file_unlink simply uses unlink(2) to remove a file
+ * 
+ * @param path pathname of file to remove
+ * @return 0 => OK, -1 => Error 
+ */
+int file_unlink(const char *path) { return unlink(path); }
+
 /// Open a file pointer and write it to *fp
 int file_open(fileptr_t *rfp, const char *path, const char *mode) {
   fileptr_t tmp = fopen(path, mode);
