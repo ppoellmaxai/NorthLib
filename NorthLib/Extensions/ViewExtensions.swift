@@ -294,8 +294,8 @@ public class Label: UILabel, Touchable {
 
 /// Helpers to add specific UI Attributes just to iOS 13 or not
 /// usage.eg: myView.iosLower13?.pinWidth(20)
-public extension UIView{
-  var iosLower13 : UIView?{
+public extension NSObject{
+  var iosLower13 : Self?{
     get{
       if #available(iOS 13, *) {
         return nil
@@ -307,7 +307,7 @@ public extension UIView{
     }
   }
   
-  var iosHigher13 : UIView?{
+  var iosHigher13 : Self?{
     get{
       if #available(iOS 13, *) {
         return self
