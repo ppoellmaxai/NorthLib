@@ -7,16 +7,6 @@
 
 import Foundation
 
-public struct Notif {
-  
-  /// Send Notification
-  public static func send(_ message: String, object: Any? = nil) {
-    let nn = NSNotification.Name(message)
-    let notification = Notification(name: nn, object: object)
-    NotificationCenter.default.post(notification)
-  }
-}
-
 public extension Notification {
   
   typealias Observer = NSObjectProtocol?
