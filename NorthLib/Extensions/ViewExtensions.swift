@@ -291,3 +291,30 @@ extension Touchable {
 public class Label: UILabel, Touchable {
   public var tapRecognizer = TapRecognizer()
 }
+
+/// Helpers to add specific UI Attributes just to iOS 13 or not
+/// usage.eg: myView.iosLower13?.pinWidth(20)
+public extension UIView{
+  var iosLower13 : UIView?{
+    get{
+      if #available(iOS 13, *) {
+        return nil
+      }
+      else {
+        return self
+        
+      }
+    }
+  }
+  
+  var iosHigher13 : UIView?{
+    get{
+      if #available(iOS 13, *) {
+        return self
+      }
+      else {
+        return nil
+      }
+    }
+  }
+}
