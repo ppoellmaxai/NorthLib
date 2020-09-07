@@ -164,6 +164,13 @@ open class WebViewCollectionVC: PageCollectionVC, WKUIDelegate,
     gotoUrl(path + "/" + file)
   }
   
+  var optionalWebViews:[OptionalWebView] = []
+  
+  open func reloadAllWebViews(){
+//    print("Reloading #\(optionalWebViews.count) Webviews")
+    optionalWebViews.forEach{ $0.webView?.reload()}
+  }
+  
   open override func viewDidLoad() {
     super.viewDidLoad()
     self.view.backgroundColor = UIColor.white
@@ -173,6 +180,7 @@ open class WebViewCollectionVC: PageCollectionVC, WKUIDelegate,
       if var ov = oview as? OptionalWebView { return ov.update(vc: this, url: this.urls[index]) }
       else { 
         let owv = OptionalWebView(vc: this, url: this.urls[index]) 
+        self?.optionalWebViews.append(owv)
         if let bridge = this.bridge { 
           owv.webView?.addBridge(bridge)
           if this.isBridgeLogging { owv.webView?.log2bridge(bridge) }

@@ -51,6 +51,10 @@ open class ButtonView: UIView {
   /// Color used in drawing the button in active state (button pressed, isActivated==true)
   @IBInspectable
   open var activeColor: UIColor = UIColor.green { didSet { setNeedsDisplay() } }
+  
+  /// Background Color used in drawing the button in active state (button pressed, isActivated==true)
+  //Active Background Color deactivated for the Moment due missing unclear Color Values
+  open var activeBackgroundColor: UIColor? = nil { didSet { setNeedsDisplay() } }
 
   // The color used for stroking lines
   open var strokeColor: UIColor { return isActivated ? activeColor : color }
@@ -79,8 +83,8 @@ open class ButtonView: UIView {
   
   fileprivate func setup() {
     contentMode = .redraw
-    backgroundColor = UIColor.clear
     color = tintColor
+    super.backgroundColor = UIColor.clear
     translatesAutoresizingMaskIntoConstraints = false
   }
   
@@ -92,6 +96,20 @@ open class ButtonView: UIView {
   required public init?(coder aDecoder: NSCoder) {
     super.init(coder: aDecoder)
     setup()
+  }
+  
+  private var bgColor:UIColor? = UIColor.clear
+  open override var backgroundColor: UIColor? {
+    get{return bgColor}
+    set{bgColor=newValue}
+  }
+  
+  override open func draw(_ rect: CGRect) {
+    super.draw(rect)
+    self.layer.backgroundColor
+      = isActivated
+      ? (self.activeBackgroundColor ?? self.backgroundColor ?? UIColor.clear).cgColor
+      : (self.backgroundColor ?? UIColor.clear).cgColor
   }
 
 } // class ButtonView
@@ -1213,11 +1231,8 @@ open class ImageView: ButtonView {
   open var symbol: String? {
     didSet {
       if let sym = symbol {
-        if #available(iOS 13.0, *) {
-          self.image = UIImage(systemName: sym)
-        } else {
-          // Fallback on earlier versions
-        }
+        self.image = UIImage(name: sym)
+        self.imageView.contentMode = .scaleAspectFit
       }
     }
   }
@@ -1293,6 +1308,7 @@ open class TextView: ButtonView {
   }
   
   override open func draw(_ rect: CGRect) {
+    super.draw(rect)
     let w = bounds.size.width, h = bounds.size.height,
         vi = h * (vinset/2),
         hi = w * (hinset/2)

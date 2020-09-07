@@ -306,3 +306,20 @@ open class Defaults: NSObject {
   public init(key: String) { self.key = key }
 }
 
+
+/// A property wrapper for Int Defaults (represented as String)
+/// If key is undefined, 0 is returned
+@propertyWrapper public struct DefaultInt {
+  /// The String to use as Defaults key
+  public var key: String
+  /// The wrapped value is in essence Defaults.singleton[key]
+  public var wrappedValue: Int {
+    get {
+      if let dfl = Defaults.singleton[key] { return Int(dfl) ?? 0 }
+      else { return 0 }
+    }
+    set { Defaults.singleton[key] = "\(newValue)" }
+  }
+  public init(key: String) { self.key = key }
+}
+
