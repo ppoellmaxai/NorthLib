@@ -58,6 +58,18 @@ open class Toolbar: UIToolbar {
     
   } // class Toolbar.TButtons
   
+  public class Spacer: ButtonControl {
+    public override func barButton() -> UIBarButtonItem {
+      return Toolbar.space()
+    }
+    public init() {
+      super.init(view: ButtonView(), frame: CGRect())
+    }    
+    required public init?(coder aDecoder: NSCoder) {
+      fatalError("init(coder:) has not been implemented")
+    }
+  }
+  
   fileprivate var bars = [ TButtons() ]
   
   fileprivate var _bar = 0
