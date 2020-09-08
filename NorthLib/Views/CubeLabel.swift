@@ -15,7 +15,7 @@ open class CubeLabel: UILabel, Touchable {
   /// Define text to scroll to
   override open var text: String? {
     get { return super.text }
-    set { cubeTransition(text: newValue, isUp: scrollUp) }
+    set { effectTransition(text: newValue, isUp: scrollUp) }
   }
   
   /// The label's text without rotation
@@ -26,16 +26,20 @@ open class CubeLabel: UILabel, Touchable {
   
   /// Define text and scroll direction
   public func setText(_ text: String?, isUp: Bool) 
-    { cubeTransition(text: text, isUp: isUp) }
+    { effectTransition(text: text, isUp: isUp) }
   
   /// To recognized taps on the label
   public var tapRecognizer = TapRecognizer()
   
-  private var inAnimation = false
-  private var lastText: String?
+  fileprivate var superText : String? {
+    get { return super.text}
+    set { super.text = newValue}
+  }
+  fileprivate var inAnimation = false
+  fileprivate var lastText: String?
   private var lastDirection: Bool?
   
-  private func cubeTransition( text: String?, isUp: Bool = true ) {
+  fileprivate func effectTransition( text: String?, isUp: Bool = true ) {
     if (super.text == nil) || (text == nil) { super.text = text; return }
     guard !inAnimation else { lastText = text; lastDirection = isUp; return }
     inAnimation = true
@@ -62,10 +66,27 @@ open class CubeLabel: UILabel, Touchable {
         if let lastDirection = self.lastDirection { direction = lastDirection }
         self.lastText = nil
         self.lastDirection = nil
-        self.cubeTransition(text: txt, isUp: direction)
+        self.effectTransition(text: txt, isUp: direction)
       }
     }
   }
 
 } // CubeLabel
+
+open class CrossfadeLabel : CubeLabel {
+  override fileprivate func effectTransition( text: String?, isUp: Bool = true ) {
+    if (self.superText == nil) || (text == nil) { self.superText = text; return }
+    inAnimation = true
+    UIView.animate(withDuration: 0.2, animations: {
+      self.alpha = 0.0
+    }) { _ in
+      self.superText = text
+      UIView.animate(withDuration: 0.2, animations: {
+        self.alpha = 1.0
+      }) { _ in
+        self.inAnimation = false
+      }
+    }
+  }
+}
 

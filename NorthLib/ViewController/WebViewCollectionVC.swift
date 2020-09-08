@@ -32,6 +32,9 @@ struct OptionalWebView: OptionalView, DoesLog {
     let webConfiguration = WKWebViewConfiguration()
     self.webView = WebView(frame: .zero, configuration: webConfiguration)
     guard let webView = self.webView else { return }
+    webView.isOpaque = false
+    webView.backgroundColor = UIColor.clear
+    webView.scrollView.backgroundColor = UIColor.clear
     webView.uiDelegate = vc
     webView.navigationDelegate = vc
     webView.allowsBackForwardNavigationGestures = false
