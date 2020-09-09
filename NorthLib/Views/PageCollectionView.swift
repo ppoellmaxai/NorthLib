@@ -78,7 +78,7 @@ open class PageCollectionView: UICollectionView, UICollectionViewDelegate,
     /// Request view from provider and put it into a PageCell
     func update(pcv: PageCollectionView, idx: Int) {
       if let provider = pcv.provider {
-        if let pv = pageView { pv.removeFromSuperview() }
+        contentView.subviews.forEach { $0.removeFromSuperview() }
         let page = provider(idx, self.page)
         let isAvailable = page.isAvailable
         if pcv.scrollFromLeftToRight {
