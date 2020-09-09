@@ -680,7 +680,7 @@ open class HttpLoader: ToString, DoesLog {
     DispatchQueue.global(qos: .background).async {
       for file in files {
         self.downloadNext(file: file)
-        self.semaphore.wait()
+        _ = self.semaphore.wait(timeout: .now() + 30)
       }
       onMain { [weak self] in self?.closure?(self!) }
     }
