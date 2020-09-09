@@ -75,20 +75,36 @@ open class CubeLabel: UILabel, Touchable {
 
 open class CrossfadeLabel : CubeLabel {
   private var newestText : String?
+  lazy var newLabel = UILabel()
+  
+  private func resetNewLabelForReuse(){
+    newLabel.alpha = 0.0
+    newLabel.frame = self.frame
+    newLabel.font != self.font ? newLabel.font = self.font : nil
+    newLabel.textAlignment != self.textAlignment ? newLabel.textAlignment = self.textAlignment : nil
+    newLabel.textColor != self.textColor ? newLabel.textColor = self.textColor : nil
+    newLabel.backgroundColor != self.backgroundColor ? newLabel.backgroundColor = self.backgroundColor : nil
+  }
   
   override fileprivate func effectTransition( text: String?, isUp: Bool = true ) {
     if (self.superText == nil) || (text == nil) { self.superText = text; return }
-    newestText = text
+    guard !inAnimation else { newestText = text; return }
     inAnimation = true
-    UIView.animate(withDuration: 0.2, animations: {
+    resetNewLabelForReuse()
+    newLabel.text = text
+    self.superview?.addSubview(self.newLabel)
+    
+    UIView.animate(withDuration: 0.5, animations: {
       self.alpha = 0.0
+      self.newLabel.alpha = 1.0
     }) { _ in
       self.superText = text
-      UIView.animate(withDuration: 0.2, animations: {
-        self.alpha = 1.0
-      }) { _ in
-        if let txt = self.newestText { self.superText = txt }
-        self.inAnimation = false
+      self.alpha = 1.0
+      self.newLabel.removeFromSuperview()
+      self.inAnimation = false
+      if let txt = self.newestText {
+        self.newestText = nil
+        self.effectTransition(text: txt)
       }
     }
   }
