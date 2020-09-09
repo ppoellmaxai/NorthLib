@@ -74,8 +74,11 @@ open class CubeLabel: UILabel, Touchable {
 } // CubeLabel
 
 open class CrossfadeLabel : CubeLabel {
+  private var newestText : String?
+  
   override fileprivate func effectTransition( text: String?, isUp: Bool = true ) {
     if (self.superText == nil) || (text == nil) { self.superText = text; return }
+    newestText = text
     inAnimation = true
     UIView.animate(withDuration: 0.2, animations: {
       self.alpha = 0.0
@@ -84,6 +87,7 @@ open class CrossfadeLabel : CubeLabel {
       UIView.animate(withDuration: 0.2, animations: {
         self.alpha = 1.0
       }) { _ in
+        if let txt = self.newestText { self.superText = txt }
         self.inAnimation = false
       }
     }
