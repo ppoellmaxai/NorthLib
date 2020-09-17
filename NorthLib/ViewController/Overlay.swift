@@ -133,7 +133,6 @@ public class Overlay: NSObject, OverlaySpec, UIGestureRecognizerDelegate {
     if overlaySize == nil {
       overlayVC.view.frame = activeVC.view.frame
     }
-    overlayView.addBorder(.cyan)
     overlayVC.willMove(toParent: activeVC)
     activeVC.view.addSubview(overlayView)
     //ToDo to/toSafe/frame.....
@@ -203,17 +202,27 @@ public class Overlay: NSObject, OverlaySpec, UIGestureRecognizerDelegate {
   // MARK: open fromFrame
     public func openAnimated(fromView: UIView, toView: UIView) {
       addToActiveVC()
+      
       var fromFrame = fromView.frame
-      let toFrame = toView.frame
       
       guard let fromSnapshot = activeVC.view.resizableSnapshotView(from: fromFrame, afterScreenUpdates: false, withCapInsets: .zero) else {
         showWithoutAnimation()
         return
       }
-      guard let targetSnapshot = overlayVC.view.resizableSnapshotView(from: toFrame, afterScreenUpdates: true, withCapInsets: .zero) else {
+      
+      if toView.frame == .zero {
+        overlayVC.view.setNeedsUpdateConstraints()
+        overlayVC.view.setNeedsLayout()
+        overlayVC.view.updateConstraintsIfNeeded()
+        overlayVC.view.layoutIfNeeded()
+      }
+
+      guard let targetSnapshot = toView.snapshotView(afterScreenUpdates: true) else {
         showWithoutAnimation()
         return
       }
+      let toFrame = toView.frame
+      targetSnapshot.frame = toView.frame
       overlayVC.view.isHidden = true
       overlayView?.isHidden = false
       targetSnapshot.alpha = 0.0
@@ -236,51 +245,44 @@ public class Overlay: NSObject, OverlaySpec, UIGestureRecognizerDelegate {
       }
       
       fromSnapshot.layer.masksToBounds = true
-//      var fromFrame = fromFrame
       fromFrame.origin.y = fromFrame.origin.y - (overlayView?.frame.origin.y ?? 0)
-  //    var toFrame = toFrame
-  //    toFrame.origin.y = toFrame.origin.y - (overlayView?.frame.origin.y ?? 0)
-  //    toFrame.size.height = toFrame.size.height + (overlayView?.frame.origin.y ?? 0)
       
       fromSnapshot.frame = fromFrame
       targetSnapshot.frame = fromFrame
       
       closeAction = {
         self.close(fromRect: toFrame, toRect: fromFrame)
+        fromView.alpha = 0.0
         fromView.isHidden = false
+        UIView.animate(seconds: 0.6) {
+          fromView.alpha = 1.0
+        }
       }
       
       overlayView?.addSubview(fromSnapshot)
       overlayView?.addSubview(targetSnapshot)
       
-      UIView.animateKeyframes(withDuration: openDuration, delay: 0, animations: {
+      fromView.isHidden = true
+      
+      UIView.animateKeyframes(withDuration: 0.6, delay: 0, animations: {
         UIView.addKeyframe(withRelativeStartTime: 0.0, relativeDuration: 0.3) {
           self.shadeView?.alpha = CGFloat(self.maxAlpha)
+          
+        }
+        UIView.addKeyframe(withRelativeStartTime: 0.0, relativeDuration: 5.0) {
+              fromSnapshot.alpha = 0.0
         }
         UIView.addKeyframe(withRelativeStartTime: 0.0, relativeDuration: 1.0) {
-          fromSnapshot.frame = toFrame
           targetSnapshot.frame = toFrame
-          fromSnapshot.alpha = 0.0
           targetSnapshot.alpha = 1.0
         }
         
-  //      UIView.addKeyframe(withRelativeStartTime: 0.5, relativeDuration: 0.4) {
-  //        fromSnapshot.alpha = 0.0
-  //      }
-  //      UIView.addKeyframe(withRelativeStartTime: 0.5, relativeDuration: 0.5) {
-  //        targetSnapshot.alpha = 1.0
-  //      }
-        
       }) { (success) in
-  //      self.overlayVC.view.isHidden = false
         self.contentView?.isHidden = false
-  //      targetSnapshot.alpha = 0.6
         targetSnapshot.removeFromSuperview()
         fromSnapshot.removeFromSuperview()
-        fromView.isHidden = true
       }
     }
-  
   
   // MARK: open fromFrame
   public func openAnimated(fromFrame: CGRect, toFrame: CGRect) {
