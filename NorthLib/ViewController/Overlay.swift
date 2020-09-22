@@ -51,7 +51,6 @@ public class Overlay: NSObject, OverlaySpec, UIGestureRecognizerDelegate {
   var overlayVC: UIViewController
   var activeVC: UIViewController
   
-  public var enablePinchAndPan: Bool = true
   public var overlayView: UIView?
   public var contentView: UIView?//either overlayVC.view or its wrapper
   public var overlaySize: CGSize?
@@ -94,24 +93,16 @@ public class Overlay: NSObject, OverlaySpec, UIGestureRecognizerDelegate {
     self.overlayView = overlayView
     /// add the pan
     
-    if enablePinchAndPan {
-      let pinchGestureRecognizer
-        = UIPinchGestureRecognizer(target: self,
-                                   action: #selector(didPinchWith(gestureRecognizer:)))
-      let panGestureRecognizer
-        = UIPanGestureRecognizer(target: self,
-                                 action: #selector(didPanWith(gestureRecognizer:)))
-      
-      overlayView.addGestureRecognizer(panGestureRecognizer)
-      overlayView.addGestureRecognizer(pinchGestureRecognizer)
-      pinchGestureRecognizer.delegate = self
-    } else {
-      let tapToCloseGestureRecognizer
-            = UITapGestureRecognizer(target: self,
-                                     action: #selector(didTapBackgroundToClose(gestureRecognizer:)))
-      overlayView.addGestureRecognizer(tapToCloseGestureRecognizer)
-    }
-
+    let pinchGestureRecognizer
+      = UIPinchGestureRecognizer(target: self,
+                                 action: #selector(didPinchWith(gestureRecognizer:)))
+    let panGestureRecognizer
+      = UIPanGestureRecognizer(target: self,
+                               action: #selector(didPanWith(gestureRecognizer:)))
+    
+    overlayView.addGestureRecognizer(panGestureRecognizer)
+    overlayView.addGestureRecognizer(pinchGestureRecognizer)
+    pinchGestureRecognizer.delegate = self
     //    overlayView.delegate = self
     overlayView.alpha = 1.0
     //    if let size = overlaySize {
@@ -200,104 +191,18 @@ public class Overlay: NSObject, OverlaySpec, UIGestureRecognizerDelegate {
   }
   
   // MARK: open fromFrame
-    public func openAnimated(fromView: UIView, toView: UIView) {
-      addToActiveVC()
-      
-      var fromFrame = fromView.frame
-      
-      guard let fromSnapshot = activeVC.view.resizableSnapshotView(from: fromFrame, afterScreenUpdates: false, withCapInsets: .zero) else {
-        showWithoutAnimation()
-        return
-      }
-      
-      if toView.frame == .zero {
-        overlayVC.view.setNeedsUpdateConstraints()
-        overlayVC.view.setNeedsLayout()
-        overlayVC.view.updateConstraintsIfNeeded()
-        overlayVC.view.layoutIfNeeded()
-      }
-
-      guard let targetSnapshot = toView.snapshotView(afterScreenUpdates: true) else {
-        showWithoutAnimation()
-        return
-      }
-      let toFrame = toView.frame
-      targetSnapshot.frame = toView.frame
-      overlayVC.view.isHidden = true
-      overlayView?.isHidden = false
-      targetSnapshot.alpha = 0.0
-      
-      if debug {
-        overlayView?.layer.borderColor = UIColor.green.cgColor
-        overlayView?.layer.borderWidth = 2.0
-        
-        fromSnapshot.layer.borderColor = UIColor.red.cgColor
-        fromSnapshot.layer.borderWidth = 2.0
-        
-        targetSnapshot.layer.borderColor = UIColor.blue.cgColor
-        targetSnapshot.layer.borderWidth = 2.0
-        
-        contentView?.layer.borderColor = UIColor.orange.cgColor
-        contentView?.layer.borderWidth = 2.0
-        
-        print("fromSnapshot.frame:", fromSnapshot.frame)
-        print("targetSnapshot.frame:", toFrame)
-      }
-      
-      fromSnapshot.layer.masksToBounds = true
-      fromFrame.origin.y = fromFrame.origin.y - (overlayView?.frame.origin.y ?? 0)
-      
-      fromSnapshot.frame = fromFrame
-      targetSnapshot.frame = fromFrame
-      
-      closeAction = {
-        self.close(fromRect: toFrame, toRect: fromFrame)
-        fromView.alpha = 0.0
-        fromView.isHidden = false
-        UIView.animate(seconds: 0.6) {
-          fromView.alpha = 1.0
-        }
-      }
-      
-      overlayView?.addSubview(fromSnapshot)
-      overlayView?.addSubview(targetSnapshot)
-      
-      fromView.isHidden = true
-      
-      UIView.animateKeyframes(withDuration: 0.6, delay: 0, animations: {
-        UIView.addKeyframe(withRelativeStartTime: 0.0, relativeDuration: 0.3) {
-          self.shadeView?.alpha = CGFloat(self.maxAlpha)
-          
-        }
-        UIView.addKeyframe(withRelativeStartTime: 0.0, relativeDuration: 5.0) {
-              fromSnapshot.alpha = 0.0
-        }
-        UIView.addKeyframe(withRelativeStartTime: 0.0, relativeDuration: 1.0) {
-          targetSnapshot.frame = toFrame
-          targetSnapshot.alpha = 1.0
-        }
-        
-      }) { (success) in
-        self.contentView?.isHidden = false
-        targetSnapshot.removeFromSuperview()
-        fromSnapshot.removeFromSuperview()
-      }
-    }
-  
-  // MARK: open fromFrame
   public func openAnimated(fromFrame: CGRect, toFrame: CGRect) {
     addToActiveVC()
-    
-    
+    closeAction = { self.close(fromRect: toFrame, toRect: fromFrame) }
     guard let fromSnapshot = activeVC.view.resizableSnapshotView(from: fromFrame, afterScreenUpdates: false, withCapInsets: .zero) else {
       showWithoutAnimation()
       return
     }
-    guard let targetSnapshot = overlayVC.view.resizableSnapshotView(from: toFrame, afterScreenUpdates: true, withCapInsets: .zero) else {
+    guard let targetSnapshot = overlayVC.view.snapshotView(afterScreenUpdates: true) else {
       showWithoutAnimation()
       return
     }
-    overlayVC.view.isHidden = true
+    
     overlayView?.isHidden = false
     targetSnapshot.alpha = 0.0
     
@@ -319,16 +224,7 @@ public class Overlay: NSObject, OverlaySpec, UIGestureRecognizerDelegate {
     }
     
     fromSnapshot.layer.masksToBounds = true
-    var fromFrame = fromFrame
-    fromFrame.origin.y = fromFrame.origin.y - (overlayView?.frame.origin.y ?? 0)
-//    var toFrame = toFrame
-//    toFrame.origin.y = toFrame.origin.y - (overlayView?.frame.origin.y ?? 0)
-//    toFrame.size.height = toFrame.size.height + (overlayView?.frame.origin.y ?? 0)
-    
     fromSnapshot.frame = fromFrame
-    targetSnapshot.frame = fromFrame
-    
-    closeAction = { self.close(fromRect: toFrame, toRect: fromFrame) }
     
     overlayView?.addSubview(fromSnapshot)
     overlayView?.addSubview(targetSnapshot)
@@ -337,26 +233,21 @@ public class Overlay: NSObject, OverlaySpec, UIGestureRecognizerDelegate {
       UIView.addKeyframe(withRelativeStartTime: 0.0, relativeDuration: 0.3) {
         self.shadeView?.alpha = CGFloat(self.maxAlpha)
       }
-      UIView.addKeyframe(withRelativeStartTime: 0.0, relativeDuration: 1.0) {
+      UIView.addKeyframe(withRelativeStartTime: 0.0, relativeDuration: 0.7) {
         fromSnapshot.frame = toFrame
-        targetSnapshot.frame = toFrame
+      }
+      
+      UIView.addKeyframe(withRelativeStartTime: 0.5, relativeDuration: 0.4) {
         fromSnapshot.alpha = 0.0
+      }
+      UIView.addKeyframe(withRelativeStartTime: 0.7, relativeDuration: 0.3) {
         targetSnapshot.alpha = 1.0
       }
       
-//      UIView.addKeyframe(withRelativeStartTime: 0.5, relativeDuration: 0.4) {
-//        fromSnapshot.alpha = 0.0
-//      }
-//      UIView.addKeyframe(withRelativeStartTime: 0.5, relativeDuration: 0.5) {
-//        targetSnapshot.alpha = 1.0
-//      }
-      
     }) { (success) in
-//      self.overlayVC.view.isHidden = false
       self.contentView?.isHidden = false
-//      targetSnapshot.alpha = 0.6
       targetSnapshot.removeFromSuperview()
-      fromSnapshot.removeFromSuperview()
+      targetSnapshot.removeFromSuperview()
     }
   }
   
@@ -555,11 +446,6 @@ public class Overlay: NSObject, OverlaySpec, UIGestureRecognizerDelegate {
         }
       }
     }
-  }
-  
-   // MARK: - didTapBackgroundToClose
-  @IBAction func didTapBackgroundToClose(gestureRecognizer: UITapGestureRecognizer){
-    self.close(animated: true)
   }
 }
 
