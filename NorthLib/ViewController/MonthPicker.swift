@@ -144,7 +144,7 @@ extension MonthPickerController {
       rotationAnimation.duration = 0.9
       rotationAnimation.repeatCount = 1
       
-      self.applyButton.layer.add(rotationAnimation, forKey: kRotationAnimationKey)
+      self.applyButton.imageView?.layer.add(rotationAnimation, forKey: kRotationAnimationKey)
     }
     
     if self._selectedDate < self.data.minimumDate {
