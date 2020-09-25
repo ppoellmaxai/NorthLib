@@ -9,13 +9,6 @@
 import Foundation
 import UIKit
 
-/**
- 
- TODO's
- - Cleanup
- - icons for ios 11/12
- */
-
 open class MonthPickerController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSource {
   
   public var doneHandler: (() -> ())?
