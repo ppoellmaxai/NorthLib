@@ -64,13 +64,12 @@ open class MonthPickerController: UIViewController, UIPickerViewDelegate, UIPick
     applyButton.setImage(UIImage(name: "arrow.2.circlepath"), for: .normal)
     applyButton.imageView?.tintColor = textColor
     
-    applyButton.pinSize(CGSize(width: 24, height: 24))
+    applyButton.pinSize(CGSize(width: 70, height: 70))
     applyButton.backgroundColor = .clear
-    //    applyButton.addBorder(UIColor.white)
     applyButton.addTarget(self, action: #selector(donedatePicker), for: .touchUpInside)
     
     content.addSubview(applyButton)
-    pin(picker.rightGuide(), to: applyButton.leftGuide(), dist: -10)
+    pin(picker.rightGuide(), to: applyButton.leftGuide(), dist: 10)
     pin(picker.centerY, to: applyButton.centerY)
     
     self.view.addSubview(content)
