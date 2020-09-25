@@ -48,8 +48,9 @@ open class MonthPickerController: UIViewController, UIPickerViewDelegate, UIPick
     content.addSubview(picker)
     pin(picker.bottomGuide(), to: content.bottomGuide())
     pin(picker.topGuide(), to: content.topGuide())
-    pin(picker.leftGuide(), to: content.leftGuide(), dist: 90)
-    pin(picker.rightGuide(), to: content.rightGuide(), dist: -90)
+    let dist = UIScreen.main.scale * 30
+    pin(picker.leftGuide(), to: content.leftGuide(), dist: dist)
+    pin(picker.rightGuide(), to: content.rightGuide(), dist: -dist)
     
     applyButton.setImage(UIImage(name: "arrow.2.circlepath"), for: .normal)
     applyButton.imageView?.tintColor = textColor
