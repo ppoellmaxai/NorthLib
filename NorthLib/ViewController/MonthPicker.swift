@@ -16,11 +16,20 @@ open class MonthPickerController: UIViewController, UIPickerViewDelegate, UIPick
   
   public var selectedDate : Date {
     get {
+      let selected = _selectedDate
+      if selected > data.maximumDate { return data.maximumDate }
+      if selected < data.minimumDate { return data.minimumDate }
+      return selected
+    }
+  }
+  
+  var _selectedDate : Date {
+    get {
       return DateComponents(calendar: Calendar.current,
-                            year: self.picker.selectedRow(inComponent: 1) + data.minimumYear,
-                            month: self.picker.selectedRow(inComponent: 0) + 1,
-                            day: 1,
-                            hour: 12).date
+                                    year: self.picker.selectedRow(inComponent: 1) + data.minimumYear,
+                                    month: self.picker.selectedRow(inComponent: 0) + 1,
+                                    day: 1,
+                                    hour: 12).date
         ?? Date()
     }
   }
@@ -139,10 +148,10 @@ extension MonthPickerController {
       self.applyButton.layer.add(rotationAnimation, forKey: kRotationAnimationKey)
     }
     
-    if self.selectedDate < self.data.minimumDate {
+    if self._selectedDate < self.data.minimumDate {
       self.setDate(self.data.minimumDate, animated : true)
       return;
-    } else if self.selectedDate > self.data.maximumDate {
+    } else if self._selectedDate > self.data.maximumDate {
       self.setDate(self.data.maximumDate, animated : true)
       return;
     }
