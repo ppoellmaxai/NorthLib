@@ -93,6 +93,7 @@ open class WebViewCollectionVC: PageCollectionVC, WKUIDelegate,
   public var isBridgeLogging = false
   
   public var currentWebView: WebView? { return currentView?.activeView as? WebView }
+  public var indicatorStyle:  UIScrollView.IndicatorStyle = .default
   
   // The closure to call when link is pressed
   private var _whenLinkPressed: ((URL?,URL?)->())?
@@ -171,7 +172,10 @@ open class WebViewCollectionVC: PageCollectionVC, WKUIDelegate,
   
   open func reloadAllWebViews(){
 //    print("Reloading #\(optionalWebViews.count) Webviews")
-    optionalWebViews.forEach{ $0.webView?.reload()}
+    optionalWebViews.forEach{
+      $0.webView?.reload()
+      $0.webView?.scrollView.indicatorStyle = indicatorStyle
+    }
   }
   
   open override func viewDidLoad() {
@@ -180,12 +184,16 @@ open class WebViewCollectionVC: PageCollectionVC, WKUIDelegate,
     inset = 0
     viewProvider { [weak self] (index, oview) in
       guard let this = self else { return UIView() }
-      if var ov = oview as? OptionalWebView { return ov.update(vc: this, url: this.urls[index]) }
+      if var ov = oview as? OptionalWebView {
+        ov.webView?.scrollView.indicatorStyle = self?.indicatorStyle ?? .default
+        return ov.update(vc: this, url: this.urls[index])
+      }
       else { 
         let owv = OptionalWebView(vc: this, url: this.urls[index]) 
         self?.optionalWebViews.append(owv)
         if let bridge = this.bridge { 
           owv.webView?.addBridge(bridge)
+          owv.webView?.scrollView.indicatorStyle = self?.indicatorStyle ?? .default
           if this.isBridgeLogging { owv.webView?.log2bridge(bridge) }
         }
         return owv
