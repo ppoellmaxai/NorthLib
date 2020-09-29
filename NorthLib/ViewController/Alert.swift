@@ -44,7 +44,8 @@ open class Alert {
       let cancelButton = UIAlertAction(title: "Abbrechen", style: .cancel) { _ in closure?(false) }
       alert.addAction(okButton)
       alert.addAction(cancelButton)
-      UIWindow.rootVC?.present(alert, animated: false, completion: nil)  
+      //present even if there is still a modal View presented
+      UIViewController.top()?.present(alert, animated: false, completion: nil)
     }
   }
 

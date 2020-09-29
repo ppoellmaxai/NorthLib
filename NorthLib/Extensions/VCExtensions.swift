@@ -10,6 +10,22 @@ import UIKit
 
 public extension UIViewController {
   
+  
+  /// Returns the topmost modaly presented ViewController or self if no modal VC is there
+  var topmostModalVc : UIViewController {
+    get {
+      var topmostModalVc : UIViewController = self
+      while true {
+        if let modal = topmostModalVc.presentedViewController {
+          topmostModalVc = modal
+        }
+        else{
+          return topmostModalVc
+        }
+      }
+    }
+  }
+  
   /**
    * `presentSubVC(controller:inView:)` takes a view controller 'controller'
    * and presents it in a subview 'inView' so that all views of 'controller'' are clipped by
