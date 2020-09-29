@@ -168,14 +168,11 @@ open class App {
   fileprivate static var _installationId: String?
   public static var installationId: String { 
     if _installationId == nil {
-      if let ifv = UIDevice.current.identifierForVendor { _installationId = ifv.uuidString }
-      else {
-        let dfl = Defaults.singleton
-        if let iid = dfl["installationId"] { _installationId = iid }
-        else { 
-          _installationId = UUID().uuidString 
-          dfl["installationId"] = _installationId
-        }
+      let dfl = Defaults.singleton
+      if let iid = dfl["installationId"] { _installationId = iid }
+      else { 
+        _installationId = UUID().uuidString 
+        dfl["installationId"] = _installationId
       }
     }
     return _installationId!
