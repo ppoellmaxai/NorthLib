@@ -138,9 +138,10 @@ public extension UIView {
   
   /// Pin height of view
   @discardableResult
-  func pinHeight(_ height: CGFloat) -> NSLayoutConstraint {
+  func pinHeight(_ height: CGFloat, priority: UILayoutPriority? = nil) -> NSLayoutConstraint {
     translatesAutoresizingMaskIntoConstraints = false
     let constraint = heightAnchor.constraint(equalToConstant: height)
+    if let prio = priority { constraint.priority = prio }
     constraint.isActive = true
     return constraint
   }
@@ -182,9 +183,10 @@ public extension UIView {
 /// Pin vertical anchor of one view to vertical anchor of another view
 @discardableResult
 public func pin(_ la: LayoutAnchorY, to: LayoutAnchorY, 
-  dist: CGFloat = 0) -> NSLayoutConstraint {
+                dist: CGFloat = 0, priority: UILayoutPriority? = nil) -> NSLayoutConstraint {
   la.view.translatesAutoresizingMaskIntoConstraints = false
   let constraint = la.anchor.constraint(equalTo: to.anchor, constant: dist)
+  if let prio = priority { constraint.priority = prio }
   constraint.isActive = true
   return constraint
 }
