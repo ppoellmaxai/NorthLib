@@ -108,11 +108,26 @@ open class App {
     return info["CFBundleVersion"] as! String
   }
   
-  /// Is this release a beta version (last two digits of buildNumber < 50)
-  /// or has it been defined as beta version
-  public static var isBeta = {
-    return Int(buildNumber.suffix(2))! < 50
+  /// Is this release a beta version (last two digits of buildNumber < 60 and >= 30)
+  public static var isBeta: Bool = {
+    let nn = Int(buildNumber.suffix(2))!
+    return (30 <= nn) && (nn < 60)
   }()
+  
+  
+  /// Is this release an alpha version (last two digits of buildNumber < 30 and >= 0)
+  public static var isAlpha: Bool = {
+    let nn = Int(buildNumber.suffix(2))!
+    return (0 <= nn) && (nn < 30)
+  }()
+
+  /// Is this release a Release (ie AppStore) version (last two digits of 
+  /// buildNumber < 100 and >= 60)
+  public static var isRelease: Bool = {
+    let nn = Int(buildNumber.suffix(2))!
+    return (60 <= nn) && (nn < 100)
+  }()
+
   
   /// Bundle identifier of currently running app
   public static var bundleIdentifier: String {
