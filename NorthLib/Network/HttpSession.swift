@@ -159,7 +159,6 @@ open class HttpJob: DoesLog {
       fileDownloaded(file: file)
     }
     isEOT = true
-    task.cancel()
     if isDownload { notifyDownload() }
     closure?(self)
   }
