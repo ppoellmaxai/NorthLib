@@ -35,6 +35,11 @@ public extension Date {
     return String(format: "%04d-%02d-%02d", dc.year!, dc.month!, dc.day!)
   }
   
+  /// Add (or subtract) number of days
+  mutating func addDays(_ days: Int) {
+    self = Calendar.current.date(byAdding: .day, value: days, to: self)!
+  }
+  
 } // extension Date
 
 /**
