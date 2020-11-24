@@ -38,9 +38,12 @@ struct OptionalWebView: OptionalView, DoesLog {
     webView.scrollView.isDirectionalLockEnabled = true
     webView.scrollView.showsHorizontalScrollIndicator = false
     webView.baseDir = vc.baseDir
-    webView.whenScrolled(minRatio: 0.05) { [weak vc] ratio in
+    webView.whenScrolled(minRatio: 0.01) { [weak vc] ratio in
       vc?.didScroll(ratio: ratio)
-    }    
+    }  
+    if let closure = vc.atEndOfContentClosure {
+      webView.atEndOfContent(closure: closure)
+    }
   }
 
   init(vc: WebViewCollectionVC, url: WebViewUrl) {
@@ -105,6 +108,15 @@ open class WebViewCollectionVC: PageCollectionVC, WKUIDelegate,
   /// Define closure to call when more than 5% has b een scrolled
   public func whenScrolled(_ closure: ((CGFloat)->())?) {
     _whenScrolled = closure
+  }
+  
+  // End of content closure
+  var atEndOfContentClosure: ((Bool)->())?
+
+  /// Define closure to call when the end of the web content will become 
+  /// visible
+  public func atEndOfContent(closure: @escaping (Bool)->()) {
+    atEndOfContentClosure = closure
   }
   
   /// reload contents of current WebView
