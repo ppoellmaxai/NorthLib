@@ -80,3 +80,32 @@ open class Keychain: DoesLog {
   }
 
 } // Keychain
+
+/// A property wrapper for Keychain String values
+@propertyWrapper public struct Key {
+  /// The String to use as Defaults key
+  public var key: String
+  /// The wrapped value is in essence Keychain.singleton[key]
+  public var wrappedValue: String? {
+    get { Keychain.singleton[key] }
+    set { Keychain.singleton[key] = newValue}
+  }
+  public init(key: String) { self.key = key }
+}
+
+/// A property wrapper for Bool Keychains (represented as String)
+/// If key is undefined, false is returned
+@propertyWrapper public struct KeyBool {
+  /// The String to use as Keychain key
+  public var key: String
+  /// The wrapped value is in essence Keychain.singleton[key]
+  public var wrappedValue: Bool {
+    get { 
+      if let k = Keychain.singleton[key] { return k.bool }
+      else { return false }
+    }
+    set { Keychain.singleton[key] = newValue ? "true" : "false" }
+  }
+  public init(key: String) { self.key = key }
+}
+
