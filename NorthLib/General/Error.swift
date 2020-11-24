@@ -45,44 +45,57 @@ extension DoesLog {
   
   @discardableResult  
   public func error(_ msg: String? = nil, file: String = #file, line: Int = #line,
-             function: String = #function) -> Log.Error {
+                    function: String = #function) -> Log.Error {
     return Log.error(msg, object: self, file: file, line: line, function: function)
+  }
+  
+  @discardableResult  
+  public func check(_ value: Bool, _ msg: String? = nil, file: String = #file, 
+                    line: Int = #line, function: String = #function) -> Bool {
+    var ret = false
+    if value { ret = true }
+    else {
+      var str = "*** Check failed"
+      if let m = msg { str += ": \(m)" }
+      Log.error(str, object: self, file: file, line: line, function: function)
+    }
+    return ret
   }
   
   @discardableResult
   public func error<T: Swift.Error>(_ error: T, file: String = #file, line: Int = #line,
-                             function: String = #function) -> Log.EnclosedError<T> {
+                                    function: String = #function) -> Log.EnclosedError<T> {
     return Log.error(error, object: self, file: file, line: line, function: function)
   }
   
   @discardableResult
   public func logIf<T: Swift.Error>(_ error: T?, file: String = #file, line: Int = #line,
-                             function: String = #function) -> Log.EnclosedError<T>? {
+                                    function: String = #function) -> Log.EnclosedError<T>? {
     guard let error = error else { return nil }
     return Log.error(error, object: self, file: file, line: line, function: function)
   }
   
   @discardableResult  
   public func fatal(_ msg: String? = nil, file: String = #file, line: Int = #line,
-             function: String = #function) -> Log.Error {
+                    function: String = #function) -> Log.Error {
     return Log.fatal(msg, object: self, file: file, line: line, function: function)
   }
   
   @discardableResult
   public func fatal<T: Swift.Error>(_ error: T, file: String = #file, line: Int = #line,
-                             function: String = #function) -> Log.EnclosedError<T> {
+                                    function: String = #function) -> Log.EnclosedError<T> {
     return Log.fatal(error, object: self, file: file, line: line, function: function)
   }
   
   @discardableResult  
   public func exception(_ msg: String? = nil, file: String = #file, line: Int = #line,
-                 function: String = #function) -> Log.Error {
+                        function: String = #function) -> Log.Error {
     return Log.exception(msg, object: self, file: file, line: line, function: function)
   }
   
   @discardableResult
   public func exception<T: Swift.Error>(_ error: T, file: String = #file, line: Int = #line,
-                                 function: String = #function) -> Log.EnclosedError<T> {
+                                        function: String = #function) -> Log.EnclosedError<T> {
     return Log.exception(error, object: self, file: file, line: line, function: function)
   }
   
