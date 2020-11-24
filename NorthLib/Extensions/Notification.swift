@@ -58,12 +58,11 @@ public extension Notification {
   
   /// Receive Notification and return observer object
   @discardableResult
-  static func receive(_ message: String, from: Any? = nil,
+  static func receive(_ message: Notification.Name, from: Any? = nil,
                       closure: @escaping (Notification)->()) 
     -> Observer {
-    let nn = NSNotification.Name(message)
     var observer: Observer = nil
-    observer = NotificationCenter.default.addObserver(forName: nn, 
+    observer = NotificationCenter.default.addObserver(forName: message, 
                      object: from, queue: nil) { notification in
       var notif = notification
       var dict: [AnyHashable:Any] = [:]
@@ -73,6 +72,23 @@ public extension Notification {
       closure(notif)
     }
     return observer
+  }
+  
+  /// Receive Notification and return observer object
+  @discardableResult
+  static func receive(_ message: String, from: Any? = nil,
+                      closure: @escaping (Notification)->()) 
+    -> Observer {
+    return receive(NSNotification.Name(message), from: from, closure: closure)
+  }
+  
+  /// Receive Notification and remove observer imediately after receival
+  static func receiveOnce(_ message: Notification.Name, from: Any? = nil,
+                          closure: @escaping (Notification)->()) {
+    receive(message) { notif in
+      notif.withdraw()
+      closure(notif)
+    }
   }
   
   /// Receive Notification and remove observer imediately after receival
