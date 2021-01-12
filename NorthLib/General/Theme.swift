@@ -60,7 +60,7 @@ public class Theme {
     public init(name: String?, light: T, dark: T? = nil) {
       self.light = light
       self.dark = dark
-      super.init(name, {[]})
+      super.init(name, {})
     }
   }
   

@@ -182,9 +182,13 @@ open class WebViewCollectionVC: PageCollectionVC, WKUIDelegate,
     inset = 0
     viewProvider { [weak self] (index, oview) in
       guard let this = self else { return UIView() }
-      if var ov = oview as? OptionalWebView { return ov.update(vc: this, url: this.urls[index]) }
+      if var ov = oview as? OptionalWebView { 
+        this.debug("Update OptionalWebView with: \(this.urls[index].url)")
+        return ov.update(vc: this, url: this.urls[index]) 
+      }
       else { 
         let owv = OptionalWebView(vc: this, url: this.urls[index]) 
+        this.debug("New OptionalWebView with: \(this.urls[index].url)")
         if let bridge = this.bridge { 
           owv.webView?.addBridge(bridge)
           if this.isBridgeLogging { owv.webView?.log2bridge(bridge) }

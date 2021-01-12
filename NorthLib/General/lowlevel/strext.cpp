@@ -919,7 +919,7 @@ char *str_reverse(char *str) {
 }
 
  
-/**
+/*
  *  str_rquote produces a "quoted" string from 'str'. 
  *  
  *  It works similar to 'str_rqcpy' but unlike to that function the 
