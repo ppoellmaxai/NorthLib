@@ -32,6 +32,9 @@ struct OptionalWebView: OptionalView, DoesLog {
     let webConfiguration = WKWebViewConfiguration()
     self.webView = WebView(frame: .zero, configuration: webConfiguration)
     guard let webView = self.webView else { return }
+    webView.isOpaque = false
+    webView.backgroundColor = UIColor.clear
+    webView.scrollView.backgroundColor = UIColor.clear
     webView.uiDelegate = vc
     webView.navigationDelegate = vc
     webView.allowsBackForwardNavigationGestures = false
@@ -93,6 +96,7 @@ open class WebViewCollectionVC: PageCollectionVC, WKUIDelegate,
   public var isBridgeLogging = false
   
   public var currentWebView: WebView? { return currentView?.activeView as? WebView }
+  public var indicatorStyle:  UIScrollView.IndicatorStyle = .default
   
   // The closure to call when link is pressed
   private var _whenLinkPressed: ((URL?,URL?)->())?
@@ -176,21 +180,32 @@ open class WebViewCollectionVC: PageCollectionVC, WKUIDelegate,
     gotoUrl(path + "/" + file)
   }
   
+  var optionalWebViews:[OptionalWebView] = []
+  
+  open func reloadAllWebViews(){
+//    print("Reloading #\(optionalWebViews.count) Webviews")
+    optionalWebViews.forEach{
+      $0.webView?.reload()
+      $0.webView?.scrollView.indicatorStyle = indicatorStyle
+    }
+  }
+  
   open override func viewDidLoad() {
     super.viewDidLoad()
     self.view.backgroundColor = UIColor.white
     inset = 0
     viewProvider { [weak self] (index, oview) in
       guard let this = self else { return UIView() }
-      if var ov = oview as? OptionalWebView { 
-        this.debug("Update OptionalWebView with: \(this.urls[index].url)")
-        return ov.update(vc: this, url: this.urls[index]) 
+      if var ov = oview as? OptionalWebView {
+        ov.webView?.scrollView.indicatorStyle = self?.indicatorStyle ?? .default
+        return ov.update(vc: this, url: this.urls[index])
       }
       else { 
         let owv = OptionalWebView(vc: this, url: this.urls[index]) 
-        this.debug("New OptionalWebView with: \(this.urls[index].url)")
+        self?.optionalWebViews.append(owv)
         if let bridge = this.bridge { 
           owv.webView?.addBridge(bridge)
+          owv.webView?.scrollView.indicatorStyle = self?.indicatorStyle ?? .default
           if this.isBridgeLogging { owv.webView?.log2bridge(bridge) }
         }
         return owv

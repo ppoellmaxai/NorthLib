@@ -10,6 +10,22 @@ import UIKit
 
 public extension UIViewController {
   
+  
+  /// Returns the topmost modaly presented ViewController or self if no modal VC is there
+  var topmostModalVc : UIViewController {
+    get {
+      var topmostModalVc : UIViewController = self
+      while true {
+        if let modal = topmostModalVc.presentedViewController {
+          topmostModalVc = modal
+        }
+        else{
+          return topmostModalVc
+        }
+      }
+    }
+  }
+  
   /**
    * `presentSubVC(controller:inView:)` takes a view controller 'controller'
    * and presents it in a subview 'inView' so that all views of 'controller'' are clipped by
@@ -149,3 +165,57 @@ public extension UIViewController {
   }
   
 } // extension UIViewController
+
+
+// MARK: - ext: UIViewController Modal Stack 
+extension UIViewController{
+  /// dismiss helper for stack of modal presented VC's
+  public static func dismiss(stack:[UIViewController], animated:Bool, completion: (() -> Void)?){
+    var stack = stack
+    let vc = stack.pop()
+    vc?.dismiss(animated: animated, completion: {
+      if stack.count > 0 {
+        UIViewController.dismiss(stack: stack, animated: false, completion: completion)
+      } else {
+        completion?()
+      }
+    })
+  }
+  
+  /// helper to find presenting VC for stack of modal presented VC's
+  public var rootPresentingViewController : UIViewController {
+    get{
+      var vc = self
+      while true {
+        if let pvc = vc.presentingViewController {
+          vc = pvc
+        }
+        return vc
+      }
+    }
+  }
+  
+  /// helper to find 1st presended VC in stack of modal presented VC's
+  public var rootModalViewController : UIViewController? {
+    get{
+      return self.rootPresentingViewController.presentedViewController
+    }
+  }
+  
+  /// helper for stack of modal presented VC's, to get all modal presented VC's below self
+  public var modalStack : [UIViewController] {
+    get{
+      var stack:[UIViewController] = []
+      var vc:UIViewController = self
+      while true {
+        if let pc = vc.presentingViewController {
+          stack.append(vc)
+          vc = pc
+        }
+        else {
+          return stack
+        }
+      }
+    }
+  }
+}

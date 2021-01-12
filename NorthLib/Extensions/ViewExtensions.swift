@@ -138,9 +138,10 @@ public extension UIView {
   
   /// Pin height of view
   @discardableResult
-  func pinHeight(_ height: CGFloat) -> NSLayoutConstraint {
+  func pinHeight(_ height: CGFloat, priority: UILayoutPriority? = nil) -> NSLayoutConstraint {
     translatesAutoresizingMaskIntoConstraints = false
     let constraint = heightAnchor.constraint(equalToConstant: height)
+    if let prio = priority { constraint.priority = prio }
     constraint.isActive = true
     return constraint
   }
@@ -182,9 +183,10 @@ public extension UIView {
 /// Pin vertical anchor of one view to vertical anchor of another view
 @discardableResult
 public func pin(_ la: LayoutAnchorY, to: LayoutAnchorY, 
-  dist: CGFloat = 0) -> NSLayoutConstraint {
+                dist: CGFloat = 0, priority: UILayoutPriority? = nil) -> NSLayoutConstraint {
   la.view.translatesAutoresizingMaskIntoConstraints = false
   let constraint = la.anchor.constraint(equalTo: to.anchor, constant: dist)
+  if let prio = priority { constraint.priority = prio }
   constraint.isActive = true
   return constraint
 }
@@ -231,6 +233,34 @@ public func pin(_ view: UIView, toSafe: UIView, dist: CGFloat = 0) -> (top: NSLa
   return (top, bottom, left, right)
 }
 
+public typealias tblrConstrains = (
+  top: NSLayoutConstraint?,
+  bottom: NSLayoutConstraint?,
+  left: NSLayoutConstraint?,
+  right: NSLayoutConstraint?)
+
+// MARK: - pinnAll Helper
+///borders Helper
+/// Pin all edges, except one of one view to the edges of another view's safe layout guide
+@discardableResult
+public func pin(_ view: UIView, to: UIView, dist: CGFloat = 0, exclude: UIRectEdge? = nil) -> tblrConstrains {
+  var top:NSLayoutConstraint?, left:NSLayoutConstraint?, bottom:NSLayoutConstraint?, right:NSLayoutConstraint?
+  exclude != UIRectEdge.top ? top = NorthLib.pin(view.top, to: to.top, dist: dist) : nil
+  exclude != UIRectEdge.left ? left = NorthLib.pin(view.left, to: to.left, dist: dist) : nil
+  exclude != UIRectEdge.right ? right = NorthLib.pin(view.right, to: to.right, dist: -dist) : nil
+  exclude != UIRectEdge.bottom ? bottom = NorthLib.pin(view.bottom, to: to.bottom, dist: -dist) : nil
+  return (top, bottom, left, right)
+}
+
+public func pin(_ view: UIView, toSafe: UIView, dist: CGFloat = 0, exclude: UIRectEdge? = nil) -> tblrConstrains {
+  var top:NSLayoutConstraint?, left:NSLayoutConstraint?, bottom:NSLayoutConstraint?, right:NSLayoutConstraint?
+  exclude != UIRectEdge.top ? top = NorthLib.pin(view.top, to: toSafe.topGuide(), dist: dist) : nil
+  exclude != UIRectEdge.left ? left = NorthLib.pin(view.left, to: toSafe.leftGuide(), dist: dist) : nil
+  exclude != UIRectEdge.right ? right = NorthLib.pin(view.right, to: toSafe.rightGuide(), dist: -dist) : nil
+  exclude != UIRectEdge.bottom ? bottom = NorthLib.pin(view.bottom, to: toSafe.bottomGuide(), dist: -dist) : nil
+  return (top, bottom, left, right)
+}
+
 /// A simple UITapGestureRecognizer wrapper
 open class TapRecognizer: UITapGestureRecognizer {  
   public var onTapClosure: ((UITapGestureRecognizer)->())?  
@@ -262,4 +292,31 @@ extension Touchable {
 /// A touchable UILabel
 public class Label: UILabel, Touchable {
   public var tapRecognizer = TapRecognizer()
+}
+
+/// Helpers to add specific UI Attributes just to iOS 13 or not
+/// usage.eg: myView.iosLower13?.pinWidth(20)
+public extension NSObject{
+  var iosLower13 : Self?{
+    get{
+      if #available(iOS 13, *) {
+        return nil
+      }
+      else {
+        return self
+        
+      }
+    }
+  }
+  
+  var iosHigher13 : Self?{
+    get{
+      if #available(iOS 13, *) {
+        return self
+      }
+      else {
+        return nil
+      }
+    }
+  }
 }

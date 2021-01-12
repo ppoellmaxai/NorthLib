@@ -266,3 +266,58 @@ public extension String {
   
 } // extension String
 
+// MARK: - extension String htmlAttributed
+extension String {
+  public var htmlAttributed : NSAttributedString?{
+    get{
+      do {
+        guard let data = "\(self)".data(using: String.Encoding.utf8) else {
+          return nil
+        }
+        
+        return try NSAttributedString(data: data,
+                                      options: [.documentType: NSAttributedString.DocumentType.html,
+                                                .characterEncoding: String.Encoding.utf8.rawValue],
+                                      documentAttributes: nil)
+      } catch {
+        print("htmlAttributed parse error: ", error)
+        return nil
+      }
+    }
+  }
+  
+  public var mutableAttributedStringFromHtml : NSMutableAttributedString?{
+    get{
+      do {
+        guard let data = "\(self)".data(using: String.Encoding.utf8) else {
+          return nil
+        }
+        
+        return try NSMutableAttributedString(data: data,
+                                      options: [.documentType: NSAttributedString.DocumentType.html,
+                                                .characterEncoding: String.Encoding.utf8.rawValue],
+                                      documentAttributes: nil)
+      } catch {
+        print("htmlAttributed parse error: ", error)
+        return nil
+      }
+    }
+  }
+}
+
+// MARK: - extension String isValidEmail
+extension String {
+  public func isValidEmail() -> Bool {
+    let emailRegEx = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
+    let emailPred = NSPredicate(format:"SELF MATCHES %@", emailRegEx)
+    return emailPred.evaluate(with: self)
+  }
+}
+
+// MARK: - Localized Helper without Comment
+public func Localized(_ key: String) -> String {
+  return NSLocalizedString(key, comment: "n/a")
+}
+public func Localized(keyWithFormat: String, _  arguments: CVarArg...) -> String {
+  return String(format: Localized(keyWithFormat), arguments: arguments)
+}

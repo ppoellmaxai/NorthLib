@@ -207,7 +207,8 @@ extension WKNavigationAction: ToString {
   
 }
 
-open class WebView: WKWebView, WKScriptMessageHandler, UIScrollViewDelegate {
+open class WebView: WKWebView, WKScriptMessageHandler, UIScrollViewDelegate,
+                    WKNavigationDelegate {
 
   /// JS NativeBridge objects
   public var bridgeObjects: [String:JSBridgeObject] = [:]
@@ -220,6 +221,26 @@ open class WebView: WKWebView, WKScriptMessageHandler, UIScrollViewDelegate {
   }
   /// The original URL to load
   public var originalUrl: URL?
+  
+  // The closure to call when link is pressed
+  private var _whenLinkPressed: ((URL?,URL?)->())?
+  
+  /// Define closure to call when link is pressed
+  public func whenLinkPressed( _ closure: @escaping (URL?,URL?)->() ) {
+    _whenLinkPressed = closure
+  }
+  
+  // Default LinkPressed closure
+  private func linkPressed(from: URL?, to: URL?) {
+    guard let to = to else { return }
+    self.debug("Calling application for: \(to.absoluteString)")
+    if UIApplication.shared.canOpenURL(to) {
+      UIApplication.shared.open(to, options: [:], completionHandler: nil)
+    }
+    else {         
+      error("No application or no permission for: \(to.absoluteString)")         
+    }
+  }
   
   /// Define Bridge Object
   public func addBridge(_ object: JSBridgeObject, isExec: Bool = false) {
@@ -343,6 +364,8 @@ open class WebView: WKWebView, WKScriptMessageHandler, UIScrollViewDelegate {
   }
   
   public func setup() {
+    self.navigationDelegate = self
+    whenLinkPressed { (from, to) in self.linkPressed(from: from, to: to) }
   }
   
   override public init(frame: CGRect, configuration: WKWebViewConfiguration? = nil) {
@@ -409,6 +432,21 @@ open class WebView: WKWebView, WKScriptMessageHandler, UIScrollViewDelegate {
     }
   }
 
+  // MARK: - WKNavigationDelegate protocol
+  public func webView(_ webView: WKWebView, decidePolicyFor nav: WKNavigationAction,
+                      decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+    if let wv = webView as? WebView {
+      let from = wv.originalUrl?.absoluteString
+      let to = nav.request.description
+      if from != to, to != "about:blank" {
+        if let closure = _whenLinkPressed {
+          closure(wv.originalUrl, URL(string: to)) 
+        }
+        decisionHandler(.cancel)
+      }
+      else { decisionHandler(.allow) }
+    }
+  }
   
 } // class WebView
 

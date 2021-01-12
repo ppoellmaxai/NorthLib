@@ -61,8 +61,8 @@ open class Slider: NSObject, DoesLog {
   }
   
   // is slider opened
-  fileprivate var isOpen = false
-  
+  public fileprivate(set) var isOpen = false
+    
   fileprivate var openClosure: ((Slider)->())? = nil
   fileprivate var closeClosure: ((Slider)->())? = nil
   fileprivate var tmpOpenClosure: ((Slider)->())? = nil

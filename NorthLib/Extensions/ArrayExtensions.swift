@@ -53,4 +53,9 @@ public extension Array {
     self.map { ($0 as! NSCopying).copy() as! Element }
   }
   
+  ///Safe acces to Array Items by Index returns null if Index did not exist
+  func valueAt(_ index : Int) -> Any?{
+    return self.indices.contains(index) ? self[index] : nil
+  }
+  
 } // Array

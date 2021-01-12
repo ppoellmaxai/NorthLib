@@ -45,6 +45,17 @@ public enum Device: CustomStringConvertible {
   
 }
 
+extension Utsname {
+  /// Returns mashine id on real device e.g. iPhone 10,6 or Simulator (iPhone X) on Simulator
+  static public var machineModel: String {
+    if Self.machine == "i386" || Self.machine == "x86_64" {
+      return "Simulator (\(UIDevice().name))"
+    }
+    return Self.machine
+  }
+}
+
+
 /** The Defaults class is just some syntactic sugar around iOS' UserDefaults.
  
  In addition to simple key/value pairs this class manages so called scoped key/values.
@@ -313,7 +324,7 @@ open class Defaults: NSObject {
   public var key: String
   /// The wrapped value is in essence Defaults.singleton[key]
   public var wrappedValue: Int {
-    get { 
+    get {
       if let dfl = Defaults.singleton[key] { return Int(dfl) ?? 0 }
       else { return 0 }
     }

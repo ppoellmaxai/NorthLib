@@ -15,7 +15,7 @@ open class CubeLabel: UILabel, Touchable {
   /// Define text to scroll to
   override open var text: String? {
     get { return super.text }
-    set { cubeTransition(text: newValue, isUp: scrollUp) }
+    set { effectTransition(text: newValue, isUp: scrollUp) }
   }
   
   /// The label's text without rotation
@@ -26,16 +26,20 @@ open class CubeLabel: UILabel, Touchable {
   
   /// Define text and scroll direction
   public func setText(_ text: String?, isUp: Bool) 
-    { cubeTransition(text: text, isUp: isUp) }
+    { effectTransition(text: text, isUp: isUp) }
   
   /// To recognized taps on the label
   public var tapRecognizer = TapRecognizer()
   
-  private var inAnimation = false
-  private var lastText: String?
+  fileprivate var superText : String? {
+    get { return super.text}
+    set { super.text = newValue}
+  }
+  fileprivate var inAnimation = false
+  fileprivate var lastText: String?
   private var lastDirection: Bool?
   
-  private func cubeTransition( text: String?, isUp: Bool = true ) {
+  fileprivate func effectTransition( text: String?, isUp: Bool = true ) {
     if (super.text == nil) || (text == nil) { super.text = text; return }
     guard !inAnimation else { lastText = text; lastDirection = isUp; return }
     inAnimation = true
@@ -62,10 +66,47 @@ open class CubeLabel: UILabel, Touchable {
         if let lastDirection = self.lastDirection { direction = lastDirection }
         self.lastText = nil
         self.lastDirection = nil
-        self.cubeTransition(text: txt, isUp: direction)
+        self.effectTransition(text: txt, isUp: direction)
       }
     }
   }
 
 } // CubeLabel
+
+open class CrossfadeLabel : CubeLabel {
+  private var newestText : String?
+  lazy var newLabel = UILabel()
+  
+  private func resetNewLabelForReuse(){
+    newLabel.alpha = 0.0
+    newLabel.frame = self.frame
+    newLabel.font != self.font ? newLabel.font = self.font : nil
+    newLabel.textAlignment != self.textAlignment ? newLabel.textAlignment = self.textAlignment : nil
+    newLabel.textColor != self.textColor ? newLabel.textColor = self.textColor : nil
+    newLabel.backgroundColor != self.backgroundColor ? newLabel.backgroundColor = self.backgroundColor : nil
+  }
+  
+  override fileprivate func effectTransition( text: String?, isUp: Bool = true ) {
+    if (self.superText == nil) || (text == nil) { self.superText = text; return }
+    guard !inAnimation else { newestText = text; return }
+    inAnimation = true
+    resetNewLabelForReuse()
+    newLabel.text = text
+    self.superview?.addSubview(self.newLabel)
+    
+    UIView.animate(withDuration: 0.5, animations: {
+      self.alpha = 0.0
+      self.newLabel.alpha = 1.0
+    }) { _ in
+      self.superText = text
+      self.alpha = 1.0
+      self.newLabel.removeFromSuperview()
+      self.inAnimation = false
+      if let txt = self.newestText {
+        self.newestText = nil
+        self.effectTransition(text: txt)
+      }
+    }
+  }
+}
 
