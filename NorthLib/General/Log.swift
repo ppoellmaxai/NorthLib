@@ -9,10 +9,14 @@ import UIKit
 
 /// Protocol to adopt from classes which like to use self.log, ...
 public protocol DoesLog {
-  //...
+  var isDebugLogging: Bool { get }
 }
 
 extension DoesLog {
+  
+  public var isDebugLogging: Bool {
+    get { return true }
+  }
   
   public func log(_ msg: String? = nil, logLevel: Log.LogLevel = .Info, file: String = #file,
             line: Int = #line, function: String = #function) {
@@ -21,7 +25,9 @@ extension DoesLog {
   
   public func debug(_ msg: String? = nil, file: String = #file, line: Int = #line,
               function: String = #function) {
-    Log.debug(msg, object: self, file: file, line: line, function: function)
+    if isDebugLogging {
+      Log.debug(msg, object: self, file: file, line: line, function: function)
+    }
   }
   
 }
