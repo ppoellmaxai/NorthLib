@@ -96,7 +96,9 @@ extension Notification.Name {
  A HttpJob uses an URLSessionTask to perform a HTTP request.
  */
 open class HttpJob: DoesLog {
-
+  
+  /// Log debug messages if HttpSession does
+  public var isDebugLogging: Bool { return HttpSession.isDebug }
   /// The task performing the request in its own thread
   public var task: URLSessionTask
   /// The task ID
@@ -193,6 +195,10 @@ open class HttpJob: DoesLog {
  */
 open class HttpSession: NSObject, URLSessionDelegate, URLSessionTaskDelegate, URLSessionDownloadDelegate, URLSessionDataDelegate, DoesLog {
   
+  /// Perform debug logging?
+  public static var isDebug: Bool = true
+  public var isDebugLogging: Bool { return HttpSession.isDebug }
+
   /// Dictionary of background completion handlers 
   public static var bgCompletionHandlers: [String:()->()] = [:]  
   // Optional name of (background) session
