@@ -554,6 +554,7 @@ open class ButtonedWebView: UIView {
     xButton.buttonView.color = UIColor.rgb(0x707070)
     xButton.buttonView.innerCircleFactor = 0.5
     xButton.isHidden = true
+    xButton.accessibilityLabel = "webViewXBtn"
     webView.atEndOfContent { [weak self] isAtEnd in
       guard let self = self else { return }
       if self.isButtonVisible != isAtEnd {
